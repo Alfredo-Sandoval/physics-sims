@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Improved Solar System with Spacetime Curvature (NASA Textures)</title>
+  <style>
+    body { margin: 0; overflow: hidden; background-color: #000; }
+    canvas { display: block; } /* Prevent scroll bars */
+    #controls {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: white;
+      font-family: Arial, sans-serif;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 8px;
+      border-radius: 5px;
+      font-size: 0.9em;
+      max-width: 220px; /* Adjust width if needed */
+    }
+    #controls label { display: block; margin-bottom: 5px; }
+    #controls input[type="range"] { vertical-align: middle; width: 100px; } /* Adjust range width */
+    #controls span { display: inline-block; width: 35px; text-align: right; } /* Align values */
+    #info {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      color: white;
+      font-family: Arial, sans-serif;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 10px;
+      border-radius: 5px;
+      display: none; /* Hidden by default */
+      max-width: 200px; /* Limit width */
+    }
+    #info h3 { margin-top: 0; font-size: 1.1em; }
+    #info p { margin: 5px 0; font-size: 0.9em; }
+    
+    /* New styles for toggle button and day counter */
+    #toggleMeshBtn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 999;
+      padding: 8px;
+      background: rgba(0, 0, 0, 0.5);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-family: Arial, sans-serif;
+      cursor: pointer;
+    }
+    #dayCounter {
+      position: absolute;
+      top: 60px;
+      right: 10px;
+      z-index: 999;
+      color: white;
+      font-family: Arial, sans-serif;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 8px;
+      border-radius: 5px;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    <label>Planet Size:
+      <input type="radio" name="sizeMode" value="scaled" checked> Scaled
+
+    </label><br>
+    <label>Speed: <input type="range" id="speedSlider" min="0.1" max="5" step="0.1" value="1"> <span id="speedValue">1.0x</span></label><br>
+    <label>Gravity: <input type="range" id="gravitySlider" min="0" max="5" step="0.1" value="1"> <span id="gravityValue">1.0x</span></label>
+  </div>
+  <div id="info">
+    <h3>Selected Planet</h3>
+    <p>Name: <span id="info-name"></span></p>
+    <p>Orbit: <span id="info-orbit"></span> AU</p>
+    <!-- Add more info fields if needed -->
+  </div>
+  
+  <!-- New Toggle Button and Day Counter -->
+  <button id="toggleMeshBtn">Toggle Space-Time Mesh</button>
+  <div id="dayCounter">Days: 0</div>
+  
+  <!-- Textures sourced from SolarSystemScope.com (often derived from NASA/ESA data) -->
+  <!-- For production, download and host these locally. -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+  <script type="module" src="script.js"></script>
+</body>
+
+</html>
