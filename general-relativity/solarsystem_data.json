@@ -1,0 +1,235 @@
+[
+  {
+    "name": "Mercury",
+    "actualRadius": 0.383,
+    "scaledRadius": 2.5,
+    "textureUrl": "textures/mercury.jpg",
+    "orbitRadiusAU": 0.387,
+    "baseOrbitSpeedFactor": 1.607,
+    "gravityStrength": 0.38,
+    "initialAngle": 0,
+    "rotationPeriod": 58.6,
+    "axialTilt": 0.03,
+    "atmosphere": { "exists": false },
+    "moons": [],
+    "info": {
+      "Mass": "0.055 Earths",
+      "Composition": "Rocky planet with iron core",
+      "SurfaceTemp": "-173°C to 427°C",
+      "RotationPeriod": "58.6 Earth days",
+      "OrbitalPeriod": "88 Earth days",
+      "Distance": "0.39 AU from Sun"
+    }
+  },
+  {
+    "name": "Venus",
+    "actualRadius": 0.949,
+    "scaledRadius": 4,
+    "textureUrl": "textures/venus.jpg",
+    "orbitRadiusAU": 0.723,
+    "baseOrbitSpeedFactor": 1.626,
+    "gravityStrength": 0.91,
+    "initialAngle": 0.7853981633974483,
+    "rotationPeriod": -243,
+    "axialTilt": 177.3,
+    "atmosphere": {
+      "exists": true,
+      "color": "0xfff7d6",
+      "density": 0.7
+    },
+    "moons": [],
+    "info": {
+      "Mass": "0.815 Earths",
+      "Composition": "Rocky planet with thick CO₂ atmosphere",
+      "SurfaceTemp": "462°C (hottest planet)",
+      "RotationPeriod": "243 Earth days (retrograde)",
+      "OrbitalPeriod": "225 Earth days",
+      "Distance": "0.72 AU from Sun"
+    }
+  },
+  {
+    "name": "Earth",
+    "actualRadius": 1.0,
+    "scaledRadius": 4.2,
+    "textureUrl": "textures/earth.jpg",
+    "cloudTextureUrl": "textures/earth_clouds.jpg",
+    "nightTextureUrl": "textures/earth_night.jpg",
+    "orbitRadiusAU": 1.0,
+    "baseOrbitSpeedFactor": 1.0,
+    "gravityStrength": 1.0,
+    "initialAngle": 1.5707963267948966,
+    "rotationPeriod": 1.0,
+    "axialTilt": 23.4,
+    "atmosphere": {
+      "exists": true,
+      "color": "0x6b8cff",
+      "density": 0.3
+    },
+    "moons": [
+      {
+        "name": "Moon",
+        "actualRadius": 0.273,
+        "orbitRadiusKm": 384400,
+        "orbitalPeriod": 27.3,
+        "rotationPeriod": 27.3,
+        "textureUrl": "textures/moon.jpg"
+      }
+    ],
+    "info": {
+      "Mass": "1.0 Earths (5.97×10²⁴ kg)",
+      "Composition": "Rocky planet with nitrogen-oxygen atmosphere",
+      "SurfaceTemp": "-88°C to 58°C",
+      "RotationPeriod": "24 hours",
+      "OrbitalPeriod": "365.25 days",
+      "Distance": "1.0 AU from Sun",
+      "Moons": "1 (Luna)"
+    }
+  },
+  {
+    "name": "Mars",
+    "actualRadius": 0.532,
+    "scaledRadius": 3,
+    "textureUrl": "textures/mars.jpg",
+    "orbitRadiusAU": 1.524,
+    "baseOrbitSpeedFactor": 0.5316,
+    "gravityStrength": 0.38,
+    "initialAngle": 2.356194490192345,
+    "rotationPeriod": 1.03,
+    "axialTilt": 25.2,
+    "atmosphere": {
+      "exists": true,
+      "color": "0xd09470",
+      "density": 0.1
+    },
+    "moons": [],
+    "info": {
+      "Mass": "0.107 Earths",
+      "Composition": "Rocky planet with thin CO₂ atmosphere",
+      "SurfaceTemp": "-153°C to 20°C",
+      "RotationPeriod": "24.6 hours",
+      "OrbitalPeriod": "687 Earth days",
+      "Distance": "1.52 AU from Sun",
+      "Moons": "2 (Phobos, Deimos) - too small to show at scale"
+    }
+  },
+  {
+    "name": "Jupiter",
+    "actualRadius": 11.209,
+    "scaledRadius": 10,
+    "textureUrl": "textures/jupiter.jpg",
+    "orbitRadiusAU": 5.203,
+    "baseOrbitSpeedFactor": 0.0843,
+    "gravityStrength": 2.53,
+    "initialAngle": 3.141592653589793,
+    "rotationPeriod": 0.41,
+    "axialTilt": 3.1,
+    "atmosphere": {
+      "exists": true,
+      "color": "0xf0e8d8",
+      "density": 0.5
+    },
+    "moons": [
+      { "name": "Io", "actualRadius": 0.286, "orbitRadiusKm": 421800, "orbitalPeriod": 1.77, "rotationPeriod": 1.77, "textureUrl": "textures/io.jpg" },
+      { "name": "Europa", "actualRadius": 0.245, "orbitRadiusKm": 671100, "orbitalPeriod": 3.55, "rotationPeriod": 3.55, "textureUrl": "textures/europa.jpg" },
+      { "name": "Ganymede", "actualRadius": 0.413, "orbitRadiusKm": 1070400, "orbitalPeriod": 7.15, "rotationPeriod": 7.15, "textureUrl": "textures/ganymede.jpg" },
+      { "name": "Callisto", "actualRadius": 0.378, "orbitRadiusKm": 1882700, "orbitalPeriod": 16.69, "rotationPeriod": 16.69, "textureUrl": "textures/callisto.jpg" }
+    ],
+    "info": {
+      "Mass": "317.8 Earths",
+      "Composition": "Gas giant (hydrogen, helium)",
+      "Temperature": "-108°C (cloud tops)",
+      "RotationPeriod": "9.9 hours (fastest)",
+      "OrbitalPeriod": "11.86 Earth years",
+      "Distance": "5.2 AU from Sun",
+      "Moons": "79+ (4 large Galilean moons shown)"
+    }
+  },
+  {
+    "name": "Saturn",
+    "actualRadius": 9.449,
+    "scaledRadius": 8.5,
+    "textureUrl": "textures/saturn.jpg",
+    "ringTextureUrl": "textures/saturn_ring.png",
+    "orbitRadiusAU": 9.539,
+    "baseOrbitSpeedFactor": 0.0339,
+    "gravityStrength": 1.07,
+    "initialAngle": 3.9269908169872414,
+    "rotationPeriod": 0.45,
+    "axialTilt": 26.7,
+    "ringTilt": 26.7,
+    "atmosphere": {
+      "exists": true,
+      "color": "0xf0e6d2",
+      "density": 0.4
+    },
+    "moons": [
+      { "name": "Titan", "actualRadius": 0.404, "orbitRadiusKm": 1221870, "orbitalPeriod": 15.95, "rotationPeriod": 15.95, "textureUrl": "textures/titan.jpg", "atmosphere": { "exists": true, "color": "0xffa500", "density": 0.3 } }
+    ],
+    "info": {
+      "Mass": "95.2 Earths",
+      "Composition": "Gas giant (hydrogen, helium) with iconic rings",
+      "Temperature": "-139°C (cloud tops)",
+      "RotationPeriod": "10.7 hours",
+      "OrbitalPeriod": "29.5 Earth years",
+      "Distance": "9.5 AU from Sun",
+      "Moons": "82+ (Titan shown - only moon with thick atmosphere)"
+    }
+  },
+  {
+    "name": "Uranus",
+    "actualRadius": 4.007,
+    "scaledRadius": 6,
+    "textureUrl": "textures/uranus.jpg",
+    "orbitRadiusAU": 19.191,
+    "baseOrbitSpeedFactor": 0.0119,
+    "gravityStrength": 0.89,
+    "initialAngle": 4.71238898038469,
+    "rotationPeriod": -0.72,
+    "axialTilt": 97.8,
+    "atmosphere": {
+      "exists": true,
+      "color": "0xd1e7e7",
+      "density": 0.3
+    },
+    "moons": [],
+    "info": {
+      "Mass": "14.5 Earths",
+      "Composition": "Ice giant (hydrogen, helium, methane)",
+      "Temperature": "-197°C",
+      "RotationPeriod": "17.2 hours (retrograde)",
+      "OrbitalPeriod": "84 Earth years",
+      "Distance": "19.2 AU from Sun",
+      "Moons": "27 (none shown at this scale)",
+      "UniqueFeature": "97.8° axial tilt (rotates sideways)"
+    }
+  },
+  {
+    "name": "Neptune",
+    "actualRadius": 3.883,
+    "scaledRadius": 6,
+    "textureUrl": "textures/neptune.jpg",
+    "orbitRadiusAU": 30.069,
+    "baseOrbitSpeedFactor": 0.00607,
+    "gravityStrength": 1.14,
+    "initialAngle": 5.497787143782138,
+    "rotationPeriod": 0.67,
+    "axialTilt": 28.3,
+    "atmosphere": {
+      "exists": true,
+      "color": "0x4b70dd",
+      "density": 0.3
+    },
+    "moons": [
+      { "name": "Triton", "actualRadius": 0.212, "orbitRadiusKm": 354759, "orbitalPeriod": -5.88, "rotationPeriod": 5.88, "textureUrl": "textures/triton.jpg" }
+    ],
+    "info": {
+      "Mass": "17.1 Earths",
+      "Composition": "Ice giant (hydrogen, helium, methane)",
+      "Temperature": "-201°C",
+      "RotationPeriod": "16.1 hours",
+      "OrbitalPeriod": "165 Earth years",
+      "Distance": "30.1 AU from Sun",
+      "Moons": "14 (Triton shown - has retrograde orbit)"
+    }
+  }
+] 

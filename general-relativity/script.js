@@ -34,293 +34,76 @@ const TEXTURE_URLS = {
 };
 
 // Planet and moon configurations
-const planetConfigs = [
-  {
-    name: "Mercury",
-    actualRadius: 0.383, // Kept for info panel and moon calculations if needed elsewhere
-    scaledRadius: 2.5,   // Used for visual representation
-    textureUrl: TEXTURE_URLS.mercury,
-    orbitRadiusAU: 0.387,
-    baseOrbitSpeedFactor: 1 / 0.241,
-    gravityStrength: 0.38,
-    initialAngle: 0,
-    rotationPeriod: 58.6,
-    axialTilt: 0.03,
-    atmosphere: { exists: false },
-    moons: [],
-    info: {
-      Mass: "0.055 Earths",
-      Composition: "Rocky planet with iron core",
-      SurfaceTemp: "-173°C to 427°C",
-      RotationPeriod: "58.6 Earth days",
-      OrbitalPeriod: "88 Earth days",
-      Distance: "0.39 AU from Sun"
-    }
-  },
-  {
-    name: "Venus",
-    actualRadius: 0.949,
-    scaledRadius: 4,
-    textureUrl: TEXTURE_URLS.venus,
-    orbitRadiusAU: 0.723,
-    baseOrbitSpeedFactor: 1 / 0.615,
-    gravityStrength: 0.91,
-    initialAngle: Math.PI / 4,
-    rotationPeriod: -243,
-    axialTilt: 177.3,
-    atmosphere: {
-      exists: true,
-      color: 0xfff7d6,
-      density: 0.7
-    },
-    moons: [],
-    info: {
-      Mass: "0.815 Earths",
-      Composition: "Rocky planet with thick CO₂ atmosphere",
-      SurfaceTemp: "462°C (hottest planet)",
-      RotationPeriod: "243 Earth days (retrograde)",
-      OrbitalPeriod: "225 Earth days",
-      Distance: "0.72 AU from Sun"
-    }
-  },
-  {
-    name: "Earth",
-    actualRadius: 1.0,
-    scaledRadius: 4.2,
-    textureUrl: TEXTURE_URLS.earth,
-    cloudTextureUrl: TEXTURE_URLS.earth_clouds,
-    nightTextureUrl: TEXTURE_URLS.earth_night,
-    orbitRadiusAU: 1.0,
-    baseOrbitSpeedFactor: 1 / 1.0,
-    gravityStrength: 1.0,
-    initialAngle: Math.PI / 2,
-    rotationPeriod: 1.0,
-    axialTilt: 23.4,
-    atmosphere: {
-      exists: true,
-      color: 0x6b8cff,
-      density: 0.3
-    },
-    moons: [
-      {
-        name: "Moon",
-        actualRadius: 0.273, // Used for moon size calculation
-        orbitRadiusKm: 384400,
-        orbitalPeriod: 27.3,
-        rotationPeriod: 27.3,
-        textureUrl: TEXTURE_URLS.moon
-      }
-    ],
-    info: {
-      Mass: "1.0 Earths (5.97×10²⁴ kg)",
-      Composition: "Rocky planet with nitrogen-oxygen atmosphere",
-      SurfaceTemp: "-88°C to 58°C",
-      RotationPeriod: "24 hours",
-      OrbitalPeriod: "365.25 days",
-      Distance: "1.0 AU from Sun",
-      Moons: "1 (Luna)"
-    }
-  },
-  {
-    name: "Mars",
-    actualRadius: 0.532,
-    scaledRadius: 3,
-    textureUrl: TEXTURE_URLS.mars,
-    orbitRadiusAU: 1.524,
-    baseOrbitSpeedFactor: 1 / 1.881,
-    gravityStrength: 0.38,
-    initialAngle: 3 * Math.PI / 4,
-    rotationPeriod: 1.03,
-    axialTilt: 25.2,
-    atmosphere: {
-      exists: true,
-      color: 0xd09470,
-      density: 0.1
-    },
-    moons: [], // Phobos/Deimos too small to render effectively with current logic
-    info: {
-      Mass: "0.107 Earths",
-      Composition: "Rocky planet with thin CO₂ atmosphere",
-      SurfaceTemp: "-153°C to 20°C",
-      RotationPeriod: "24.6 hours",
-      OrbitalPeriod: "687 Earth days",
-      Distance: "1.52 AU from Sun",
-      Moons: "2 (Phobos, Deimos) - too small to show at scale"
-    }
-  },
-  {
-    name: "Jupiter",
-    actualRadius: 11.209,
-    scaledRadius: 10,
-    textureUrl: TEXTURE_URLS.jupiter,
-    orbitRadiusAU: 5.203,
-    baseOrbitSpeedFactor: 1 / 11.86,
-    gravityStrength: 2.53,
-    initialAngle: Math.PI,
-    rotationPeriod: 0.41,
-    axialTilt: 3.1,
-    atmosphere: {
-      exists: true,
-      color: 0xf0e8d8,
-      density: 0.5
-    },
-    moons: [
-      {
-        name: "Io",
-        actualRadius: 0.286,
-        orbitRadiusKm: 421800,
-        orbitalPeriod: 1.77,
-        rotationPeriod: 1.77,
-        textureUrl: TEXTURE_URLS.io
-      },
-      {
-        name: "Europa",
-        actualRadius: 0.245,
-        orbitRadiusKm: 671100,
-        orbitalPeriod: 3.55,
-        rotationPeriod: 3.55,
-        textureUrl: TEXTURE_URLS.europa
-      },
-      {
-        name: "Ganymede",
-        actualRadius: 0.413,
-        orbitRadiusKm: 1070400,
-        orbitalPeriod: 7.15,
-        rotationPeriod: 7.15,
-        textureUrl: TEXTURE_URLS.ganymede
-      },
-      {
-        name: "Callisto",
-        actualRadius: 0.378,
-        orbitRadiusKm: 1882700,
-        orbitalPeriod: 16.69,
-        rotationPeriod: 16.69,
-        textureUrl: TEXTURE_URLS.callisto
-      }
-    ],
-    info: {
-      Mass: "317.8 Earths",
-      Composition: "Gas giant (hydrogen, helium)",
-      Temperature: "-108°C (cloud tops)",
-      RotationPeriod: "9.9 hours (fastest)",
-      OrbitalPeriod: "11.86 Earth years",
-      Distance: "5.2 AU from Sun",
-      Moons: "79+ (4 large Galilean moons shown)"
-    }
-  },
-  {
-    name: "Saturn",
-    actualRadius: 9.449,
-    scaledRadius: 8.5,
-    textureUrl: TEXTURE_URLS.saturn,
-    ringTextureUrl: TEXTURE_URLS.saturn_ring,
-    orbitRadiusAU: 9.539,
-    baseOrbitSpeedFactor: 1 / 29.46,
-    gravityStrength: 1.07,
-    initialAngle: 5 * Math.PI / 4,
-    rotationPeriod: 0.45,
-    axialTilt: 26.7,
-    ringTilt: 26.7, // Tilt for the rings
-    atmosphere: {
-      exists: true,
-      color: 0xf0e6d2,
-      density: 0.4
-    },
-    moons: [
-      {
-        name: "Titan",
-        actualRadius: 0.404,
-        orbitRadiusKm: 1221870,
-        orbitalPeriod: 15.95,
-        rotationPeriod: 15.95,
-        textureUrl: TEXTURE_URLS.titan,
-        atmosphere: { exists: true, color: 0xffa500, density: 0.3 } // Titan's atmosphere
-      }
-    ],
-    info: {
-      Mass: "95.2 Earths",
-      Composition: "Gas giant (hydrogen, helium) with iconic rings",
-      Temperature: "-139°C (cloud tops)",
-      RotationPeriod: "10.7 hours",
-      OrbitalPeriod: "29.5 Earth years",
-      Distance: "9.5 AU from Sun",
-      Moons: "82+ (Titan shown - only moon with thick atmosphere)"
-    }
-  },
-  {
-    name: "Uranus",
-    actualRadius: 4.007,
-    scaledRadius: 6,
-    textureUrl: TEXTURE_URLS.uranus,
-    orbitRadiusAU: 19.191,
-    baseOrbitSpeedFactor: 1 / 84.01,
-    gravityStrength: 0.89,
-    initialAngle: 3 * Math.PI / 2,
-    rotationPeriod: -0.72,
-    axialTilt: 97.8, // Extreme tilt
-    atmosphere: {
-      exists: true,
-      color: 0xd1e7e7,
-      density: 0.3
-    },
-    moons: [],
-    info: {
-      Mass: "14.5 Earths",
-      Composition: "Ice giant (hydrogen, helium, methane)",
-      Temperature: "-197°C",
-      RotationPeriod: "17.2 hours (retrograde)",
-      OrbitalPeriod: "84 Earth years",
-      Distance: "19.2 AU from Sun",
-      Moons: "27 (none shown at this scale)",
-      UniqueFeature: "97.8° axial tilt (rotates sideways)"
-    }
-  },
-  {
-    name: "Neptune",
-    actualRadius: 3.883,
-    scaledRadius: 6,
-    textureUrl: TEXTURE_URLS.neptune,
-    orbitRadiusAU: 30.069,
-    baseOrbitSpeedFactor: 1 / 164.8,
-    gravityStrength: 1.14,
-    initialAngle: 7 * Math.PI / 4,
-    rotationPeriod: 0.67,
-    axialTilt: 28.3,
-    atmosphere: {
-      exists: true,
-      color: 0x4b70dd,
-      density: 0.3
-    },
-    moons: [
-      {
-        name: "Triton",
-        actualRadius: 0.212,
-        orbitRadiusKm: 354759,
-        orbitalPeriod: -5.88, // Retrograde orbit
-        rotationPeriod: 5.88, // Tidally locked, but orbit is retrograde
-        textureUrl: TEXTURE_URLS.triton
-      }
-    ],
-    info: {
-      Mass: "17.1 Earths",
-      Composition: "Ice giant (hydrogen, helium, methane)",
-      Temperature: "-201°C",
-      RotationPeriod: "16.1 hours",
-      OrbitalPeriod: "165 Earth years",
-      Distance: "30.1 AU from Sun",
-      Moons: "14 (Triton shown - has retrograde orbit)"
-    }
-  }
-];
+// REMOVED: Will be loaded from JSON
+// const planetConfigs = [ ... ];
+
+// --- Constants (Moved and Expanded) ---
+const HIGHLIGHT_MATERIAL = new THREE.MeshBasicMaterial({ color: SELECTED_HIGHLIGHT_COLOR, wireframe: true });
+const OUTLINE_MATERIAL = new THREE.MeshBasicMaterial({ color: SELECTED_HIGHLIGHT_COLOR, side: THREE.BackSide });
+const OUTLINE_SCALE = 1.06; // How much larger the outline mesh is
+
+// Scaling and Display
+const MOON_ORBIT_SCALE_FACTOR = MOON_ORBIT_SCALE; // Use previous constant
+const MOON_SIZE_SCALE_FACTOR = MOON_SIZE_SCALE; // Use previous constant
+const MIN_MOON_RADIUS = 0.5; // Smallest visual size for a moon
+const ATMOSPHERE_SCALE_FACTOR = 1.05; // How much larger atmosphere mesh is than planet
+const ATMOSPHERE_OPACITY_MULTIPLIER = 0.3;
+const MOON_ATMOSPHERE_SCALE_FACTOR = 1.1;
+const MOON_ATMOSPHERE_OPACITY_MULTIPLIER = 0.4;
+const CLOUD_SCALE_FACTOR = 1.02; // How much larger cloud mesh is than planet
+const CLOUD_OPACITY = 0.7;
+const CLOUD_ROTATION_SPEED_MULTIPLIER = 1.1; // Clouds rotate slightly faster
+const SATURN_RING_INNER_RADIUS_FACTOR = 1.2;
+const SATURN_RING_OUTER_RADIUS_FACTOR = 2.5;
+const SATURN_RING_OPACITY = 0.9;
+const PLANET_SEGMENTS = 32; // Geometry detail for planets
+const MOON_SEGMENTS = 16;   // Geometry detail for moons
+const ORBIT_SEGMENTS = 128; // Geometry detail for orbit lines
+const MOON_ORBIT_SEGMENTS = 64; // Geometry detail for moon orbit lines
+const EARTH_RADIUS_KM = 6371; // For info display
+
+// Starfield
+const STARFIELD_RADIUS = 3000;
+const STAR_COUNT = 15000;
+const STAR_BASE_SIZE = 1.5;
+const STAR_MIN_SIZE_FACTOR = 0.5;
+const STAR_MAX_SIZE_FACTOR = 1.5;
+const STAR_MIN_COLOR_FACTOR = 0.7; // Multiplier for brightness (0.7 to 1.0)
+
+// Physics & Time
+const BASE_ORBIT_SPEED_UNIT_TIME = 60; // Sim seconds representing 1 Earth year for baseOrbitSpeedFactor=1
+const DAYS_PER_SIM_SECOND_AT_1X = 365.25 / BASE_ORBIT_SPEED_UNIT_TIME; // How many sim days pass per real second at 1x speed
+// const RADS_PER_DAY = (2 * Math.PI) / (24 * 60 * 60); // Not directly used in animation loop
+
+// Lighting
+const AMBIENT_LIGHT_INTENSITY = 0.15;
+const SUN_POINT_LIGHT_INTENSITY = 5; // Main light source intensity
+const SUN_POINT_LIGHT_DECAY = 1;
+const SUN_GLOW_LIGHT_INTENSITY = 2; // Softer glow around sun
+const SUN_GLOW_LIGHT_DISTANCE = 200;
+const SUN_GLOW_LIGHT_DECAY = 1.5;
+const DIR_LIGHT_INTENSITY = 0.3; // Simulating distant starlight
+const HEMI_LIGHT_INTENSITY = 0.2; // Fill light
+
+// Materials
+const PLANET_ROUGHNESS = 0.7;
+const PLANET_METALNESS = 0.1;
+const SUN_EMISSIVE_COLOR = 0xffddaa;
+const SUN_EMISSIVE_INTENSITY = 1.5; // Make the sun mesh glow
 
 // --- Global Variables ---
 let scene, camera, renderer, controls, clock, textureLoader, raycaster, pointer;
-let sunMesh, planets = [], moonGroups = [];
-// Removed useScaledSize variable
-let simulationSpeed = 1, gravityModifier = 1;
+let sunMesh, sunConfig; // Store sun config separately
+let planets = []; // Array to hold planet data { group, mesh, config, orbitRadius, displayRadius }
+let moonGroups = []; // Array to hold moon system groups { parentPlanetName, group }
+let celestialBodies = []; // Combined list of selectable objects (planet groups, moon meshes, sun mesh)
+let planetConfigs = []; // Loaded from JSON
+
+let simulationSpeed = 1;
+// REMOVED: let gravityModifier = 1;
 let selectedObject = null;
-let originalMaterials = new Map();
-const highlightMaterial = new THREE.MeshBasicMaterial({ color: SELECTED_HIGHLIGHT_COLOR, wireframe: true });
+let originalMaterials = new Map(); // Map<Mesh, Material>
+let activeOutlines = new Map(); // Map<Object3D, Mesh> Keep track of active outline meshes
 
 // Simulation time tracker
 let simulatedDays = 0;
@@ -330,796 +113,893 @@ const infoPanel = document.getElementById('info');
 const infoName = document.getElementById('info-name');
 const infoOrbit = document.getElementById('info-orbit');
 const infoSize = document.getElementById('info-size');
+const infoDetailsContainer = document.getElementById('info-details'); // Use the container directly
 const speedValueSpan = document.getElementById('speedValue');
-const gravityValueSpan = document.getElementById('gravityValue');
-// Extended info element
-const infoDetails = document.getElementById('info-details') || document.createElement('div');
-if (!document.getElementById('info-details')) {
-  infoDetails.id = 'info-details';
-  infoPanel.appendChild(infoDetails);
-}
+// REMOVED: const gravityValueSpan = ...
+const dayCounter = document.getElementById('dayCounter');
+
+// REMOVED: Old extended info element creation block
+// if (!document.getElementById('info-details')) { ... }
 
 // --- Initialization ---
-function init() {
-  // Scene setup
-  scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x000000);
+// Make init async to await data loading
+async function init() {
+    try {
+        // Load planet data first
+        await loadPlanetData();
 
-  // Camera
-  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
-  camera.position.set(150, 100, 150);
+        // Basic Scene Setup
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x000000);
+        clock = new THREE.Clock();
+        textureLoader = new THREE.TextureLoader();
+        raycaster = new THREE.Raycaster();
+        pointer = new THREE.Vector2();
 
-  // Renderer with better settings for visual quality
-  renderer = new THREE.WebGLRenderer({
-    antialias: true,
-    powerPreference: "high-performance"
-  });
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(window.devicePixelRatio);
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Softer shadows
-  renderer.physicallyCorrectLights = true; // Enable physically correct lighting
-  renderer.outputEncoding = THREE.sRGBEncoding; // Better color reproduction
-  document.body.appendChild(renderer.domElement);
+        // Camera
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, STARFIELD_RADIUS * 2.5); // Adjust far plane
+        camera.position.set(150, 100, 150);
 
-  // Orbit controls
-  controls = new OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
-  controls.dampingFactor = 0.05;
-  controls.minDistance = 30;
-  controls.maxDistance = 1500;
-  controls.target.set(0, 0, 0);
+        // Renderer
+        renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.physicallyCorrectLights = true;
+        renderer.outputEncoding = THREE.sRGBEncoding;
+        document.body.appendChild(renderer.domElement);
 
-  // Clock, texture loader, raycaster, pointer
-  clock = new THREE.Clock();
-  textureLoader = new THREE.TextureLoader();
-  raycaster = new THREE.Raycaster();
-  pointer = new THREE.Vector2();
+        // Controls
+        controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 10; // Allow closer zoom
+        controls.maxDistance = STARFIELD_RADIUS * 1.5; // Increase max zoom out distance significantly
+        controls.target.set(0, 0, 0);
 
-  // Set up improved lighting
-  setupLighting();
+        // Setup Scene Contents
+        setupLighting();
+        createStarfield(); // Use improved starfield
+        createSun(); // Use improved sun material
+        createPlanetsAndOrbits(); // Uses loaded data and constants
 
-  // Create objects
-  createStarfield();
-  createSun();
-  createPlanetsAndOrbits(); // This now uses the fixed scaled size
+        // Combine all selectable objects (moons added during their creation)
+        celestialBodies.push(sunMesh);
+        planets.forEach(p => celestialBodies.push(p.group)); // Add planet groups
 
-  // Set up event listeners
-  setupEventListeners(); // Event listeners for size mode removed from here
+        // Event Listeners
+        setupEventListeners(); // Updated listeners
 
-  // Start animation loop
-  animate();
+        // Start Animation
+        animate();
 
-  // Remove any existing toggle button (if present) - keeping this as it was in original
-  const toggleButton = document.getElementById('toggleMeshBtn');
-  if (toggleButton) {
-    toggleButton.remove();
-  }
+    } catch (error) {
+        console.error("Initialization failed:", error);
+        // Display error message to the user
+         const errorDiv = document.createElement('div');
+         errorDiv.style.color = 'red';
+         errorDiv.style.position = 'absolute';
+         errorDiv.style.top = '10px'; // Position below controls
+         errorDiv.style.left = '10px';
+         errorDiv.style.background = 'rgba(0,0,0,0.8)';
+         errorDiv.style.padding = '10px';
+         errorDiv.style.border = '1px solid red';
+         errorDiv.style.zIndex = '1000';
+         errorDiv.textContent = `Failed to initialize simulation: ${error.message}. Check console.`;
+         document.body.appendChild(errorDiv);
+    }
 }
 
-// --- Improved Lighting System ---
+// --- Data Loading --- Function to load and process JSON data
+async function loadPlanetData() {
+    try {
+        const response = await fetch('solarsystem_data.json');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        planetConfigs = await response.json();
+
+        // Pre-process data (calculate speeds, parse colors)
+        planetConfigs.forEach(config => {
+            // Orbit speed (radians per simulation second at 1x speed)
+            config.calculatedOrbitSpeed = (2 * Math.PI * config.baseOrbitSpeedFactor) / BASE_ORBIT_SPEED_UNIT_TIME;
+
+            // Rotation speed - DECOUPLED from orbit time base
+            const ROTATION_SPEED_SCALE_FACTOR = 0.05; // ** NEW ** - Adjust this to globally speed up/slow down rotation
+            const BASE_SECONDS_PER_DAY_FOR_ROTATION = 10; // Arbitrary visual scaling - 1 Earth day rotation takes 10 sim seconds at 1x
+            if (config.rotationPeriod && config.rotationPeriod !== 0) {
+                 config.calculatedRotationSpeed = ((2 * Math.PI) / (Math.abs(config.rotationPeriod) * BASE_SECONDS_PER_DAY_FOR_ROTATION)) * ROTATION_SPEED_SCALE_FACTOR;
+            } else {
+                config.calculatedRotationSpeed = 0;
+            }
+            config.rotationDirection = config.rotationPeriod >= 0 ? 1 : -1;
+
+            // Convert atmosphere color string hex to number
+            if (config.atmosphere && typeof config.atmosphere.color === 'string') {
+                config.atmosphere.color = parseInt(config.atmosphere.color, 16);
+            }
+
+            // Process moons
+            if (config.moons) {
+                config.moons.forEach(moon => {
+                    // Moon orbit speed (uses orbital time base)
+                    const secondsPerDayInSim = BASE_ORBIT_SPEED_UNIT_TIME / 365.25;
+                    moon.calculatedOrbitSpeed = (2 * Math.PI) / (Math.abs(moon.orbitalPeriod) * secondsPerDayInSim);
+                    moon.orbitDirection = moon.orbitalPeriod >= 0 ? 1 : -1;
+                    // Moon rotation speed (uses new rotation time base)
+                    moon.calculatedRotationSpeed = ((2 * Math.PI) / (Math.abs(moon.rotationPeriod) * BASE_SECONDS_PER_DAY_FOR_ROTATION)) * ROTATION_SPEED_SCALE_FACTOR;
+                    moon.rotationDirection = moon.rotationPeriod >= 0 ? 1 : -1;
+                    if (moon.atmosphere && typeof moon.atmosphere.color === 'string') {
+                        moon.atmosphere.color = parseInt(moon.atmosphere.color, 16);
+                    }
+                });
+            }
+        });
+        console.log("Planet data loaded and processed.");
+
+    } catch (error) {
+        console.error("Failed to load or process planet data:", error);
+        planetConfigs = []; // Ensure it's an empty array on failure
+        throw error; // Re-throw to stop initialization
+    }
+}
+
+// --- Lighting Setup (using constants) ---
 function setupLighting() {
-  // Very low ambient light for dramatic contrast
-  const ambientLight = new THREE.AmbientLight(0x111111, 0.15);
-  scene.add(ambientLight);
+    // Reduce ambient and hemisphere light for better contrast
+    scene.add(new THREE.AmbientLight(0xffffff, AMBIENT_LIGHT_INTENSITY * 0.3)); // Reduced
 
-  // Main sun light - brighten it significantly
-  const sunLight = new THREE.PointLight(0xffffee, 5, 0, 1);
-  sunLight.position.set(0, 0, 0);
-  sunLight.castShadow = true;
-  sunLight.shadow.mapSize.width = 2048;
-  sunLight.shadow.mapSize.height = 2048;
-  sunLight.shadow.camera.near = 10;
-  sunLight.shadow.camera.far = 5000;
-  scene.add(sunLight);
+    const sunLight = new THREE.PointLight(0xffffee, SUN_POINT_LIGHT_INTENSITY, 0, SUN_POINT_LIGHT_DECAY);
+    sunLight.position.set(0, 0, 0);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.width = 2048;
+    sunLight.shadow.mapSize.height = 2048;
+    sunLight.shadow.camera.near = 10;
+    sunLight.shadow.camera.far = STARFIELD_RADIUS * 1.2; // Ensure shadow camera covers enough distance
+    scene.add(sunLight);
 
-  // Secondary sun glow light (no shadows, just illumination)
-  const sunGlowLight = new THREE.PointLight(0xffddaa, 2, 200, 1.5);
-  sunGlowLight.position.set(0, 0, 0);
-  scene.add(sunGlowLight);
+    const sunGlowLight = new THREE.PointLight(SUN_EMISSIVE_COLOR, SUN_GLOW_LIGHT_INTENSITY, SUN_GLOW_LIGHT_DISTANCE, SUN_GLOW_LIGHT_DECAY);
+    sunGlowLight.position.set(0, 0, 0);
+    scene.add(sunGlowLight);
 
-  // Directional light to simulate distant star light
-  const dirLight = new THREE.DirectionalLight(0xffffff, 0.3);
-  dirLight.position.set(1, 0.5, 0.5).normalize();
-  scene.add(dirLight);
+    const dirLight = new THREE.DirectionalLight(0xffffff, DIR_LIGHT_INTENSITY);
+    dirLight.position.set(1, 0.5, 0.5).normalize();
+    scene.add(dirLight);
 
-  // Subtle hemisphere light for fill
-  const hemiLight = new THREE.HemisphereLight(0xffffbb, 0x080820, 0.2);
-  scene.add(hemiLight);
+    // Reduce hemisphere light significantly
+    const hemiLight = new THREE.HemisphereLight(0xffffbb, 0x080820, HEMI_LIGHT_INTENSITY * 0.2); // Reduced
+    scene.add(hemiLight);
 }
 
-// --- Improved Material Creation ---
-function createImprovedPlanetMaterial(textureUrl) {
-  const texture = textureLoader.load(textureUrl);
-
-  // Standard material with better light response settings
-  return new THREE.MeshStandardMaterial({
-    map: texture,
-    roughness: 0.7,      // Slightly rougher for better light diffusion
-    metalness: 0.1,      // Low metalness for terrestrial planets
-    envMapIntensity: 0.5 // Softer environment reflections
-  });
+// --- Material Creation Helper (using constants) ---
+function createPlanetMaterial(textureUrl) {
+    const texture = textureLoader.load(textureUrl, undefined, undefined, (err) => console.error(`Error loading texture: ${textureUrl}`, err));
+    return new THREE.MeshStandardMaterial({
+        map: texture,
+        roughness: PLANET_ROUGHNESS,
+        metalness: PLANET_METALNESS,
+        // envMapIntensity: 0.5 // Removed, adjust globally if needed
+    });
 }
 
 // --- Object Creation Functions ---
+
+// --- Starfield with Texture ---
 function createStarfield() {
-  const STAR_COUNT = 15000; // More stars for better visibility
-  const starVertices = [];
+    const vertices = [];
+    const colors = [];
+    const sizes = [];
+    const color = new THREE.Color();
+    const starTexture = createStarTexture(); // Create the texture once
 
-  // Generate random stars distributed throughout space
-  for (let i = 0; i < STAR_COUNT; i++) {
-    const x = THREE.MathUtils.randFloatSpread(6000);
-    const y = THREE.MathUtils.randFloatSpread(6000);
-    const z = THREE.MathUtils.randFloatSpread(6000);
-    starVertices.push(x, y, z);
-  }
+    for (let i = 0; i < STAR_COUNT; i++) {
+        const vertex = new THREE.Vector3();
+        // Distribute stars spherically
+        const phi = Math.acos(-1 + (2 * i) / STAR_COUNT);
+        const theta = Math.sqrt(STAR_COUNT * Math.PI) * phi;
+        const radius = Math.cbrt(Math.random()) * STARFIELD_RADIUS; // Cube root for more uniform spatial distribution
 
-  const starGeometry = new THREE.BufferGeometry();
-  starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
+        vertex.setFromSphericalCoords(radius, phi, theta);
 
-  // Create a simple point material that looks like stars
-  const starMaterial = new THREE.PointsMaterial({
-    color: 0xffffff,
-    size: 1.0,
-    sizeAttenuation: true
-  });
+        vertices.push(vertex.x, vertex.y, vertex.z);
 
-  const stars = new THREE.Points(starGeometry, starMaterial);
-  scene.add(stars);
+        // Vary color slightly (brightness)
+        const brightness = THREE.MathUtils.randFloat(STAR_MIN_COLOR_FACTOR, 1.0);
+        color.setHSL(0.0, 0.0, brightness); // Grayscale brightness variation
+        colors.push(color.r, color.g, color.b);
+
+        // Vary size
+        sizes.push(STAR_BASE_SIZE * THREE.MathUtils.randFloat(STAR_MIN_SIZE_FACTOR, STAR_MAX_SIZE_FACTOR));
+    }
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    geometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
+
+    const material = new THREE.PointsMaterial({
+        map: starTexture, // Use the texture for shape
+        // alphaMap: starTexture, // Let's disable alphaMap temporarily to test
+        size: STAR_BASE_SIZE, // Base size, multiplied by attribute
+        sizeAttenuation: true,
+        vertexColors: true,
+        transparent: true, // Keep transparency for the texture map
+        depthWrite: false, // Avoid stars hiding each other incorrectly
+        // blending: THREE.AdditiveBlending // Revert to NormalBlending for now
+        blending: THREE.NormalBlending
+    });
+
+    const stars = new THREE.Points(geometry, material);
+    scene.add(stars);
 }
 
+// --- Helper function to create star texture ---
+function createStarTexture() {
+    console.log("Creating star texture..."); // Add log
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const context = canvas.getContext('2d');
+    const gradient = context.createRadialGradient(32, 32, 0, 32, 32, 32);
+    gradient.addColorStop(0, 'rgba(255,255,255,1)');
+    gradient.addColorStop(0.1, 'rgba(255,255,255,0.9)');
+    gradient.addColorStop(0.4, 'rgba(255,255,255,0.3)');
+    gradient.addColorStop(1, 'rgba(255,255,255,0)');
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, 64, 64);
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.needsUpdate = true; // Ensure texture uploads
+    return texture;
+}
+
+// --- Improved Sun Creation --- Function updated
 function createSun() {
-  // Simple sun with texture
-  const sunTexture = textureLoader.load(TEXTURE_URLS.sun);
-  const sunGeometry = new THREE.SphereGeometry(SUN_RADIUS, 64, 32);
-  const sunMaterial = new THREE.MeshBasicMaterial({
-    map: sunTexture,
-    color: 0xffddaa // Add a bit of color tint
-  });
-  sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
-  sunMesh.userData.isSelectable = true;
-  sunMesh.userData.name = "Sun";
-  sunMesh.userData.info = {
-    Mass: "333,000 Earths",
-    Composition: "Hydrogen (73%), Helium (25%), other elements (2%)",
-    Temperature: "5,500°C (surface), 15,000,000°C (core)",
-    RotationPeriod: "25-35 days (varies by latitude)",
-    Diameter: "109 Earths",
-    Type: "G-type main-sequence star (G2V)",
-    Age: "~4.6 billion years"
-  };
+    const sunTexture = textureLoader.load(TEXTURE_URLS.sun);
+    const sunGeometry = new THREE.SphereGeometry(SUN_RADIUS, 64, 32); // Higher detail sun
 
-  scene.add(sunMesh);
+    // Use MeshStandardMaterial for realistic lighting and emission
+    const sunMaterial = new THREE.MeshStandardMaterial({
+        map: sunTexture,
+        emissive: SUN_EMISSIVE_COLOR, // Make it glow
+        emissiveIntensity: SUN_EMISSIVE_INTENSITY,
+        emissiveMap: sunTexture, // Use texture for emission pattern
+        // No need for base color if emissive is strong
+    });
+
+    sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
+    sunMesh.userData.isSelectable = true;
+    sunMesh.userData.name = "Sun";
+    sunMesh.userData.type = "star"; // Define type
+
+    // Define sun specific config directly (as it doesn't come from JSON)
+    sunConfig = {
+        name: "Sun",
+        info: {
+            Mass: "333,000 Earths",
+            Composition: "Hydrogen (73%), Helium (25%), other elements (2%)",
+            Temperature: "5,500°C (surface), 15,000,000°C (core)",
+            RotationPeriod: "25-35 days (varies by latitude)",
+            // Calculate approximate diameter based on scaled Earth
+            Diameter: `~${(SUN_RADIUS * 2 * (EARTH_RADIUS_KM / 4.2)).toLocaleString()} km`, // Assuming Earth scaledRadius is 4.2
+            Type: "G-type main-sequence star (G2V)",
+            Age: "~4.6 billion years"
+        },
+        // No orbital/rotational data needed for simplified model
+    };
+    sunMesh.userData.config = sunConfig; // Link config info to mesh
+
+    scene.add(sunMesh);
 }
 
+// --- Create Planets (using loaded data & constants) --- Function updated
 function createPlanetsAndOrbits() {
-  const baseOrbitScale = ORBIT_SCALE_FACTOR;
-
-  planetConfigs.forEach(config => {
-    const orbitRadius = config.orbitRadiusAU * baseOrbitScale;
-    // calculateDisplayRadius is now simplified and always uses scaledRadius
-    const displayRadius = calculateDisplayRadius(config);
-
-    // Create group for planet, atmosphere, and moons
-    const planetGroup = new THREE.Group();
-    planetGroup.userData = {
-      isSelectable: true,
-      name: config.name,
-      type: 'planet',
-      info: config.info // Store reference to detailed info
-    };
-
-    // Create planet mesh using improved material
-    const planetGeometry = new THREE.SphereGeometry(displayRadius, 32, 16);
-    const planetMaterial = createImprovedPlanetMaterial(config.textureUrl);
-    const planetMesh = new THREE.Mesh(planetGeometry, planetMaterial);
-    planetMesh.castShadow = true;
-    planetMesh.receiveShadow = true;
-
-    // Add atmosphere if applicable
-    if (config.atmosphere && config.atmosphere.exists) {
-      const atmoRadius = displayRadius * 1.05;
-      const atmoGeometry = new THREE.SphereGeometry(atmoRadius, 32, 16);
-      const atmoMaterial = new THREE.MeshBasicMaterial({
-        color: config.atmosphere.color,
-        transparent: true,
-        opacity: config.atmosphere.density * 0.3, // Adjust opacity as needed
-        side: THREE.BackSide // Render inside for effect
-      });
-      const atmosphereMesh = new THREE.Mesh(atmoGeometry, atmoMaterial);
-      planetGroup.add(atmosphereMesh);
+    if (!planetConfigs || planetConfigs.length === 0) {
+        console.warn("No planet configurations loaded. Skipping planet creation.");
+        return;
     }
 
-    // Special handling for Earth clouds
-    if (config.name === "Earth" && config.cloudTextureUrl) {
-      const cloudGeometry = new THREE.SphereGeometry(displayRadius * 1.02, 32, 16);
-      const cloudTexture = textureLoader.load(config.cloudTextureUrl);
-      const cloudMaterial = new THREE.MeshStandardMaterial({ // Use Standard for light interaction
-        map: cloudTexture,
-        transparent: true,
-        opacity: 0.7,
-        side: THREE.DoubleSide // Render both sides
-      });
-      const cloudMesh = new THREE.Mesh(cloudGeometry, cloudMaterial);
-      planetGroup.add(cloudMesh);
+    planetConfigs.forEach(config => {
+        const orbitRadius = config.orbitRadiusAU * ORBIT_SCALE_FACTOR;
+        const displayRadius = config.scaledRadius; // Use pre-defined scaled size
 
-      // Store cloud mesh for rotation animation
-      planetMesh.userData.cloudMesh = cloudMesh; // Attach to planet mesh's data
-    }
+        // --- Planet Group --- (Stores shared data like orbit)
+        const planetGroup = new THREE.Group();
+        planetGroup.userData = {
+            isSelectable: true,
+            name: config.name,
+            type: 'planet',
+            config: config, // Store reference to full config
+            orbitRadius: orbitRadius,
+            orbitSpeed: config.calculatedOrbitSpeed,
+            rotationSpeed: config.calculatedRotationSpeed,
+            rotationDirection: config.rotationDirection,
+            initialAngle: config.initialAngle, // Assuming radians from JSON processing
+            currentAngle: config.initialAngle,
+            axialTilt: config.axialTilt ? config.axialTilt * (Math.PI / 180) : 0
+        };
+        // planetGroup.userData.currentAngle = config.initialAngle; // Set initial angle
 
-    // Apply axial tilt to the planet mesh itself within the group
-    if (config.axialTilt) {
-      const tiltRadians = config.axialTilt * (Math.PI / 180);
-      // We rotate the mesh, not the group, so orbit isn't affected by tilt
-      planetMesh.rotation.order = 'YXZ'; // Set rotation order if needed
-      planetMesh.rotation.z = tiltRadians; // Tilt around Z-axis relative to its orbit path
-    }
+        // --- Planet Mesh --- (The visible planet)
+        const planetGeometry = new THREE.SphereGeometry(displayRadius, PLANET_SEGMENTS, PLANET_SEGMENTS / 2);
+        const planetMaterial = createPlanetMaterial(config.textureUrl);
+        const planetMesh = new THREE.Mesh(planetGeometry, planetMaterial);
+        planetMesh.castShadow = true;
+        planetMesh.receiveShadow = true;
+        planetMesh.rotation.order = 'YXZ'; // Set rotation order for tilt
+        planetMesh.rotation.z = planetGroup.userData.axialTilt; // Apply tilt
+        planetGroup.userData.planetMesh = planetMesh; // Keep reference in group data
+        planetGroup.add(planetMesh);
 
-    // Special handling for Saturn's rings
-    if (config.ringTextureUrl) {
-      const innerRadius = displayRadius * 1.2;
-      const outerRadius = displayRadius * 2.5;
-      const ringGeometry = new THREE.RingGeometry(innerRadius, outerRadius, 64);
-      const ringTexture = textureLoader.load(config.ringTextureUrl);
-
-      // Adjust UV mapping for proper texture display
-      const uvs = ringGeometry.attributes.uv.array;
-      const phiSegments = ringGeometry.parameters.phiSegments;
-      const thetaSegments = ringGeometry.parameters.thetaSegments;
-      for (let i = 0; i < phiSegments + 1; i++) {
-        for (let j = 0; j < thetaSegments + 1; j++) {
-          const idx = (i * (thetaSegments + 1) + j) * 2;
-          // Correct UV mapping for ring geometry
-          const radius = innerRadius + (outerRadius - innerRadius) * (i / phiSegments);
-          uvs[idx] = j / thetaSegments; // Maps theta angle to U
-          uvs[idx + 1] = (radius - innerRadius) / (outerRadius - innerRadius); // Maps radius to V
+        // --- Atmosphere --- (If defined in config)
+        if (config.atmosphere && config.atmosphere.exists) {
+            const atmoGeometry = new THREE.SphereGeometry(displayRadius * ATMOSPHERE_SCALE_FACTOR, PLANET_SEGMENTS, PLANET_SEGMENTS / 2);
+            const atmoMaterial = new THREE.MeshBasicMaterial({ // Basic glow
+                color: config.atmosphere.color, // Use processed color number
+                transparent: true,
+                opacity: config.atmosphere.density * ATMOSPHERE_OPACITY_MULTIPLIER,
+                side: THREE.BackSide // Render inside for glow effect
+            });
+            const atmosphereMesh = new THREE.Mesh(atmoGeometry, atmoMaterial);
+            atmosphereMesh.raycast = () => {}; // ** Make non-raycastable **
+            planetGroup.add(atmosphereMesh);
         }
-      }
-      ringGeometry.attributes.uv.needsUpdate = true; // Flag UVs as updated
 
-      const ringMaterial = new THREE.MeshStandardMaterial({
+        // --- Clouds --- (Specific to Earth config)
+        if (config.name === "Earth" && config.cloudTextureUrl) {
+            const cloudGeometry = new THREE.SphereGeometry(displayRadius * CLOUD_SCALE_FACTOR, PLANET_SEGMENTS, PLANET_SEGMENTS / 2);
+            const cloudTexture = textureLoader.load(config.cloudTextureUrl);
+            const cloudMaterial = new THREE.MeshStandardMaterial({
+                map: cloudTexture,
+                transparent: true,
+                opacity: CLOUD_OPACITY,
+                blending: THREE.AdditiveBlending, // Optional: brighter clouds where they overlap sun
+                depthWrite: false // Render clouds without hiding planet below
+            });
+            const cloudMesh = new THREE.Mesh(cloudGeometry, cloudMaterial);
+            cloudMesh.raycast = () => {}; // ** Make non-raycastable **
+            planetMesh.userData.cloudMesh = cloudMesh; // Attach to planet mesh for rotation
+            planetGroup.add(cloudMesh);
+        }
+
+        // --- Rings --- (Specific to Saturn config)
+        if (config.ringTextureUrl) {
+            createRings(config, displayRadius, planetGroup);
+        }
+
+        // --- Initial Position --- (Place the group)
+        const initialAngleRad = planetGroup.userData.initialAngle;
+        planetGroup.position.set(
+            orbitRadius * Math.cos(initialAngleRad),
+            0,
+            orbitRadius * Math.sin(initialAngleRad)
+        );
+        scene.add(planetGroup);
+
+        // --- Orbit Line --- (Added directly to scene)
+        createOrbitLine(orbitRadius, ORBIT_LINE_COLOR, ORBIT_SEGMENTS);
+
+        // --- Store Planet Data --- (For potential later use)
+        planets.push({
+            group: planetGroup,
+            mesh: planetMesh,
+            config: config, // Includes info, speeds etc.
+            orbitRadius: orbitRadius,
+            displayRadius: displayRadius
+        });
+
+        // --- Moons --- (If defined in config)
+        if (config.moons && config.moons.length > 0) {
+            createMoonSystem(config, planetGroup, displayRadius);
+        }
+    });
+}
+
+// --- Helper for Saturn's Rings --- Function Updated
+function createRings(planetConfig, planetRadius, planetGroup) {
+    const innerRadius = planetRadius * SATURN_RING_INNER_RADIUS_FACTOR;
+    const outerRadius = planetRadius * SATURN_RING_OUTER_RADIUS_FACTOR;
+    const ringGeometry = new THREE.RingGeometry(innerRadius, outerRadius, ORBIT_SEGMENTS); // Use high segments
+    const ringTexture = textureLoader.load(planetConfig.ringTextureUrl);
+
+    // Fix UV mapping for RingGeometry (crucial for texture)
+    const uvs = ringGeometry.attributes.uv.array;
+    const pos = ringGeometry.attributes.position.array;
+    for (let i = 0; i < pos.length / 3; i++) {
+        const x = pos[i * 3];
+        const z = pos[i * 3 + 2]; // Use X and Z for radius/angle in horizontal plane
+        const radius = Math.sqrt(x * x + z * z);
+        const angle = Math.atan2(z, x); // Angle in XZ plane
+
+        uvs[i * 2] = (radius - innerRadius) / (outerRadius - innerRadius); // Map radius to U (0 to 1)
+        uvs[i * 2 + 1] = (angle + Math.PI) / (2 * Math.PI);           // Map angle to V (0 to 1)
+    }
+    ringGeometry.attributes.uv.needsUpdate = true;
+
+    const ringMaterial = new THREE.MeshStandardMaterial({
         map: ringTexture,
         side: THREE.DoubleSide,
         transparent: true,
-        opacity: 0.9,
-        roughness: 0.8, // Rings aren't perfectly smooth
-        metalness: 0.1
-      });
-
-      const ringMesh = new THREE.Mesh(ringGeometry, ringMaterial);
-      ringMesh.rotation.x = Math.PI / 2; // Orient rings horizontally initially
-
-      // Apply ring tilt relative to the planet's tilt (often similar)
-      if (config.ringTilt) {
-         const ringTiltRadians = config.ringTilt * (Math.PI / 180);
-         // Apply tilt - assuming tilt axis is consistent with planet's axial tilt axis
-         ringMesh.rotation.z += ringTiltRadians; // Adjust tilt axis if needed
-      }
-
-
-      ringMesh.castShadow = true;
-      ringMesh.receiveShadow = true;
-      planetGroup.add(ringMesh); // Add rings to the planet's group
-    }
-
-
-    // Add the planet mesh to the group
-    planetGroup.add(planetMesh);
-
-    // Position planet group at its orbital location
-    const angle = config.initialAngle;
-    planetGroup.position.set(
-      orbitRadius * Math.cos(angle),
-      0,
-      orbitRadius * Math.sin(angle)
-    );
-
-    // Store rotation and orbit data in the GROUP's userData
-    planetGroup.userData.orbitRadius = orbitRadius;
-    planetGroup.userData.orbitSpeed = (2 * Math.PI / 60) * config.baseOrbitSpeedFactor; // Speed relative to Earth's 60s = 1 year
-    planetGroup.userData.initialAngle = config.initialAngle;
-    planetGroup.userData.currentAngle = config.initialAngle;
-    // Use Earth days for rotation speed calculation consistency
-    planetGroup.userData.rotationSpeed = (2 * Math.PI) / (Math.abs(config.rotationPeriod) * 24 * 60); // Radians per simulation second at 1x speed
-    planetGroup.userData.rotationDirection = config.rotationPeriod >= 0 ? 1 : -1;
-    planetGroup.userData.planetMesh = planetMesh; // Keep reference if needed
-    if (config.axialTilt) {
-        planetGroup.userData.axialTilt = config.axialTilt * (Math.PI / 180);
-    }
-
-
-    scene.add(planetGroup);
-
-    // Store planet data (including group and mesh)
-     const planetData = {
-         group: planetGroup,
-         mesh: planetMesh,
-         config: config,
-         orbitRadius: orbitRadius,
-         currentRadius: displayRadius // Store the radius used
-     };
-    planets.push(planetData);
-
-
-    // Create moon systems if defined
-    if (config.moons && config.moons.length > 0) {
-      // Pass planet's display radius for moon calculations
-      const moonSystem = createMoonSystem(config, planetGroup, displayRadius);
-      moonGroups.push(moonSystem);
-    }
-
-    // Draw orbit line
-    const orbitPoints = [];
-    const segments = 128; // Increased segments for smoother orbits
-    for (let i = 0; i <= segments; i++) {
-      const theta = (i / segments) * Math.PI * 2;
-      orbitPoints.push(new THREE.Vector3(
-        orbitRadius * Math.cos(theta),
-        0,
-        orbitRadius * Math.sin(theta)
-      ));
-    }
-
-    const orbitGeometry = new THREE.BufferGeometry().setFromPoints(orbitPoints);
-    const orbitMaterial = new THREE.LineBasicMaterial({
-      color: ORBIT_LINE_COLOR,
-      transparent: true,
-      opacity: 0.5 // Slightly more visible orbits
+        opacity: SATURN_RING_OPACITY,
+        roughness: 0.8,
+        metalness: 0.1,
+        depthWrite: false // Render rings without hiding planet/moons behind them
     });
 
-    const orbitLine = new THREE.Line(orbitGeometry, orbitMaterial);
-    scene.add(orbitLine);
-  });
+    const ringMesh = new THREE.Mesh(ringGeometry, ringMaterial);
+    ringMesh.receiveShadow = true;
+    ringMesh.raycast = () => {}; // ** Make non-raycastable **
+
+    // Orient rings horizontally initially (RingGeometry is in XY plane)
+    ringMesh.rotation.x = Math.PI / 2;
+
+    // Apply tilt (use ringTilt from config if available, else planet's axial tilt)
+    const ringTiltRad = (planetConfig.ringTilt ?? planetConfig.axialTilt ?? 0) * (Math.PI / 180);
+    // Tilt around the appropriate axis after the initial rotation (usually Z)
+    ringMesh.rotation.z += ringTiltRad;
+
+    planetGroup.add(ringMesh);
 }
 
+// --- Helper for Orbit Lines --- Function updated
+function createOrbitLine(radius, color, segments = ORBIT_SEGMENTS) {
+    const points = [];
+    for (let i = 0; i <= segments; i++) {
+        const theta = (i / segments) * Math.PI * 2;
+        points.push(new THREE.Vector3(
+            radius * Math.cos(theta),
+            0,
+            radius * Math.sin(theta)
+        ));
+    }
+    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+    const material = new THREE.LineBasicMaterial({
+        color: color,
+        transparent: true,
+        opacity: 0.4 // Slightly dimmer orbits
+    });
+    const line = new THREE.Line(geometry, material);
+    scene.add(line); // Add directly to scene
+    return line;
+}
 
-// Create moon systems for planets with moons
+// --- Create Moons (using loaded data & constants) --- Function updated
 function createMoonSystem(planetConfig, planetGroup, planetRadius) {
-  const moonSystem = new THREE.Group(); // Group for all moons of this planet
-  moonSystem.userData.parentPlanet = planetConfig.name;
+    const moonSystemGroup = new THREE.Group(); // Group for all moons/orbits of this planet
+    moonSystemGroup.userData.parentPlanetName = planetConfig.name; // Identify group
 
-  planetConfig.moons.forEach(moonConfig => {
-      // --- Use fixed scale factor for orbits ---
-      const fixedScaleFactor = MOON_ORBIT_SCALE; // Use constant
-      // Calculate orbit radius relative to planet radius and scaled distance
-      let orbitRadius = (moonConfig.orbitRadiusKm / 100000) * fixedScaleFactor + planetRadius * 1.5; // Adjusted scaling factor for KM distance
+    planetConfig.moons.forEach(moonConfig => {
+        // Calculate orbit radius relative to planet display size + scaled distance
+        const orbitRadius = planetRadius * 1.5 + (moonConfig.orbitRadiusKm / 100000) * MOON_ORBIT_SCALE_FACTOR;
 
-      let moonRadius;
-      // --- Use fixed calculation for moon radius (based on original scaled logic) ---
-      // Calculate moon radius relative to the parent planet's DISPLAY radius and moon's actual relative size
-      moonRadius = planetRadius * (moonConfig.actualRadius * MOON_SIZE_SCALE); // Apply general moon scale down
-      moonRadius = Math.max(moonRadius, 0.5); // Ensure minimum size for visibility
+        // Calculate moon display radius relative to planet display size
+        let moonRadius = planetRadius * (moonConfig.actualRadius * MOON_SIZE_SCALE_FACTOR);
+        moonRadius = Math.max(moonRadius, MIN_MOON_RADIUS); // Ensure minimum size
 
-      // Create moon mesh using improved material
-      const moonGeometry = new THREE.SphereGeometry(moonRadius, 16, 12);
-      const moonMaterial = createImprovedPlanetMaterial(moonConfig.textureUrl);
+        // --- Moon Mesh ---
+        const moonGeometry = new THREE.SphereGeometry(moonRadius, MOON_SEGMENTS, MOON_SEGMENTS / 2);
+        const moonMaterial = createPlanetMaterial(moonConfig.textureUrl);
+        const moonMesh = new THREE.Mesh(moonGeometry, moonMaterial);
+        moonMesh.castShadow = true;
+        moonMesh.receiveShadow = true;
 
-      const moonMesh = new THREE.Mesh(moonGeometry, moonMaterial);
-      moonMesh.castShadow = true;
-      moonMesh.receiveShadow = true;
+        // --- Moon Atmosphere (e.g., Titan) ---
+        if (moonConfig.atmosphere && moonConfig.atmosphere.exists) {
+            const atmoGeometry = new THREE.SphereGeometry(moonRadius * MOON_ATMOSPHERE_SCALE_FACTOR, MOON_SEGMENTS, MOON_SEGMENTS / 2);
+            const atmoMaterial = new THREE.MeshBasicMaterial({
+                color: moonConfig.atmosphere.color,
+                transparent: true,
+                opacity: moonConfig.atmosphere.density * MOON_ATMOSPHERE_OPACITY_MULTIPLIER,
+                side: THREE.BackSide
+            });
+            const moonAtmosphereMesh = new THREE.Mesh(atmoGeometry, atmoMaterial);
+            moonAtmosphereMesh.raycast = () => {}; // ** Make non-raycastable **
+            moonMesh.add(moonAtmosphereMesh); // Add atmosphere as child of moon mesh
+        }
 
-      // Add atmosphere for moons that have one (like Titan)
-      if (moonConfig.atmosphere && moonConfig.atmosphere.exists) {
-          const atmoRadius = moonRadius * 1.1; // Slightly larger than moon
-          const atmoGeometry = new THREE.SphereGeometry(atmoRadius, 16, 12);
-          const atmoMaterial = new THREE.MeshBasicMaterial({
-              color: moonConfig.atmosphere.color,
-              transparent: true,
-              opacity: moonConfig.atmosphere.density * 0.4,
-              side: THREE.BackSide
-          });
-          const atmosphereMesh = new THREE.Mesh(atmoGeometry, atmoMaterial);
-          moonMesh.add(atmosphereMesh); // Add atmosphere directly to moon mesh
-      }
+        // --- Moon Positioning & Data ---
+        const initialAngle = Math.random() * Math.PI * 2; // Random start
+        moonMesh.position.set(
+            orbitRadius * Math.cos(initialAngle),
+            0,
+            orbitRadius * Math.sin(initialAngle)
+        );
 
-      // --- Moon Positioning and Orbit Data ---
-      const moonOrbitContainer = new THREE.Group(); // Container for moon and its orbit line
+        // Store data in MESH userData (this is the selectable object)
+        moonMesh.userData = {
+            isSelectable: true,
+            name: moonConfig.name,
+            type: 'moon',
+            parentPlanetName: planetConfig.name,
+            config: moonConfig, // Store reference to moon config
+            orbitRadius: orbitRadius,
+            orbitSpeed: moonConfig.calculatedOrbitSpeed,
+            orbitDirection: moonConfig.orbitDirection,
+            rotationSpeed: moonConfig.calculatedRotationSpeed,
+            rotationDirection: moonConfig.rotationDirection,
+            initialAngle: initialAngle,
+            currentAngle: initialAngle,
+            // Pre-format info for display panel convenience
+            displayInfo: {
+                Size: `${(moonConfig.actualRadius * EARTH_RADIUS_KM).toFixed(0)} km radius`,
+                Orbit: `${moonConfig.orbitRadiusKm.toLocaleString()} km from ${planetConfig.name}`,
+                OrbitalPeriod: `${Math.abs(moonConfig.orbitalPeriod).toFixed(2)} days ${moonConfig.orbitalPeriod < 0 ? '(retrograde)' : ''}`,
+                RotationPeriod: `${Math.abs(moonConfig.rotationPeriod).toFixed(2)} days ${moonConfig.rotationPeriod === moonConfig.orbitalPeriod ? '(tidally locked)' : ''}`, // Basic check for tidal lock
+                ParentPlanet: planetConfig.name,
+                // Include details from moonConfig.info if it exists
+                ...(moonConfig.info || {})
+            }
+        };
+        celestialBodies.push(moonMesh); // Add moon mesh to main selectable list
 
-      const initialAngle = Math.random() * Math.PI * 2; // Randomize starting position
-      // Position the moon MESH relative to the moonOrbitContainer center
-      moonMesh.position.set(
-          orbitRadius * Math.cos(initialAngle),
-          0,
-          orbitRadius * Math.sin(initialAngle)
-      );
+        // --- Moon Orbit Line --- (Relative to planet center)
+        const moonOrbitLine = createOrbitLine(orbitRadius, ORBIT_LINE_COLOR * 0.8, MOON_ORBIT_SEGMENTS);
+        moonOrbitLine.raycast = () => {}; // ** Make non-raycastable **
 
-      // Store data specific to this moon in its MESH userData
-      moonMesh.userData = {
-          isSelectable: true,
-          name: moonConfig.name,
-          parentPlanet: planetConfig.name,
-          orbitRadius: orbitRadius,
-          initialAngle: initialAngle,
-          currentAngle: initialAngle,
-          // Calculate orbit speed based on its period in Earth days
-          orbitSpeed: (2 * Math.PI) / (Math.abs(moonConfig.orbitalPeriod) * 24 * 60), // Radians per simulation second at 1x
-          orbitDirection: moonConfig.orbitalPeriod >= 0 ? 1 : -1,
-          // Calculate rotation speed based on its period
-          rotationSpeed: (2 * Math.PI) / (Math.abs(moonConfig.rotationPeriod) * 24 * 60), // Radians per simulation second at 1x
-          rotationDirection: moonConfig.rotationPeriod >= 0 ? 1 : -1,
-          // Pre-format info for the panel
-          info: {
-              // Use actualRadius relative to Earth's radius (approx 6371 km)
-              Size: `${(moonConfig.actualRadius * 6371).toFixed(0)} km radius`,
-              Orbit: `${moonConfig.orbitRadiusKm.toLocaleString()} km from ${planetConfig.name}`,
-              OrbitalPeriod: `${Math.abs(moonConfig.orbitalPeriod).toFixed(2)} days ${moonConfig.orbitalPeriod < 0 ? '(retrograde)' : ''}`,
-              // Assume tidal locking if rotation/orbital periods match (or based on real data)
-              RotationPeriod: `${Math.abs(moonConfig.rotationPeriod).toFixed(2)} days ${moonConfig.rotationPeriod === moonConfig.orbitalPeriod ? '(tidally locked)' : ''}`,
-              ParentPlanet: planetConfig.name
-          }
-      };
+        // Add moon mesh and its orbit line to the system group
+        moonSystemGroup.add(moonMesh);
+        moonSystemGroup.add(moonOrbitLine); // Add orbit line here so it moves with the planet
+    });
 
-      // --- Create Moon Orbit Line ---
-      const moonOrbitPoints = [];
-      const segments = 64; // Smoother orbit line
-      for (let i = 0; i <= segments; i++) {
-          const theta = (i / segments) * Math.PI * 2;
-          moonOrbitPoints.push(new THREE.Vector3(
-              orbitRadius * Math.cos(theta),
-              0,
-              orbitRadius * Math.sin(theta)
-          ));
-      }
-      const moonOrbitGeometry = new THREE.BufferGeometry().setFromPoints(moonOrbitPoints);
-      const moonOrbitMaterial = new THREE.LineBasicMaterial({
-          color: 0x555555, // Slightly different color for moon orbits
-          transparent: true,
-          opacity: 0.3
-      });
-      const moonOrbitLine = new THREE.Line(moonOrbitGeometry, moonOrbitMaterial);
+    // Add the whole system (all moons/orbits for this planet) to the planet's group
+    planetGroup.add(moonSystemGroup);
+    moonGroups.push({ parentPlanetName: planetConfig.name, group: moonSystemGroup }); // Store reference
+}
 
-      // Add moon mesh and orbit line to the container
-      moonOrbitContainer.add(moonMesh);
-      moonOrbitContainer.add(moonOrbitLine); // Orbit line is relative to the planet center
+// REMOVED: calculateDisplayRadius function (using fixed scaledRadius)
+// REMOVED: updatePlanetSizes function
 
-      // Add this moon's container to the overall moon system group for the planet
-      moonSystem.add(moonOrbitContainer);
-  });
+// --- Update Functions --- Consolidated position and rotation updates
 
-  // Add the complete moon system (all moons and orbits for this planet) to the planet's group
-  planetGroup.add(moonSystem);
-  return moonSystem; // Return the group containing all moon containers
+function updatePositions(deltaTime) {
+    const timeFactor = deltaTime * simulationSpeed;
+
+    // Update Planets (Groups)
+    planets.forEach(planetData => {
+        const group = planetData.group;
+        const userData = group.userData;
+        // Skip if speed is zero or not defined
+        if (!userData.orbitSpeed || userData.orbitSpeed === 0) return;
+
+        userData.currentAngle += userData.orbitSpeed * timeFactor;
+        group.position.set(
+            userData.orbitRadius * Math.cos(userData.currentAngle),
+            0,
+            userData.orbitRadius * Math.sin(userData.currentAngle)
+        );
+    });
+
+    // Update Moons (Meshes within Moon Systems)
+    moonGroups.forEach(mg => {
+        mg.group.children.forEach(child => {
+            // Identify moon meshes by checking for orbitSpeed in userData
+            if (child.isMesh && child.userData.orbitSpeed) {
+                const moonMesh = child;
+                const userData = moonMesh.userData;
+
+                userData.currentAngle += userData.orbitSpeed * userData.orbitDirection * timeFactor;
+                moonMesh.position.set(
+                    userData.orbitRadius * Math.cos(userData.currentAngle),
+                    0,
+                    userData.orbitRadius * Math.sin(userData.currentAngle)
+                );
+            }
+        });
+    });
+}
+
+function updateRotations(deltaTime) {
+    const timeFactor = deltaTime * simulationSpeed;
+
+    // Rotate Planets (Meshes)
+    planets.forEach(planetData => {
+        const planetMesh = planetData.mesh;
+        const userData = planetData.group.userData; // Get speeds from group data
+
+        if (userData.rotationSpeed && userData.rotationSpeed !== 0) {
+             planetMesh.rotateY(userData.rotationSpeed * userData.rotationDirection * timeFactor);
+        }
+
+        // Rotate Clouds
+        if (planetMesh.userData.cloudMesh && userData.rotationSpeed && userData.rotationSpeed !== 0) {
+            planetMesh.userData.cloudMesh.rotateY(
+                userData.rotationSpeed * userData.rotationDirection * timeFactor * CLOUD_ROTATION_SPEED_MULTIPLIER
+            );
+        }
+    });
+
+    // Rotate Moons (Meshes)
+    moonGroups.forEach(mg => {
+        mg.group.children.forEach(child => {
+            // Identify moon meshes by checking for rotationSpeed
+            if (child.isMesh && child.userData.rotationSpeed && child.userData.rotationSpeed !== 0) {
+                const moonMesh = child;
+                const moonUserData = moonMesh.userData;
+                moonMesh.rotateY(moonUserData.rotationSpeed * moonUserData.rotationDirection * timeFactor);
+            }
+        });
+    });
+
+    // Rotate Sun (Optional)
+    // Add rotationPeriod to sunConfig if needed and uncomment
+    // if (sunMesh && sunConfig.calculatedRotationSpeed) {
+    //     sunMesh.rotateY(sunConfig.calculatedRotationSpeed * timeFactor);
+    // }
 }
 
 
-// --- Update Functions ---
-// Simplified: Always calculates scaled radius (or Sun's fixed radius)
-function calculateDisplayRadius(config) {
-    if (config.name === "Sun") {
-        return SUN_RADIUS; // Sun uses fixed radius constant
-    } else {
-        // Planets use their defined scaledRadius
-        return config.scaledRadius;
-    }
-}
+// --- Interactivity --- Updated logic
+let cameraTarget = null; // ** NEW ** Variable to store the object camera should follow
+const targetPosition = new THREE.Vector3(); // Reusable vector for target position
+const cameraOffset = new THREE.Vector3(); // Reusable vector for offset calculation
+const CAMERA_FOLLOW_LERP_FACTOR = 0.05; // Smoothness of camera following (lower = smoother)
 
-// Removed the updatePlanetSizes function as sizes are now fixed at initialization
-
-
-function updatePlanetPositions(deltaTime) {
-  // Use consistent time factor based on simulation speed
-  // deltaTime is seconds passed since last frame
-  const timeFactor = deltaTime * simulationSpeed;
-
-  planets.forEach(planetData => {
-    const group = planetData.group;
-    const orbitRadius = group.userData.orbitRadius;
-
-    // Update angle based on orbit speed (radians per sim second * time passed)
-    group.userData.currentAngle += group.userData.orbitSpeed * timeFactor;
-    const angle = group.userData.currentAngle;
-
-    // Update group position based on new angle
-    group.position.set(
-      orbitRadius * Math.cos(angle),
-      0,
-      orbitRadius * Math.sin(angle)
-    );
-
-    // Update moons if they exist (moons orbit relative to the planet group)
-    // Find the moonSystem group within the planet's group children
-     const moonSystemGroup = group.children.find(child => child.userData.parentPlanet === planetData.config.name);
-
-     if (moonSystemGroup) {
-         moonSystemGroup.children.forEach(moonOrbitContainer => {
-             // The first child of the container is the moon mesh
-             const moonMesh = moonOrbitContainer.children[0];
-             if (moonMesh && moonMesh.userData.orbitSpeed) { // Check if it's a valid moon mesh
-                 const userData = moonMesh.userData;
-                 userData.currentAngle += userData.orbitSpeed * userData.orbitDirection * timeFactor;
-                 const moonAngle = userData.currentAngle;
-                 const moonOrbitRadius = userData.orbitRadius;
-
-                 // Update moon MESH position relative to the planet center (within its container)
-                 moonMesh.position.set(
-                     moonOrbitRadius * Math.cos(moonAngle),
-                     0,
-                     moonOrbitRadius * Math.sin(moonAngle)
-                 );
-             }
-         });
-     }
-
-  });
-}
-
-function updatePlanetRotations(deltaTime) {
-  // Consistent time factor
-  const timeFactor = deltaTime * simulationSpeed;
-
-  planets.forEach(planetData => {
-    const group = planetData.group;
-    const planetMesh = group.userData.planetMesh; // Get the planet mesh itself
-    const userData = group.userData; // Get the group's user data
-
-    // Rotate the planet MESH around its local Y-axis (up axis)
-    // Rotation speed is radians per simulation second * time passed
-    planetMesh.rotateY(userData.rotationSpeed * userData.rotationDirection * timeFactor);
-
-    // Rotate clouds slightly faster if they exist
-    if (planetMesh.userData.cloudMesh) {
-      planetMesh.userData.cloudMesh.rotateY(
-          userData.rotationSpeed * userData.rotationDirection * timeFactor * 1.1 // Cloud differential rotation
-      );
-    }
-
-     // Rotate moons around their own axes
-     const moonSystemGroup = group.children.find(child => child.userData.parentPlanet === planetData.config.name);
-     if (moonSystemGroup) {
-         moonSystemGroup.children.forEach(moonOrbitContainer => {
-             const moonMesh = moonOrbitContainer.children[0];
-             if (moonMesh && moonMesh.userData.rotationSpeed) {
-                 const moonUserData = moonMesh.userData;
-                 moonMesh.rotateY(moonUserData.rotationSpeed * moonUserData.rotationDirection * timeFactor);
-             }
-         });
-     }
-
-  });
-}
-
-
-// --- Interactivity ---
 function onPointerMove(event) {
-  // Calculate pointer position in normalized device coordinates (-1 to +1)
-  pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-  pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+    pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
 }
 
 function onPointerClick(event) {
-  // Update the picking ray with the camera and pointer position
-  raycaster.setFromCamera(pointer, camera);
+    console.log("--- Pointer Click ---");
+    raycaster.setFromCamera(pointer, camera);
+    // Important: Check against scene children recursively to hit everything, *then* filter
+    const intersects = raycaster.intersectObjects(scene.children, true);
 
-  // Calculate objects intersecting the picking ray
-  // Pass scene.children and true to check descendants (planets/moons within groups)
-  const intersects = raycaster.intersectObjects(scene.children, true);
+    let clickedSelectable = null;
+    if (intersects.length > 0) {
+        // Iterate through intersects because the first hit might be non-selectable (e.g., orbit line)
+        for (let i = 0; i < intersects.length; i++) {
+            let hitObject = intersects[i].object;
+            console.log(`Raycast hit candidate [${i}]: ${hitObject.name || 'Unnamed'} (Type: ${hitObject.type}, IsMesh: ${hitObject.isMesh}, IsGroup: ${hitObject.isGroup})`);
 
-  let clickedSelectable = null;
-
-  // Iterate through intersects to find the closest selectable object
-  for (let i = 0; i < intersects.length; i++) {
-    let object = intersects[i].object;
-    // Traverse up the hierarchy to find the object with isSelectable=true
-    while (object && !clickedSelectable) {
-      if (object.userData && object.userData.isSelectable) {
-        // We might click a planet mesh, atmosphere, or moon mesh.
-        // If it's a moon, we want the moon mesh itself.
-        // If it's part of a planet (mesh, cloud, atmosphere, ring), we want the planet's GROUP.
-        if (object.userData.parentPlanet) { // It's a moon mesh
-             clickedSelectable = object;
-        } else {
-            // Traverse up until we hit the main planet/sun group or the scene
-            let parentGroup = object;
-            while (parentGroup.parent && parentGroup.parent !== scene) {
-                parentGroup = parentGroup.parent;
+            // Find the nearest ancestor that is in our selectable list
+            let current = hitObject;
+            while (current) {
+                if (celestialBodies.includes(current)) {
+                    clickedSelectable = current;
+                    console.log(`Found selectable object via traversal: ${clickedSelectable.userData.name || clickedSelectable.name}`);
+                    break; // Found the selectable object, stop searching this intersection
+                }
+                current = current.parent;
             }
-             // Ensure we selected a celestial body group, not something else
-             if (parentGroup.userData && parentGroup.userData.isSelectable) {
-                 clickedSelectable = parentGroup;
-             } else if (object === sunMesh && sunMesh.userData.isSelectable) { // Handle direct sun click
-                 clickedSelectable = sunMesh;
-             }
+            if (clickedSelectable) {
+                break; // Found the selectable object, stop iterating through intersects
+            }
         }
-        break; // Exit the inner while loop once selectable is found
-      }
-      // Move up only if we haven't found the selectable object yet
-       if (!clickedSelectable) object = object.parent;
     }
-     if (clickedSelectable) break; // Exit the outer for loop if found
-  }
 
+    // --- Selection / Deselection Logic --- (remains the same)
+    if (clickedSelectable) {
+        console.log(`Final Selected: ${clickedSelectable.userData.name || clickedSelectable.name || 'Unknown'} (Type: ${clickedSelectable.userData.type || 'N/A'})`);
+    } else {
+        console.log("No selectable object found in intersection path.");
+    }
 
-  if (clickedSelectable) {
-    // If we clicked the already selected object, maybe deselect or do nothing?
-    // Current logic: re-select (updates highlight and info)
-    selectObject(clickedSelectable);
-  } else {
-    // Clicked empty space or a non-selectable object
-    deselectObject();
-  }
+    if (!clickedSelectable || clickedSelectable === sunMesh) {
+        console.log("Clicked Sun or empty space/non-selectable -> Deselecting");
+        deselectObject();
+    } else if (clickedSelectable !== selectedObject) {
+        console.log("Clicked new selectable object -> Selecting");
+        selectObject(clickedSelectable);
+    } else {
+        console.log("Clicked already selected object -> No Action");
+    }
+    console.log("---------------------");
 }
 
-
 function selectObject(object) {
-  deselectObject(); // Deselect previous object first
+    deselectObject(); // Deselect previous first, including outline
 
-  selectedObject = object; // Store the selected object (could be planet group or moon mesh)
+    selectedObject = object;
 
-  // --- Apply Highlight ---
-  // Need to find the actual MESH to highlight (planet, sun, or moon)
-  let meshToHighlight = null;
-  if (selectedObject === sunMesh) {
-      meshToHighlight = sunMesh;
-  } else if (selectedObject.userData.type === 'planet') { // It's a planet group
-      meshToHighlight = selectedObject.userData.planetMesh;
-  } else if (selectedObject.userData.parentPlanet) { // It's a moon mesh
-      meshToHighlight = selectedObject;
-  }
+    let meshToHighlight = null;
+    let parentForOutline = scene; // Default parent for outline (Sun, Moons)
 
-  if (meshToHighlight && meshToHighlight.material) {
-      // Store original material only if not already highlighted
-      if (!originalMaterials.has(meshToHighlight)) {
-          originalMaterials.set(meshToHighlight, meshToHighlight.material);
-      }
-      meshToHighlight.material = highlightMaterial;
-  }
+    if (selectedObject.userData.type === 'star') {
+        meshToHighlight = sunMesh;
+    } else if (selectedObject.userData.type === 'planet') {
+        meshToHighlight = selectedObject.userData.planetMesh;
+        parentForOutline = selectedObject; // Add outline to planet group
+    } else if (selectedObject.userData.type === 'moon') {
+        meshToHighlight = selectedObject;
+        parentForOutline = selectedObject.parent; // Add outline to moon's container group
+    }
 
+    // ** NEW ** Outline Logic
+    if (meshToHighlight) {
+        // Create outline mesh
+        const outlineMesh = meshToHighlight.clone();
+        outlineMesh.material = OUTLINE_MATERIAL.clone(); // Use outline material
+        outlineMesh.scale.set(OUTLINE_SCALE, OUTLINE_SCALE, OUTLINE_SCALE);
+        outlineMesh.raycast = () => {}; // Outline should not be clickable
+        outlineMesh.userData.isOutline = true; // Mark as outline
 
-  displayObjectInfo(selectedObject); // Display info for the selected object/group
+        // Add outline to the appropriate parent and store reference
+        parentForOutline.add(outlineMesh);
+        activeOutlines.set(selectedObject, outlineMesh);
+    }
+
+    displayObjectInfo(selectedObject);
+
+    // Set cameraTarget
+    if (selectedObject.userData.type === 'planet' || selectedObject.userData.type === 'moon') {
+        cameraTarget = selectedObject;
+    } else {
+        cameraTarget = null;
+    }
 }
 
 function deselectObject() {
-  if (selectedObject) {
-      // Find the mesh that was highlighted
-      let meshToRestore = null;
-      if (selectedObject === sunMesh) {
-          meshToRestore = sunMesh;
-      } else if (selectedObject.userData.type === 'planet') {
-          meshToRestore = selectedObject.userData.planetMesh;
-      } else if (selectedObject.userData.parentPlanet) {
-          meshToRestore = selectedObject;
-      }
+    // ** NEW ** Remove existing outline
+    if (selectedObject && activeOutlines.has(selectedObject)) {
+        const outlineMesh = activeOutlines.get(selectedObject);
+        if (outlineMesh && outlineMesh.parent) {
+            outlineMesh.parent.remove(outlineMesh);
+        }
+        // Dispose geometry/material if needed, but maybe not critical here
+        // outlineMesh.geometry.dispose();
+        // outlineMesh.material.dispose();
+        activeOutlines.delete(selectedObject); // Remove from map
+    }
 
-      // Restore original material if found
-      if (meshToRestore && originalMaterials.has(meshToRestore)) {
-          meshToRestore.material = originalMaterials.get(meshToRestore);
-          originalMaterials.delete(meshToRestore); // Remove from map
-      }
-  }
-  selectedObject = null; // Clear selection reference
-  infoPanel.style.display = 'none'; // Hide info panel
-}
+    // Restore original material (no longer used if we ditch wireframe)
+    /*
+    if (selectedObject) {
+        let meshToRestore = null;
+        // ... find meshToRestore ...
+        if (meshToRestore && originalMaterials.has(meshToRestore)) {
+            meshToRestore.material = originalMaterials.get(meshToRestore);
+            originalMaterials.delete(meshToRestore);
+        }
+    }
+    */
 
-
-function displayObjectInfo(object) {
-  // object is the selected item (planet group, sun mesh, or moon mesh)
-  if (!object || !object.userData) {
+    selectedObject = null;
     infoPanel.style.display = 'none';
-    return;
-  }
+    cameraTarget = null; // Reset camera target
+}
 
-  const userData = object.userData; // Get data from the GROUP or MESH
-  const name = userData.name || 'Unknown Object';
-  infoName.textContent = name;
+// --- Info Panel Display --- Updated logic
+function displayObjectInfo(object) {
+    // Ensure object and its necessary data exist
+    if (!object || !object.userData || !object.userData.config) {
+        infoPanel.style.display = 'none';
+        return;
+    }
 
-  const isMoon = userData.parentPlanet !== undefined;
+    const userData = object.userData;
+    const config = userData.config; // Config from planet/moon/sun data
+    const name = userData.name || 'Unknown';
+    const type = userData.type; // 'planet', 'moon', 'star'
 
-  // Clear previous details
-  infoDetails.innerHTML = '';
+    // --- Update Static DOM Elements --- (Name, Orbit, Size)
+    infoName.textContent = name;
 
-  if (isMoon) {
-      // Use pre-formatted info stored in moon mesh userData
-      infoOrbit.textContent = userData.info.Orbit || 'Unknown orbit';
-      infoSize.textContent = userData.info.Size || 'Unknown size';
-      let detailsHTML = `
-         <p><strong>Parent Planet:</strong> ${userData.parentPlanet}</p>
-         <p><strong>Orbital Period:</strong> ${userData.info.OrbitalPeriod || 'Unknown'}</p>
-         <p><strong>Rotation Period:</strong> ${userData.info.RotationPeriod || 'Unknown'}</p>
-      `;
-      // Add other moon-specific info if available in userData.info
-      infoDetails.innerHTML = detailsHTML;
+    let orbitText = '';
+    let sizeText = '';
+    let infoSource = null; // The object containing key-value pairs for details
 
-  } else { // It's a planet group or the sun mesh
-      // Find the config (for planets) or use sun's direct userData.info
-      const config = (userData.name === "Sun") ? null : planetConfigs.find(p => p.name === userData.name);
-      const infoSource = (userData.name === "Sun") ? userData.info : (config ? config.info : null);
+    if (type === 'star') {
+        infoSource = config.info;
+        orbitText = "Center of Solar System";
+        sizeText = infoSource.Diameter ? `Diameter: ${infoSource.Diameter}` : 'Size Unknown';
+    } else if (type === 'moon') {
+        infoSource = userData.displayInfo || config.info || {}; // Prefer pre-formatted displayInfo
+        orbitText = infoSource.Orbit || `Orbiting ${userData.parentPlanetName}`;
+        sizeText = infoSource.Size || 'Size Unknown';
+    } else if (type === 'planet') {
+        infoSource = config.info;
+        orbitText = config.orbitRadiusAU ? `Orbit: ${config.orbitRadiusAU.toFixed(2)} AU` : 'Orbit Unknown';
+        sizeText = config.actualRadius ? `Radius: ${config.actualRadius.toFixed(3)} Earths` : 'Size Unknown';
+        if (config.actualRadius) {
+            const radiusKm = (config.actualRadius * EARTH_RADIUS_KM).toFixed(0);
+            sizeText += ` (~${radiusKm} km)`;
+        }
+    }
 
+    infoOrbit.textContent = orbitText;
+    infoSize.textContent = sizeText;
 
-      if (!infoSource && userData.name !== "Sun") { // Check if config was found for planet
-          infoPanel.style.display = 'none';
-          return;
-      }
+    // --- Populate Details Section --- (Dynamically add <p> elements)
+    // Clear previous details efficiently
+    while (infoDetailsContainer.firstChild) {
+        infoDetailsContainer.removeChild(infoDetailsContainer.firstChild);
+    }
 
-      // Display basic Orbit/Size
-      if (userData.name === "Sun") {
-          infoOrbit.textContent = "Center of Solar System";
-          infoSize.textContent = "Radius: ~696,340 km"; // More specific size
-      } else if (config) {
-          infoOrbit.textContent = `Orbit: ${config.orbitRadiusAU.toFixed(2)} AU from Sun`;
-          // Display actual size comparison using actualRadius
-          infoSize.textContent = `Radius: ${config.actualRadius.toFixed(3)} × Earth's radius`;
-      }
+    if (infoSource && Object.keys(infoSource).length > 0) {
+        for (const [key, value] of Object.entries(infoSource)) {
+            // Skip keys already shown in main info for moons if using displayInfo
+            if (type === 'moon' && userData.displayInfo && ['Size', 'Orbit', 'ParentPlanet'].includes(key)) {
+                continue;
+            }
+            // Skip keys already shown for sun
+             if (type === 'star' && ['Diameter'].includes(key)) {
+                 continue;
+             }
 
-      // Display detailed info from config.info or sunMesh.userData.info
-      let detailsHTML = '';
-      if (infoSource) {
-          for (const [key, value] of Object.entries(infoSource)) {
-              detailsHTML += `<p><strong>${key}:</strong> ${value}</p>`;
-          }
-      }
-      infoDetails.innerHTML = detailsHTML;
-  }
+            const p = document.createElement('p');
+            const strong = document.createElement('strong');
+            strong.textContent = `${key}: `;
+            p.appendChild(strong);
+            p.appendChild(document.createTextNode(value));
+            infoDetailsContainer.appendChild(p);
+        }
+    } else {
+        const p = document.createElement('p');
+        p.textContent = "No detailed information available.";
+        infoDetailsContainer.appendChild(p);
+    }
 
-  infoPanel.style.display = 'block'; // Show the panel
+    infoPanel.style.display = 'block'; // Show the panel
 }
 
 
-// --- Event Listeners Setup ---
+// --- Event Listeners Setup --- Updated
 function setupEventListeners() {
-  window.addEventListener('resize', onWindowResize);
-  window.addEventListener('pointermove', onPointerMove);
-  window.addEventListener('click', onPointerClick);
+    window.addEventListener('resize', onWindowResize);
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('click', onPointerClick);
 
-  // --- Removed Size Mode Radio Button Listeners ---
+    // Speed slider listener
+    document.getElementById('speedSlider').addEventListener('input', (e) => {
+        simulationSpeed = parseFloat(e.target.value);
+        speedValueSpan.textContent = `${simulationSpeed.toFixed(1)}x`;
+        // Speed calculations are now done by multiplying base speed by simSpeed in updates,
+        // so no need to recalculate anything here.
+    });
 
-  document.getElementById('speedSlider').addEventListener('input', (e) => {
-    simulationSpeed = parseFloat(e.target.value);
-    speedValueSpan.textContent = `${simulationSpeed.toFixed(1)}x`;
-  });
+    // REMOVED: Gravity slider listener
+    // REMOVED: Size mode radio button listeners
+    // REMOVED: Toggle button listener
 
-  document.getElementById('gravitySlider').addEventListener('input', (e) => {
-    gravityModifier = parseFloat(e.target.value);
-    gravityValueSpan.textContent = `${gravityModifier.toFixed(1)}x`;
-    // Note: gravityModifier is not currently used in the physics calculations.
-    // You would need to incorporate it into updatePlanetPositions/Rotations if desired.
-  });
-
-  // Remove the spacetime mesh toggle button (keeping as per original code)
-  const toggleButton = document.getElementById('toggleMeshBtn');
-  if (toggleButton) {
-    toggleButton.remove();
-  }
+    // ** ADDED BACK ** Safeguard button removal
+    const toggleButton = document.getElementById('toggleMeshBtn');
+    if (toggleButton) {
+        toggleButton.remove();
+    }
 }
 
 function onWindowResize() {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
-// --- Animation Loop ---
+// --- Animation Loop --- Updated
 function animate() {
-  requestAnimationFrame(animate); // Loop
-  const deltaTime = clock.getDelta(); // Time since last frame in seconds
+    requestAnimationFrame(animate);
+    const deltaTime = clock.getDelta();
 
-  // Update simulation time counter
-  const DAYS_PER_REAL_SECOND_AT_1X = 365.25 / 60; // Approx days per second at 1x speed if 60s = 1 year
-  const daysPassedThisFrame = deltaTime * simulationSpeed * DAYS_PER_REAL_SECOND_AT_1X;
-  simulatedDays += daysPassedThisFrame;
-  const dayCounter = document.getElementById('dayCounter');
-  if (dayCounter) {
-    dayCounter.textContent = `Simulated Days: ${Math.floor(simulatedDays)}`; // Show whole days
-  }
+    // Update Simulation Time Counter
+    const daysPassedThisFrame = deltaTime * simulationSpeed * DAYS_PER_SIM_SECOND_AT_1X;
+    simulatedDays += daysPassedThisFrame;
+    if (dayCounter) {
+        dayCounter.textContent = `Simulated Days: ${Math.floor(simulatedDays)}`;
+    }
 
-  // Update simulation state
-  updatePlanetPositions(deltaTime); // Update orbits and moon positions
-  updatePlanetRotations(deltaTime); // Update self-rotation for planets and moons
+    // Update Simulation State
+    updatePositions(deltaTime);
+    updateRotations(deltaTime);
 
-  // Update controls (for damping, etc.)
-  controls.update();
+    // ** NEW ** Camera Following Logic
+    if (cameraTarget) {
+        // Get the world position of the target
+        cameraTarget.getWorldPosition(targetPosition);
+        // Smoothly interpolate the controls target towards the object's position
+        controls.target.lerp(targetPosition, CAMERA_FOLLOW_LERP_FACTOR);
+    } else {
+        // If no target, smoothly interpolate back to the center (0,0,0)
+        controls.target.lerp(new THREE.Vector3(0, 0, 0), CAMERA_FOLLOW_LERP_FACTOR);
+    }
 
-  // Render the scene
-  renderer.render(scene, camera);
+    controls.update(); // Update orbit controls (handles damping, target following)
+    renderer.render(scene, camera); // Render the scene
 }
 
-// --- DOM Content Loaded Event ---
-document.addEventListener('DOMContentLoaded', function() {
-  // Final check to remove toggle button (keeping as per original code)
-  const toggleButton = document.getElementById('toggleMeshBtn');
-  if (toggleButton) {
-    toggleButton.remove();
-  }
-
-  // Start the simulation
-  init();
+// --- Start Simulation --- Updated
+document.addEventListener('DOMContentLoaded', () => {
+    init().catch(error => {
+        // Error handling moved inside init's try/catch
+        console.error("Caught error after init call in DOMContentLoaded:", error);
+    });
 });
