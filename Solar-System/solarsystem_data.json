@@ -2,67 +2,104 @@
   {
     "name": "Mercury",
     "actualRadius": 0.383,
-    "scaledRadius": 2.5,
-    "textureUrl": "textures/mercury.jpg",
-    "orbitRadiusAU": 0.387,
+    "scaledRadius": 1.5,
+    "orbitRadiusAU": 0.38709927,
     "baseOrbitSpeedFactor": 1.607,
     "gravityStrength": 0.38,
-    "initialAngle": 0,
-    "rotationPeriod": 58.6,
+    "initialAngle": 0.0,
+    "rotationPeriod": 58.646,
+    "retrograde": false,
     "axialTilt": 0.03,
+    "textureUrl": "mercury.jpg",
     "atmosphere": { "exists": false },
     "moons": [],
+    "kepler": {
+      "inclinationDeg": 7.004979,
+      "longAscNodeDeg": 48.330766,
+      "argPeriapsisDeg": 29.124279,
+      "meanAnomalyDeg": 174.795884,
+      "epoch": "J2000"
+    },
     "info": {
-      "Mass": "0.055 Earths",
-      "Composition": "Rocky planet with iron core",
-      "SurfaceTemp": "-173°C to 427°C",
-      "RotationPeriod": "58.6 Earth days",
-      "OrbitalPeriod": "88 Earth days",
-      "Distance": "0.39 AU from Sun"
+      "massEarths": 0.055,
+      "densityGcm3": 5.43,
+      "surfaceGravityG": 0.38,
+      "escapeVelocityKms": 4.25,
+      "composition": "Rocky planet with iron‑nickel core",
+      "surfaceTempMinC": -173,
+      "surfaceTempMaxC": 427,
+      "rotationPeriodDays": 58.646,
+      "orbitalPeriodDays": 87.969,
+      "orbitalEccentricity": 0.20563593,
+      "orbitalInclinationDeg": 7.0,
+      "meanOrbitalSpeedKms": 47.36,
+      "albedoBond": 0.119,
+      "distanceAU": 0.387,
+      "moonCount": 0,
+      "ringCount": 0,
+      "magnetosphere": true
     }
   },
   {
     "name": "Venus",
     "actualRadius": 0.949,
-    "scaledRadius": 4,
-    "textureUrl": "textures/venus.jpg",
-    "orbitRadiusAU": 0.723,
+    "scaledRadius": 3.8,
+    "orbitRadiusAU": 0.72333566,
     "baseOrbitSpeedFactor": 1.626,
     "gravityStrength": 0.91,
     "initialAngle": 0.7853981633974483,
-    "rotationPeriod": -243,
+    "rotationPeriod": 243.02,
+    "retrograde": true,
     "axialTilt": 177.3,
+    "textureUrl": "venus.jpg",
     "atmosphere": {
       "exists": true,
-      "color": "0xfff7d6",
+      "color": "#fff7d6",
       "density": 0.7
     },
     "moons": [],
+    "kepler": {
+      "inclinationDeg": 3.394662,
+      "longAscNodeDeg": 76.680694,
+      "argPeriapsisDeg": 54.852,
+      "meanAnomalyDeg": 50.416114,
+      "epoch": "J2000"
+    },
     "info": {
-      "Mass": "0.815 Earths",
-      "Composition": "Rocky planet with thick CO₂ atmosphere",
-      "SurfaceTemp": "462°C (hottest planet)",
-      "RotationPeriod": "243 Earth days (retrograde)",
-      "OrbitalPeriod": "225 Earth days",
-      "Distance": "0.72 AU from Sun"
+      "massEarths": 0.815,
+      "densityGcm3": 5.24,
+      "surfaceGravityG": 0.91,
+      "escapeVelocityKms": 10.36,
+      "composition": "Rocky planet with dense CO₂ atmosphere",
+      "surfaceTempMinC": 462,
+      "surfaceTempMaxC": 462,
+      "rotationPeriodDays": 243.02,
+      "orbitalPeriodDays": 224.701,
+      "orbitalEccentricity": 0.00677672,
+      "orbitalInclinationDeg": 3.39,
+      "meanOrbitalSpeedKms": 35.02,
+      "albedoBond": 0.65,
+      "distanceAU": 0.723,
+      "moonCount": 0,
+      "ringCount": 0,
+      "magnetosphere": false
     }
   },
   {
     "name": "Earth",
     "actualRadius": 1.0,
-    "scaledRadius": 4.2,
-    "textureUrl": "textures/earth.jpg",
-    "cloudTextureUrl": "textures/earth_clouds.jpg",
-    "nightTextureUrl": "textures/earth_night.jpg",
-    "orbitRadiusAU": 1.0,
+    "scaledRadius": 4.0,
+    "orbitRadiusAU": 1.00000011,
     "baseOrbitSpeedFactor": 1.0,
     "gravityStrength": 1.0,
     "initialAngle": 1.5707963267948966,
     "rotationPeriod": 1.0,
-    "axialTilt": 23.4,
+    "retrograde": false,
+    "axialTilt": 23.44,
+    "textureUrl": "earth.jpg",
     "atmosphere": {
       "exists": true,
-      "color": "0x6b8cff",
+      "color": "#6b8cff",
       "density": 0.3
     },
     "moons": [
@@ -70,166 +107,436 @@
         "name": "Moon",
         "actualRadius": 0.273,
         "orbitRadiusKm": 384400,
-        "orbitalPeriod": 27.3,
-        "rotationPeriod": 27.3,
-        "textureUrl": "textures/moon.jpg"
+        "orbitalPeriod": 27.3217,
+        "rotationPeriod": 27.3217,
+        "retrograde": false,
+        "textureUrl": "Moon_JPG_Collection/ganymede.jpg"
       }
     ],
+    "kepler": {
+      "inclinationDeg": 0.0,
+      "longAscNodeDeg": 348.73936,
+      "argPeriapsisDeg": 114.20783,
+      "meanAnomalyDeg": 357.529109,
+      "epoch": "J2000"
+    },
     "info": {
-      "Mass": "1.0 Earths (5.97×10²⁴ kg)",
-      "Composition": "Rocky planet with nitrogen-oxygen atmosphere",
-      "SurfaceTemp": "-88°C to 58°C",
-      "RotationPeriod": "24 hours",
-      "OrbitalPeriod": "365.25 days",
-      "Distance": "1.0 AU from Sun",
-      "Moons": "1 (Luna)"
+      "massEarths": 1.0,
+      "densityGcm3": 5.51,
+      "surfaceGravityG": 1.0,
+      "escapeVelocityKms": 11.186,
+      "composition": "Rocky planet with N₂‑O₂ atmosphere",
+      "surfaceTempMinC": -88,
+      "surfaceTempMaxC": 58,
+      "rotationPeriodDays": 1.0,
+      "orbitalPeriodDays": 365.256,
+      "orbitalEccentricity": 0.01670863,
+      "orbitalInclinationDeg": 0.0,
+      "meanOrbitalSpeedKms": 29.78,
+      "albedoBond": 0.306,
+      "distanceAU": 1.0,
+      "moonCount": 1,
+      "ringCount": 0,
+      "magnetosphere": true
     }
   },
   {
     "name": "Mars",
     "actualRadius": 0.532,
-    "scaledRadius": 3,
-    "textureUrl": "textures/mars.jpg",
-    "orbitRadiusAU": 1.524,
+    "scaledRadius": 2.0,
+    "orbitRadiusAU": 1.52371034,
     "baseOrbitSpeedFactor": 0.5316,
     "gravityStrength": 0.38,
     "initialAngle": 2.356194490192345,
-    "rotationPeriod": 1.03,
+    "rotationPeriod": 1.026,
+    "retrograde": false,
     "axialTilt": 25.2,
+    "textureUrl": "mars.jpg",
     "atmosphere": {
       "exists": true,
-      "color": "0xd09470",
+      "color": "#d09470",
       "density": 0.1
     },
-    "moons": [],
+    "moons": [
+      {
+        "name": "Phobos",
+        "actualRadius": 0.0018,
+        "orbitRadiusKm": 9378,
+        "orbitalPeriod": 0.319,
+        "rotationPeriod": 0.319,
+        "retrograde": false,
+        "textureUrl": "Moon_JPG_Collection/Phobos.jpg"
+      },
+      {
+        "name": "Deimos",
+        "actualRadius": 0.001,
+        "orbitRadiusKm": 23460,
+        "orbitalPeriod": 1.262,
+        "rotationPeriod": 1.262,
+        "retrograde": false,
+        "textureUrl": "Moon_JPG_Collection/Deimos.jpg"
+      }
+    ],
+    "kepler": {
+      "inclinationDeg": 1.850333,
+      "longAscNodeDeg": 49.57854,
+      "argPeriapsisDeg": 286.537,
+      "meanAnomalyDeg": 19.373,
+      "epoch": "J2000"
+    },
     "info": {
-      "Mass": "0.107 Earths",
-      "Composition": "Rocky planet with thin CO₂ atmosphere",
-      "SurfaceTemp": "-153°C to 20°C",
-      "RotationPeriod": "24.6 hours",
-      "OrbitalPeriod": "687 Earth days",
-      "Distance": "1.52 AU from Sun",
-      "Moons": "2 (Phobos, Deimos) - too small to show at scale"
+      "massEarths": 0.107,
+      "densityGcm3": 3.93,
+      "surfaceGravityG": 0.38,
+      "escapeVelocityKms": 5.03,
+      "composition": "Rocky planet with thin CO₂ atmosphere",
+      "surfaceTempMinC": -153,
+      "surfaceTempMaxC": 20,
+      "rotationPeriodDays": 1.026,
+      "orbitalPeriodDays": 686.98,
+      "orbitalEccentricity": 0.0933941,
+      "orbitalInclinationDeg": 1.85,
+      "meanOrbitalSpeedKms": 24.07,
+      "albedoBond": 0.25,
+      "distanceAU": 1.524,
+      "moonCount": 2,
+      "ringCount": 0,
+      "magnetosphere": false
     }
   },
   {
     "name": "Jupiter",
     "actualRadius": 11.209,
-    "scaledRadius": 10,
-    "textureUrl": "textures/jupiter.jpg",
-    "orbitRadiusAU": 5.203,
+    "scaledRadius": 20.0,
+    "orbitRadiusAU": 5.202887,
     "baseOrbitSpeedFactor": 0.0843,
     "gravityStrength": 2.53,
     "initialAngle": 3.141592653589793,
-    "rotationPeriod": 0.41,
+    "rotationPeriod": 0.4135,
+    "retrograde": false,
     "axialTilt": 3.1,
+    "textureUrl": "jupiter.jpg",
     "atmosphere": {
       "exists": true,
-      "color": "0xf0e8d8",
+      "color": "#f0e8d8",
       "density": 0.5
     },
     "moons": [
-      { "name": "Io", "actualRadius": 0.286, "orbitRadiusKm": 421800, "orbitalPeriod": 1.77, "rotationPeriod": 1.77, "textureUrl": "textures/io.jpg" },
-      { "name": "Europa", "actualRadius": 0.245, "orbitRadiusKm": 671100, "orbitalPeriod": 3.55, "rotationPeriod": 3.55, "textureUrl": "textures/europa.jpg" },
-      { "name": "Ganymede", "actualRadius": 0.413, "orbitRadiusKm": 1070400, "orbitalPeriod": 7.15, "rotationPeriod": 7.15, "textureUrl": "textures/ganymede.jpg" },
-      { "name": "Callisto", "actualRadius": 0.378, "orbitRadiusKm": 1882700, "orbitalPeriod": 16.69, "rotationPeriod": 16.69, "textureUrl": "textures/callisto.jpg" }
+      {
+        "name": "Io",
+        "actualRadius": 0.286,
+        "orbitRadiusKm": 421800,
+        "orbitalPeriod": 1.769,
+        "rotationPeriod": 1.769,
+        "retrograde": false,
+        "textureUrl": "Moon_JPG_Collection/Io.jpg"
+      },
+      {
+        "name": "Europa",
+        "actualRadius": 0.245,
+        "orbitRadiusKm": 671100,
+        "orbitalPeriod": 3.551,
+        "rotationPeriod": 3.551,
+        "retrograde": false,
+        "textureUrl": "Moon_JPG_Collection/Europa.jpg"
+      },
+      {
+        "name": "Ganymede",
+        "actualRadius": 0.413,
+        "orbitRadiusKm": 1070400,
+        "orbitalPeriod": 7.155,
+        "rotationPeriod": 7.155,
+        "retrograde": false,
+        "textureUrl": "Moon_JPG_Collection/Ganymede.jpg"
+      },
+      {
+        "name": "Callisto",
+        "actualRadius": 0.378,
+        "orbitRadiusKm": 1882700,
+        "orbitalPeriod": 16.689,
+        "rotationPeriod": 16.689,
+        "retrograde": false,
+        "textureUrl": "Moon_JPG_Collection/Callisto.jpg"
+      }
     ],
+    "kepler": {
+      "inclinationDeg": 1.30594,
+      "longAscNodeDeg": 100.55615,
+      "argPeriapsisDeg": 14.75385,
+      "meanAnomalyDeg": 20.02,
+      "epoch": "J2000"
+    },
     "info": {
-      "Mass": "317.8 Earths",
-      "Composition": "Gas giant (hydrogen, helium)",
-      "Temperature": "-108°C (cloud tops)",
-      "RotationPeriod": "9.9 hours (fastest)",
-      "OrbitalPeriod": "11.86 Earth years",
-      "Distance": "5.2 AU from Sun",
-      "Moons": "79+ (4 large Galilean moons shown)"
+      "massEarths": 317.8,
+      "densityGcm3": 1.33,
+      "surfaceGravityG": 2.53,
+      "escapeVelocityKms": 59.5,
+      "composition": "Gas giant (H₂, He)",
+      "surfaceTempMinC": -108,
+      "surfaceTempMaxC": -108,
+      "rotationPeriodDays": 0.4135,
+      "orbitalPeriodDays": 4332.59,
+      "orbitalEccentricity": 0.04838624,
+      "orbitalInclinationDeg": 1.31,
+      "meanOrbitalSpeedKms": 13.07,
+      "albedoBond": 0.503,
+      "distanceAU": 5.203,
+      "moonCount": 79,
+      "ringCount": 1,
+      "magnetosphere": true
     }
   },
   {
     "name": "Saturn",
     "actualRadius": 9.449,
-    "scaledRadius": 8.5,
-    "textureUrl": "textures/saturn.jpg",
-    "ringTextureUrl": "textures/saturn_ring.png",
-    "orbitRadiusAU": 9.539,
+    "scaledRadius": 17.0,
+    "orbitRadiusAU": 9.53667594,
     "baseOrbitSpeedFactor": 0.0339,
     "gravityStrength": 1.07,
     "initialAngle": 3.9269908169872414,
-    "rotationPeriod": 0.45,
+    "rotationPeriod": 0.444,
+    "retrograde": false,
     "axialTilt": 26.7,
     "ringTilt": 26.7,
+    "textureUrl": "saturn.jpg",
+    "ringTextureUrl": "saturn_ring.png",
     "atmosphere": {
       "exists": true,
-      "color": "0xf0e6d2",
+      "color": "#f0e6d2",
       "density": 0.4
     },
     "moons": [
-      { "name": "Titan", "actualRadius": 0.404, "orbitRadiusKm": 1221870, "orbitalPeriod": 15.95, "rotationPeriod": 15.95, "textureUrl": "textures/titan.jpg", "atmosphere": { "exists": true, "color": "0xffa500", "density": 0.3 } }
+      {
+        "name": "Mimas",
+        "actualRadius": 0.031,
+        "orbitRadiusKm": 185520,
+        "orbitalPeriod": 0.942,
+        "rotationPeriod": 0.942,
+        "retrograde": false,
+        "textureUrl": "Moon_JPG_Collection/Mimas.jpg"
+      },
+      {
+        "name": "Enceladus",
+        "actualRadius": 0.04,
+        "orbitRadiusKm": 238020,
+        "orbitalPeriod": 1.37,
+        "rotationPeriod": 1.37,
+        "retrograde": false,
+        "textureUrl": "Moon_JPG_Collection/Enceladus.jpg"
+      },
+      {
+        "name": "Tethys",
+        "actualRadius": 0.083,
+        "orbitRadiusKm": 294660,
+        "orbitalPeriod": 1.888,
+        "rotationPeriod": 1.888,
+        "retrograde": false
+      },
+      {
+        "name": "Dione",
+        "actualRadius": 0.088,
+        "orbitRadiusKm": 377400,
+        "orbitalPeriod": 2.737,
+        "rotationPeriod": 2.737,
+        "retrograde": false,
+        "textureUrl": "Moon_JPG_Collection/Dione.jpg"
+      },
+      {
+        "name": "Rhea",
+        "actualRadius": 0.12,
+        "orbitRadiusKm": 527040,
+        "orbitalPeriod": 4.518,
+        "rotationPeriod": 4.518,
+        "retrograde": false,
+        "textureUrl": "Moon_JPG_Collection/Rhea.jpg"
+      },
+      {
+        "name": "Titan",
+        "actualRadius": 0.404,
+        "orbitRadiusKm": 1221870,
+        "orbitalPeriod": 15.95,
+        "rotationPeriod": 15.95,
+        "retrograde": false,
+        "atmosphere": { "exists": true, "color": "#ffa500", "density": 0.3 }
+      },
+      {
+        "name": "Iapetus",
+        "actualRadius": 0.115,
+        "orbitRadiusKm": 3561300,
+        "orbitalPeriod": 79.33,
+        "rotationPeriod": 79.33,
+        "retrograde": false,
+        "textureUrl": "Moon_JPG_Collection/Iapetus.jpg"
+      }
     ],
+    "kepler": {
+      "inclinationDeg": 2.483456,
+      "longAscNodeDeg": 113.71504,
+      "argPeriapsisDeg": 92.43194,
+      "meanAnomalyDeg": 317.02,
+      "epoch": "J2000"
+    },
     "info": {
-      "Mass": "95.2 Earths",
-      "Composition": "Gas giant (hydrogen, helium) with iconic rings",
-      "Temperature": "-139°C (cloud tops)",
-      "RotationPeriod": "10.7 hours",
-      "OrbitalPeriod": "29.5 Earth years",
-      "Distance": "9.5 AU from Sun",
-      "Moons": "82+ (Titan shown - only moon with thick atmosphere)"
+      "massEarths": 95.16,
+      "densityGcm3": 0.687,
+      "surfaceGravityG": 1.07,
+      "escapeVelocityKms": 35.5,
+      "composition": "Gas giant (H₂, He) with extensive ring system",
+      "surfaceTempMinC": -139,
+      "surfaceTempMaxC": -139,
+      "rotationPeriodDays": 0.444,
+      "orbitalPeriodDays": 10759.22,
+      "orbitalEccentricity": 0.0541506,
+      "orbitalInclinationDeg": 2.49,
+      "meanOrbitalSpeedKms": 9.68,
+      "albedoBond": 0.342,
+      "distanceAU": 9.539,
+      "moonCount": 82,
+      "ringCount": 7,
+      "magnetosphere": true
     }
   },
   {
     "name": "Uranus",
     "actualRadius": 4.007,
-    "scaledRadius": 6,
-    "textureUrl": "textures/uranus.jpg",
-    "orbitRadiusAU": 19.191,
+    "scaledRadius": 10.0,
+    "orbitRadiusAU": 19.18916464,
     "baseOrbitSpeedFactor": 0.0119,
     "gravityStrength": 0.89,
     "initialAngle": 4.71238898038469,
-    "rotationPeriod": -0.72,
+    "rotationPeriod": 0.718,
+    "retrograde": true,
     "axialTilt": 97.8,
+    "textureUrl": "uranus.jpg",
     "atmosphere": {
       "exists": true,
-      "color": "0xd1e7e7",
+      "color": "#d1e7e7",
       "density": 0.3
     },
-    "moons": [],
+    "moons": [
+      {
+        "name": "Miranda",
+        "actualRadius": 0.037,
+        "orbitRadiusKm": 129900,
+        "orbitalPeriod": 1.413,
+        "rotationPeriod": 1.413,
+        "retrograde": false,
+        "textureUrl": "Moon_JPG_Collection/Miranda.jpg"
+      },
+      {
+        "name": "Ariel",
+        "actualRadius": 0.091,
+        "orbitRadiusKm": 190900,
+        "orbitalPeriod": 2.52,
+        "rotationPeriod": 2.52,
+        "retrograde": false,
+        "textureUrl": "Moon_JPG_Collection/Ariel.jpg"
+      },
+      {
+        "name": "Umbriel",
+        "actualRadius": 0.092,
+        "orbitRadiusKm": 266000,
+        "orbitalPeriod": 4.144,
+        "rotationPeriod": 4.144,
+        "retrograde": false
+      },
+      {
+        "name": "Titania",
+        "actualRadius": 0.124,
+        "orbitRadiusKm": 436300,
+        "orbitalPeriod": 8.706,
+        "rotationPeriod": 8.706,
+        "retrograde": false
+      },
+      {
+        "name": "Oberon",
+        "actualRadius": 0.119,
+        "orbitRadiusKm": 583500,
+        "orbitalPeriod": 13.463,
+        "rotationPeriod": 13.463,
+        "retrograde": false,
+        "textureUrl": "Moon_JPG_Collection/Oberon.jpg"
+      }
+    ],
+    "kepler": {
+      "inclinationDeg": 0.77,
+      "longAscNodeDeg": 74.22988,
+      "argPeriapsisDeg": 170.96424,
+      "meanAnomalyDeg": 142.239,
+      "epoch": "J2000"
+    },
     "info": {
-      "Mass": "14.5 Earths",
-      "Composition": "Ice giant (hydrogen, helium, methane)",
-      "Temperature": "-197°C",
-      "RotationPeriod": "17.2 hours (retrograde)",
-      "OrbitalPeriod": "84 Earth years",
-      "Distance": "19.2 AU from Sun",
-      "Moons": "27 (none shown at this scale)",
-      "UniqueFeature": "97.8° axial tilt (rotates sideways)"
+      "massEarths": 14.54,
+      "densityGcm3": 1.27,
+      "surfaceGravityG": 0.89,
+      "escapeVelocityKms": 21.3,
+      "composition": "Ice giant (H₂, He, CH₄)",
+      "surfaceTempMinC": -197,
+      "surfaceTempMaxC": -197,
+      "rotationPeriodDays": 0.718,
+      "orbitalPeriodDays": 30685,
+      "orbitalEccentricity": 0.04716771,
+      "orbitalInclinationDeg": 0.77,
+      "meanOrbitalSpeedKms": 6.8,
+      "albedoBond": 0.3,
+      "distanceAU": 19.191,
+      "moonCount": 27,
+      "ringCount": 13,
+      "magnetosphere": true
     }
   },
   {
     "name": "Neptune",
     "actualRadius": 3.883,
-    "scaledRadius": 6,
-    "textureUrl": "textures/neptune.jpg",
-    "orbitRadiusAU": 30.069,
+    "scaledRadius": 10.0,
+    "orbitRadiusAU": 30.06992276,
     "baseOrbitSpeedFactor": 0.00607,
     "gravityStrength": 1.14,
     "initialAngle": 5.497787143782138,
-    "rotationPeriod": 0.67,
+    "rotationPeriod": 0.671,
+    "retrograde": false,
     "axialTilt": 28.3,
+    "textureUrl": "neptune.jpg",
     "atmosphere": {
       "exists": true,
-      "color": "0x4b70dd",
+      "color": "#4b70dd",
       "density": 0.3
     },
     "moons": [
-      { "name": "Triton", "actualRadius": 0.212, "orbitRadiusKm": 354759, "orbitalPeriod": -5.88, "rotationPeriod": 5.88, "textureUrl": "textures/triton.jpg" }
+      {
+        "name": "Triton",
+        "actualRadius": 0.212,
+        "orbitRadiusKm": 354759,
+        "orbitalPeriod": 5.877,
+        "rotationPeriod": 5.877,
+        "retrograde": true
+      }
     ],
+    "kepler": {
+      "inclinationDeg": 1.769952,
+      "longAscNodeDeg": 131.72169,
+      "argPeriapsisDeg": 44.97135,
+      "meanAnomalyDeg": 256.784,
+      "epoch": "J2000"
+    },
     "info": {
-      "Mass": "17.1 Earths",
-      "Composition": "Ice giant (hydrogen, helium, methane)",
-      "Temperature": "-201°C",
-      "RotationPeriod": "16.1 hours",
-      "OrbitalPeriod": "165 Earth years",
-      "Distance": "30.1 AU from Sun",
-      "Moons": "14 (Triton shown - has retrograde orbit)"
+      "massEarths": 17.15,
+      "densityGcm3": 1.64,
+      "surfaceGravityG": 1.14,
+      "escapeVelocityKms": 23.5,
+      "composition": "Ice giant (H₂, He, CH₄)",
+      "surfaceTempMinC": -201,
+      "surfaceTempMaxC": -201,
+      "rotationPeriodDays": 0.671,
+      "orbitalPeriodDays": 60190,
+      "orbitalEccentricity": 0.00858587,
+      "orbitalInclinationDeg": 1.77,
+      "meanOrbitalSpeedKms": 5.43,
+      "albedoBond": 0.29,
+      "distanceAU": 30.069,
+      "moonCount": 14,
+      "ringCount": 5,
+      "magnetosphere": true
     }
   }
-] 
+]

@@ -1,0 +1,3245 @@
+# ===== C:/Users/Alif/Documents/GitHub/solar-system/index.html =====
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Solar System Simulation</title>
+
+    <!-- Favicon Links -->
+    <link rel="icon" href="assets/favicon.ico" sizes="any" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="assets/favicon-16.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="assets/favicon-32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="48x48"
+      href="assets/favicon-48.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="64x64"
+      href="assets/favicon-64.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="128x128"
+      href="assets/favicon-128.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="256x256"
+      href="assets/favicon-256.png"
+    />
+    <link rel="apple-touch-icon" href="assets/Favicon.png" />
+    <!-- Assuming Favicon.png is the largest/preferred -->
+
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        background-color: #000;
+        color: white; /* Added default text color */
+      }
+      canvas {
+        display: block;
+      }
+
+      /* ---- Theme Base ---- */
+      :root {
+        --border-color: #555;
+        --groove-bg: #333;
+        --handle-bg: #555;
+        --handle-border: #2a82da;
+        --handle-hover: #3d8fe0;
+        --bg-color: #333;
+        --text-color: white;
+        --highlight-color: #2a82da;
+        --highlighted-text: white;
+        --indicator-bg: #333;
+        --checked-bg: #2a82da;
+        --hover-bg: #444;
+        --pressed-bg: #2a82da;
+        --pressed-text: white;
+        --track-bg: #333;
+      }
+
+      /* ---- collapsible left‑hand menu ---- */
+      #menuContainer {
+        position: absolute;
+        left: 0;
+        top: 10px;
+        z-index: 1000;
+        /* transition: transform 0.3s ease; */ /* REMOVED CSS Transition */
+      }
+      #menuToggle {
+        position: absolute;
+        top: 50%;
+        right: -24px; /* Adjusted position */
+        background: var(--bg-color);
+        color: var(--text-color);
+        border: 1px solid var(--border-color);
+        border-left: none; /* Remove left border */
+        border-radius: 0 8px 8px 0; /* More rounded */
+        width: 24px;
+        height: 40px; /* Reduced height */
+        cursor: pointer;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        transform: translateY(-50%);
+      }
+      #menuToggle:hover {
+        background: var(--hover-bg);
+      }
+      #menuToggle::after {
+        content: "◀";
+        font-size: 14px;
+      }
+      #menuContainer.collapsed #menuToggle::after {
+        content: "▶";
+      }
+
+      /* ---- Controls panel ---- */
+      #controls,
+      #planetNavContainer,
+      #additionalControls {
+        position: relative;
+        margin: 0 0 8px 10px; /* Reduced bottom margin */
+        width: 220px;
+        color: var(--text-color);
+        font-family: Arial, sans-serif;
+        background: rgba(30, 30, 30, 0.85); /* Neutral dark grey */
+        padding: 10px 12px; /* Adjusted padding */
+        border-radius: 8px; /* More rounded */
+        font-size: 0.9em;
+        border: 1px solid var(--border-color); /* Added border */
+      }
+
+      /* ---- Slider (#speedSlider) ---- */
+      #controls label {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      #controls input[type="range"] {
+        flex-grow: 1; /* Allow slider to take space */
+        -webkit-appearance: none;
+        appearance: none;
+        height: 8px;
+        background: transparent;
+        cursor: pointer;
+        margin: 0; /* Remove default margin */
+      }
+      #controls input[type="range"]::-webkit-slider-runnable-track {
+        height: 8px;
+        background: var(--groove-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+      }
+      #controls input[type="range"]::-moz-range-track {
+        height: 8px;
+        background: var(--groove-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+      }
+      #controls input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        margin-top: -4px; /* Adjust vertical position */
+        width: 14px;
+        height: 14px;
+        background: var(--handle-bg);
+        border: 1px solid var(--handle-border);
+        border-radius: 7px;
+      }
+      #controls input[type="range"]::-moz-range-thumb {
+        width: 14px;
+        height: 14px;
+        background: var(--handle-bg);
+        border: 1px solid var(--handle-border);
+        border-radius: 7px;
+        border: none; /* FF adds own border */
+      }
+      #controls input[type="range"]:hover::-webkit-slider-thumb {
+        background: var(--handle-hover);
+      }
+      #controls input[type="range"]:hover::-moz-range-thumb {
+        background: var(--handle-hover);
+      }
+      #speedValue {
+        min-width: 3em;
+        text-align: right;
+      } /* Ensure space for value */
+
+      /* ---- ComboBox (#planetNav) ---- */
+      #planetNavContainer label {
+        margin-right: 5px;
+        display: block;
+        margin-bottom: 4px; /* Stack label */
+      }
+      select#planetNav {
+        flex-grow: 1; /* Allow select to take space */
+        width: 100%; /* Make select full width */
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        border: 1px solid var(--border-color);
+        padding: 4px;
+        border-radius: 2px;
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23CCCCCC%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+        background-repeat: no-repeat;
+        background-position: right 8px top 50%;
+        background-size: 0.65em auto;
+        padding-right: 25px; /* Space for arrow */
+      }
+      select#planetNav option {
+        background-color: var(--bg-color);
+        color: var(--text-color);
+      }
+      /* Highlight color for options is browser default, difficult to override reliably */
+
+      /* ---- Push Buttons (.controlBtn) ---- */
+      .controlBtn {
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        border: 1px solid var(--border-color);
+        padding: 8px; /* Increased padding */
+        border-radius: 5px; /* More rounded */
+        cursor: pointer;
+        text-align: center;
+        font-size: 0.9em;
+        transition: background-color 0.2s;
+        margin: 3px 0; /* Keep existing */
+        display: block; /* Make buttons block level */
+        width: 100%; /* Make buttons full width */
+        box-sizing: border-box; /* Include padding/border in width */
+      }
+      .controlBtn:hover {
+        background-color: var(--hover-bg);
+      }
+      .controlBtn:active {
+        background-color: var(--pressed-bg);
+        color: var(--pressed-text);
+      }
+      .btnRow {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px; /* Increased gap */
+        margin-top: 8px; /* Increased margin */
+      }
+      .btnRow .controlBtn {
+        flex: 1;
+        margin: 0;
+      } /* Override margin for row buttons */
+
+      /* ---- Info card ---- */
+      #info {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        width: 280px;
+        max-height: 320px; /* Use max-height */
+        overflow-y: auto;
+        z-index: 998;
+        background: rgba(30, 30, 30, 0.85); /* Match panel background */
+        color: var(--text-color);
+        font-family: Arial, sans-serif;
+        padding: 10px;
+        border-radius: 8px; /* Match panel radius */
+        display: none;
+        /* transform: translateX(-100%); */ /* Initial state set by JS */
+        /* opacity: 0; */ /* Initial state set by JS */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        border: 1px solid var(--border-color); /* Added border */
+      }
+      #info h3 {
+        margin: 0 0 8px;
+        font-size: 1.1em;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 5px;
+      }
+      #info p {
+        margin: 6px 0;
+        font-size: 0.9em;
+        line-height: 1.4;
+      }
+      #info p strong {
+        color: #cccccc; /* Changed from #aaaaff to light grey */
+      } /* Keep existing highlight */
+      #info hr {
+        border-color: var(--border-color);
+        margin: 8px 0;
+      } /* Style hr */
+
+      /* ---- Scrollbar (for #info) ---- */
+      #info::-webkit-scrollbar {
+        width: 10px; /* Slightly thinner */
+      }
+      #info::-webkit-scrollbar-track {
+        background: var(--track-bg);
+        border-radius: 0 8px 8px 0; /* Match panel radius */
+      }
+      #info::-webkit-scrollbar-thumb {
+        background: var(--handle-bg);
+        border-radius: 5px; /* More rounded */
+        border: 1px solid var(--border-color);
+      }
+      #info::-webkit-scrollbar-thumb:hover {
+        background: var(--handle-hover);
+      }
+      /* Basic Firefox scrollbar styling */
+      #info {
+        scrollbar-width: thin;
+        scrollbar-color: var(--handle-bg) var(--track-bg);
+      }
+
+      #dayCounter,
+      #scaleIndicator {
+        position: absolute;
+        right: 10px;
+        color: var(--text-color);
+        font-family: Arial, sans-serif;
+        background: rgba(30, 30, 30, 0.85); /* Match panel background */
+        padding: 8px;
+        border-radius: 8px; /* Match panel radius */
+        font-size: 0.9em;
+        border: 1px solid var(--border-color); /* Added border */
+      }
+      #dayCounter {
+        top: 10px;
+      }
+      #scaleIndicator {
+        top: 55px;
+      } /* Adjusted position */
+
+      /* ---- Loading Screen ---- */
+      #loadingScreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 2000;
+        background: rgba(0, 0, 0, 0.8);
+        color: #fff;
+        display: flex; /* Use flex to center content */
+        justify-content: center;
+        align-items: center;
+        font-size: 24px;
+        font-family: Arial, sans-serif;
+        /* transition: opacity .5s ease-out; */ /* REMOVED CSS Transition */
+        opacity: 1; /* Start visible */
+      }
+
+      /* ---- Error Overlay ---- */
+      #errorOverlay {
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        z-index: 2001;
+        background: rgba(200, 0, 0, 0.9);
+        color: #fff;
+        padding: 15px;
+        border: 1px solid darkred;
+        border-radius: 5px;
+        font-family: Arial, sans-serif;
+        font-size: 16px;
+        text-align: center;
+        display: none; /* Hidden initially */
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen">Loading...</div>
+    <!-- Error Overlay -->
+    <div id="errorOverlay"></div>
+
+    <!-- Collapsible menu -->
+    <div id="menuContainer">
+      <button id="menuToggle" aria-label="Toggle menu"></button>
+
+      <div id="controls">
+        <label
+          >Speed:
+          <input
+            type="range"
+            id="speedSlider"
+            min="0.1"
+            max="5"
+            step="0.1"
+            value="1"
+          />
+          <span id="speedValue">1.0x</span>
+        </label>
+      </div>
+
+      <div id="planetNavContainer">
+        <label for="planetNav">Go to:</label>
+        <select id="planetNav">
+          <option value="">-- Select Body --</option>
+          <optgroup label="Star"><option value="Sun">Sun</option></optgroup>
+          <optgroup label="Planets">
+            <option>Mercury</option>
+            <option>Venus</option>
+            <option>Earth</option>
+            <option>Mars</option>
+            <option>Jupiter</option>
+            <option>Saturn</option>
+            <option>Uranus</option>
+            <option>Neptune</option>
+          </optgroup>
+          <optgroup label="Moons">
+            <option>Moon</option>
+            <option>Phobos</option>
+            <option>Deimos</option>
+            <option>Io</option>
+            <option>Europa</option>
+            <option>Ganymede</option>
+            <option>Callisto</option>
+            <option>Mimas</option>
+            <option>Enceladus</option>
+            <option>Tethys</option>
+            <option>Dione</option>
+            <option>Rhea</option>
+            <option>Titan</option>
+            <option>Iapetus</option>
+            <option>Miranda</option>
+            <option>Ariel</option>
+            <option>Umbriel</option>
+            <option>Titania</option>
+            <option>Oberon</option>
+            <option>Triton</option>
+          </optgroup>
+        </select>
+      </div>
+
+      <div id="additionalControls">
+        <button id="resetCameraBtn" class="controlBtn">Reset Camera</button>
+        <button id="toggleOrbitsBtn" class="controlBtn">Toggle Orbits</button>
+        <div class="btnRow">
+          <button id="pauseBtn" class="controlBtn">Pause</button>
+          <button id="playBtn" class="controlBtn">Play&nbsp;(1x)</button>
+        </div>
+        <div class="btnRow">
+          <button id="slowDownBtn" class="controlBtn">Speed&nbsp;÷2</button>
+          <button id="speedUpBtn" class="controlBtn">Speed&nbsp;×2</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Info card -->
+    <div id="info">
+      <h3>Selected Body</h3>
+      <p>Name: <span id="info-name">N/A</span></p>
+      <p id="info-orbit"></p>
+      <p id="info-size"></p>
+      <hr style="border-color: #444; margin: 8px 0" />
+      <div id="info-details"></div>
+    </div>
+
+    <div id="dayCounter">Days: 0</div>
+    <!-- <div id="scaleIndicator">Scale: Enhanced Visibility</div> -->
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+
+    <!-- three.js import map -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+
+    <script type="module">
+      import { init } from "./js/main.js";
+      document.addEventListener("DOMContentLoaded", init);
+    </script>
+  </body>
+</html>
+
+
+# ===== C:/Users/Alif/Documents/GitHub/solar-system/js/utils.js =====
+// --- Utility Functions -------------------------------------------------
+import * as THREE from "three";
+import * as CONSTANTS from "./constants.js";
+import { eccentricAnomaly, trueAnomaly, radius } from "./kepler.js"; // Import Kepler helpers
+
+/* Centralised texture loader ------------------------------------------ */
+/**
+ * Loads a texture with correct colour‑space and basic error logging.
+ * Assumes textureLoader.setPath('./textures/') has already been called.
+ *
+ * @param {string} filename  The filename within the textures folder.
+ * @param {THREE.TextureLoader} loader  Shared THREE.TextureLoader instance.
+ * @returns {THREE.Texture}  (asynchronously filled)
+ */
+export function loadTexture(filename, loader) {
+  if (!filename || !loader) {
+    console.error("loadTexture: missing filename or loader");
+    return new THREE.Texture(); // placeholder
+  }
+  const tex = loader.load(
+    filename,
+    (t) => {
+      t.colorSpace = THREE.SRGBColorSpace;
+      t.needsUpdate = true;
+    },
+    undefined,
+    (err) => console.error(`Texture load failed: ${filename}`, err)
+  );
+  return tex;
+}
+
+/* Look‑up helper ------------------------------------------------------- */
+export function findCelestialBodyByName(name, list) {
+  if (!name || !Array.isArray(list)) return null;
+  for (const obj of list) {
+    if (obj.userData?.name === name) return obj;
+    if (obj.name === name) return obj; // fallback
+  }
+  return null;
+}
+
+/* Procedural star sprite ---------------------------------------------- */
+export function createStarTexture() {
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = 64;
+  const ctx = canvas.getContext("2d");
+  const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+  g.addColorStop(0, "rgba(255,255,255,1)");
+  g.addColorStop(0.2, "rgba(255,255,255,0.9)");
+  g.addColorStop(0.35, "rgba(255,255,255,0.5)");
+  g.addColorStop(0.65, "rgba(255,255,255,0.1)");
+  g.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 64, 64);
+  return new THREE.CanvasTexture(canvas);
+}
+
+/* Planet material factory --------------------------------------------- */
+export function createPlanetMaterial(filename, loader) {
+  const texture = filename ? loadTexture(filename, loader) : null;
+  return new THREE.MeshStandardMaterial({
+    map: texture ?? undefined,
+    color: texture ? 0xffffff : 0x888888, // grey placeholder if missing
+    roughness: CONSTANTS.PLANET_ROUGHNESS,
+    metalness: CONSTANTS.PLANET_METALNESS,
+  });
+}
+
+/* Orbit line generator ------------------------------------------------- */
+/**
+ * Creates an elliptical orbit line based on Keplerian elements.
+ *
+ * @param {object} cfg Planet configuration object containing kepler elements and orbitRadiusAU.
+ * @param {number} scaleFactor Scale factor (e.g., CONSTANTS.ORBIT_SCALE_FACTOR).
+ * @param {number} colour Line color.
+ * @param {number} segments Number of line segments.
+ * @param {THREE.Object3D} parent Object to add the line to.
+ * @returns {THREE.LineLoop}
+ */
+export function createOrbitLine(cfg, scaleFactor, colour, segments, parent) {
+  const points = [];
+  const elements = {
+    a: cfg.orbitRadiusAU, // Semi-major axis
+    e: cfg.info?.orbitalEccentricity ?? 0, // Eccentricity
+    ω: (cfg.kepler?.argPeriapsisDeg ?? 0) * THREE.MathUtils.DEG2RAD, // Arg of Periapsis
+  };
+
+  if (elements.a <= 0) {
+    console.warn(
+      `Skipping orbit line for ${cfg.name}: invalid semi-major axis ${elements.a}`
+    );
+    return null;
+  }
+
+  for (let i = 0; i <= segments; i++) {
+    const M = (i / segments) * 2 * Math.PI; // Mean anomaly for this segment
+    const E = eccentricAnomaly(M, elements.e); // Solve Kepler's equation
+    const ν = trueAnomaly(E, elements.e); // True anomaly
+    const r = radius(elements.a, elements.e, ν); // Radius at this point
+
+    // Position in orbital plane (periapsis along +X)
+    let x0 = r * Math.cos(ν);
+    let y0 = r * Math.sin(ν);
+
+    // Rotate by argument of periapsis ω
+    const cosω = Math.cos(elements.ω);
+    const sinω = Math.sin(elements.ω);
+    const x = x0 * cosω - y0 * sinω;
+    const y = x0 * sinω + y0 * cosω;
+
+    // Scale and add point (y maps to scene Z)
+    points.push(new THREE.Vector3(x * scaleFactor, 0, y * scaleFactor));
+  }
+
+  const geom = new THREE.BufferGeometry().setFromPoints(points);
+  const mat = new THREE.LineBasicMaterial({ color: colour, linewidth: 1 });
+  const line = new THREE.LineLoop(geom, mat);
+  line.userData = { isOrbitLine: true };
+  if (parent) parent.add(line);
+  return line;
+}
+
+
+# ===== C:/Users/Alif/Documents/GitHub/solar-system/js/ui.js =====
+// --- UI Module ---------------------------------------------------------
+import * as THREE from "three";
+import * as CONSTANTS from "./constants.js";
+
+/* ---------------------------------------------------------------------- */
+/*                        DOM element refs                                */
+/* ---------------------------------------------------------------------- */
+let infoPanel, infoName, infoOrbit, infoSize, infoDetails;
+let speedSpan, dayCounter, debugDiv;
+let materials;
+
+let selectedObject = null;
+const originalMaterials = new Map(); // Mesh → Material
+const outlineMeshes = new Map(); // Object3D → outline Mesh
+
+/* Collapsible menu refs */
+let menuContainer, menuToggleBtn;
+
+/* ---------------------------------------------------------------------- */
+/*                         Initialisation                                 */
+/* ---------------------------------------------------------------------- */
+export function initUI() {
+  infoPanel = document.getElementById("info");
+  infoName = document.getElementById("info-name");
+  infoOrbit = document.getElementById("info-orbit");
+  infoSize = document.getElementById("info-size");
+  infoDetails = document.getElementById("info-details");
+  speedSpan = document.getElementById("speedValue");
+  dayCounter = document.getElementById("dayCounter");
+
+  materials = CONSTANTS.createMaterials();
+
+  createDebugOverlay();
+  initMenuToggle();
+}
+
+/* ---------------------------------------------------------------------- */
+/*                         Collapsible menu                               */
+/* ---------------------------------------------------------------------- */
+function initMenuToggle() {
+  menuContainer = document.getElementById("menuContainer");
+  menuToggleBtn = document.getElementById("menuToggle");
+
+  if (!menuContainer || !menuToggleBtn) {
+    console.error("UI Error: Menu elements not found!");
+    return;
+  }
+
+  // Initial state from localStorage
+  const initiallyCollapsed = localStorage.getItem("menuCollapsed") === "true";
+  if (initiallyCollapsed) {
+    menuContainer.classList.add("collapsed");
+    // Set initial position without animation
+    menuContainer.style.transform = "translateX(-246px)"; // UPDATED VALUE
+  } else {
+    menuContainer.style.transform = "translateX(0px)";
+  }
+
+  // Click listener
+  menuToggleBtn.addEventListener("click", () => {
+    if (!menuContainer) return;
+
+    const isCurrentlyCollapsed = menuContainer.classList.contains("collapsed");
+    const targetTranslateX = isCurrentlyCollapsed ? "0px" : "-246px"; // UPDATED VALUE
+
+    anime.remove(menuContainer); // Stop previous animation
+    anime({
+      targets: menuContainer,
+      translateX: targetTranslateX,
+      duration: 350,
+      easing: "easeOutQuad",
+      begin: () => {
+        if (isCurrentlyCollapsed) {
+          // Corrected logic: remove class when expanding
+          menuContainer.classList.remove("collapsed");
+        }
+      },
+      complete: () => {
+        if (!isCurrentlyCollapsed) {
+          // Corrected logic: add class after collapsing
+          menuContainer.classList.add("collapsed");
+        }
+        // Save state after animation completes
+        localStorage.setItem("menuCollapsed", !isCurrentlyCollapsed);
+      },
+    });
+  });
+}
+
+/* ---------------------------------------------------------------------- */
+/*                        Object info panel                               */
+/* ---------------------------------------------------------------------- */
+export function displayObjectInfo(obj) {
+  if (!infoPanel) return; // Guard against missing element
+
+  if (!obj?.userData?.config) {
+    // Animate out if currently visible
+    if (
+      infoPanel.style.display !== "none" &&
+      !infoPanel.classList.contains("animating-out")
+    ) {
+      infoPanel.classList.add("animating-out");
+      anime({
+        targets: infoPanel,
+        translateX: ["0%", "-100%"], // Animate from current to off-screen
+        opacity: [1, 0],
+        duration: 300,
+        easing: "easeInQuad",
+        complete: () => {
+          infoPanel.style.display = "none";
+          infoPanel.classList.remove("animating-out");
+        },
+      });
+    }
+    return;
+  }
+
+  const ud = obj.userData;
+  const cfg = ud.config;
+
+  infoName.textContent = ud.name || "Unknown";
+
+  if (ud.type === "star") {
+    infoOrbit.textContent = "Center of Solar System";
+    infoSize.textContent = cfg.info.Diameter ?? "";
+    populateDetails(cfg.info);
+  } else if (ud.type === "planet") {
+    infoOrbit.textContent = `${cfg.orbitRadiusAU} AU`;
+    infoSize.textContent = `${cfg.actualRadius.toFixed(3)} Earth radii (${(
+      cfg.actualRadius * CONSTANTS.EARTH_RADIUS_KM
+    ).toLocaleString()} km)`;
+    populateDetails(cfg.info);
+  } else if (ud.type === "moon") {
+    infoOrbit.textContent = ud.displayInfo.Orbit;
+    infoSize.textContent = ud.displayInfo.Size;
+    populateDetails(ud.displayInfo);
+  }
+
+  ensureCloseButton();
+
+  // Animate in
+  infoPanel.style.display = "block"; // Make it visible first
+  infoPanel.style.transform = "translateX(-100%)";
+  infoPanel.style.opacity = 0;
+  anime.remove(infoPanel); // Remove any existing animations on this element
+  anime({
+    targets: infoPanel,
+    translateX: ["-100%", "0%"],
+    opacity: [0, 1],
+    duration: 400,
+    easing: "easeOutQuad",
+    begin: () => {
+      infoPanel.classList.remove("animating-out"); // Ensure out-animation class is removed
+    },
+  });
+}
+
+function populateDetails(obj) {
+  infoDetails.innerHTML = "";
+  Object.entries(obj).forEach(([k, v]) => {
+    if (["Diameter", "Size", "Orbit", "Name"].includes(k)) return;
+    const p = document.createElement("p");
+    p.innerHTML = `<strong>${k}:</strong> ${v}`;
+    infoDetails.appendChild(p);
+  });
+}
+
+function ensureCloseButton() {
+  if (infoPanel.querySelector(".info-close-btn")) return;
+  const btn = document.createElement("button");
+  btn.textContent = "×";
+  btn.className = "info-close-btn";
+  Object.assign(btn.style, {
+    position: "absolute",
+    top: "5px",
+    right: "5px",
+    background: "rgba(80,80,100,.5)",
+    border: "none",
+    color: "#fff",
+    borderRadius: "50%",
+    width: "24px",
+    height: "24px",
+    cursor: "pointer",
+    fontSize: "16px",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+  });
+  btn.addEventListener("click", deselectObject);
+  infoPanel.appendChild(btn);
+}
+
+/* ---------------------------------------------------------------------- */
+/*                        Selection / highlight                           */
+/* ---------------------------------------------------------------------- */
+export function selectObject(obj, follow = true) {
+  deselectObject(); // clear previous
+
+  selectedObject = obj;
+
+  const mesh = obj.userData.planetMesh ?? obj;
+  if (mesh.isMesh) {
+    originalMaterials.set(mesh, mesh.material);
+
+    const outlineGeom = mesh.geometry.clone();
+    const outlineMat = materials.OUTLINE_MATERIAL;
+    const outline = new THREE.Mesh(outlineGeom, outlineMat);
+    outline.scale.multiplyScalar(CONSTANTS.OUTLINE_SCALE);
+    outline.position.copy(mesh.position);
+    outline.rotation.copy(mesh.rotation);
+    mesh.parent.add(outline);
+    outlineMeshes.set(obj, outline);
+  }
+  displayObjectInfo(obj);
+  return { cameraTarget: follow ? obj : null };
+}
+
+export function deselectObject() {
+  if (!selectedObject) return;
+
+  const outline = outlineMeshes.get(selectedObject);
+  if (outline) {
+    outline.parent.remove(outline);
+    outlineMeshes.delete(selectedObject);
+  }
+
+  const mesh = selectedObject.userData.planetMesh ?? selectedObject;
+  if (mesh.isMesh && originalMaterials.has(mesh)) {
+    mesh.material = originalMaterials.get(mesh);
+    originalMaterials.delete(mesh);
+  }
+
+  displayObjectInfo(null);
+
+  selectedObject = null;
+}
+
+/* ---------------------------------------------------------------------- */
+/*                      Debug overlay & helpers                           */
+/* ---------------------------------------------------------------------- */
+export function createDebugOverlay() {
+  debugDiv = document.createElement("div");
+  Object.assign(debugDiv.style, {
+    position: "absolute",
+    bottom: "200px",
+    right: "10px",
+    color: "#fff",
+    fontFamily: "monospace",
+    fontSize: "10px",
+    background: "rgba(0,0,0,.7)",
+    padding: "5px",
+    borderRadius: "3px",
+    maxWidth: "300px",
+    maxHeight: "200px",
+    overflow: "auto",
+    zIndex: 1000,
+    display: "none",
+  });
+  document.body.appendChild(debugDiv);
+
+  const btn = document.createElement("button");
+  btn.textContent = "Debug";
+  Object.assign(btn.style, {
+    position: "absolute",
+    bottom: "10px",
+    right: "10px",
+    padding: "4px 8px",
+    fontSize: "10px",
+    cursor: "pointer",
+    background: "rgba(0,0,0,.7)",
+    color: "#fff",
+    border: "1px solid #444",
+    borderRadius: "3px",
+  });
+  btn.addEventListener("click", () => {
+    debugDiv.style.display =
+      debugDiv.style.display === "none" ? "block" : "none";
+  });
+  document.body.appendChild(btn);
+}
+
+export function updateDebugInfo(msg) {
+  if (debugDiv) {
+    debugDiv.innerHTML = msg;
+    debugDiv.style.display = "block";
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+/*                     Day counter & speed read‑out                       */
+/* ---------------------------------------------------------------------- */
+export function updateDayCounter(days) {
+  if (dayCounter) dayCounter.textContent = `Days: ${Math.floor(days)}`;
+}
+
+export function updateUIDisplay(simSpeed) {
+  if (speedSpan) speedSpan.textContent = `${simSpeed.toFixed(1)}x`;
+
+  const currentSelected = getUIReferences().selectedObject; // Get current selection state
+
+  // Stop animations for outlines that are no longer selected or have been removed
+  outlineMeshes.forEach((outline, obj) => {
+    if (obj !== currentSelected && outline?.userData?.isAnimating) {
+      anime.remove(outline.scale);
+      outline.userData.isAnimating = false;
+      // Optional: Reset scale if needed, though removal in deselectObject should handle this
+      // outline.scale.setScalar(CONSTANTS.OUTLINE_SCALE);
+    }
+  });
+
+  // Start or continue animation for the currently selected object
+  if (currentSelected) {
+    const outline = outlineMeshes.get(currentSelected);
+    // Ensure outline exists and is not already animating
+    if (outline && !outline.userData.isAnimating) {
+      outline.userData.isAnimating = true;
+      anime({
+        targets: outline.scale,
+        x: [CONSTANTS.OUTLINE_SCALE * 0.98, CONSTANTS.OUTLINE_SCALE * 1.02],
+        y: [CONSTANTS.OUTLINE_SCALE * 0.98, CONSTANTS.OUTLINE_SCALE * 1.02],
+        z: [CONSTANTS.OUTLINE_SCALE * 0.98, CONSTANTS.OUTLINE_SCALE * 1.02],
+        duration: 1000,
+        easing: "easeInOutSine",
+        direction: "alternate",
+        loop: true,
+        // Use end callback which runs even if animation is removed/paused
+        end: () => {
+          // Check outline still exists in map before accessing userData
+          if (outlineMeshes.has(currentSelected) && outline?.userData) {
+            outline.userData.isAnimating = false;
+          }
+        },
+      });
+    }
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+/*                       Public getters                                   */
+/* ---------------------------------------------------------------------- */
+export function getUIReferences() {
+  return {
+    infoPanel,
+    infoName,
+    infoOrbit,
+    infoSize,
+    infoDetails,
+    speedSpan,
+    dayCounter,
+    debugDiv,
+    selectedObject,
+  };
+}
+
+
+# ===== C:/Users/Alif/Documents/GitHub/solar-system/js/starfield.js =====
+// --- Starfield Module --------------------------------------------------
+import * as THREE from "three";
+import * as CONSTANTS from "./constants.js";
+import { loadTexture } from "./utils.js";
+
+/* ---------------------------------------------------------------------- */
+/*          Public: createStarfield(scene, texture)                       */
+/* ---------------------------------------------------------------------- */
+/**
+ * Adds a realistic Milky‑Way background to the scene and returns the mesh.
+ * Uses a pre-loaded equirectangular texture for the sky-sphere.
+ *
+ * @param {THREE.Scene} scene
+ * @param {THREE.Texture} texture  Pre-loaded environment map texture.
+ * @returns {THREE.Mesh}  Sky‑sphere mesh
+ */
+export function createStarfield(scene, texture) {
+  // MODIFIED: Accept pre-loaded texture
+  // If you want procedural star particles instead, comment this line
+  return createSkybox(scene, texture); // MODIFIED
+}
+
+/* ---------------------------------------------------------------------- */
+/*                      Private helpers                                   */
+/* ---------------------------------------------------------------------- */
+function createSkybox(scene, texture) {
+  // MODIFIED: Accept pre-loaded texture
+  // *** Texture is now pre-loaded and passed in ***
+  // const tex = loadTexture(
+  //   "Moon_JPG_Collection/hipparcos star map.jpg",
+  //   textureLoader
+  // );
+  // tex.mapping = THREE.EquirectangularReflectionMapping;
+
+  const geom = new THREE.SphereGeometry(
+    CONSTANTS.STARFIELD_RADIUS,
+    64, // Increase segments for smoother sphere
+    32
+  );
+  // Dim the starfield by setting the material color to a dark grey
+  const mat = new THREE.MeshBasicMaterial({
+    map: texture, // Use the pre-loaded texture
+    side: THREE.BackSide,
+    color: 0xaaaaaa, // Dim the texture slightly if needed
+    fog: false, // Ensure fog doesn't affect the skybox
+  });
+
+  const sky = new THREE.Mesh(geom, mat);
+  scene.add(sky);
+  console.log("[Starfield] Skybox created using pre-loaded texture.");
+  return sky;
+}
+
+/* ---------------------------------------------------------------------- */
+/*      (Legacy) Procedural point‑cloud starfield (commented out)          */
+/* ---------------------------------------------------------------------- */
+/*
+export function createStarfield(scene, textureLoader) {
+  const verts=[], cols=[], sizes=[];
+  const color = new THREE.Color();
+  const starTex = createStarTexture();   // utils.js helper
+
+  for(let i=0;i<CONSTANTS.STAR_COUNT;i++){
+    // distribute on a sphere
+    const φ = Math.acos(-1 + (2*i)/CONSTANTS.STAR_COUNT);
+    const θ = Math.sqrt(CONSTANTS.STAR_COUNT*Math.PI)*φ;
+    const r = Math.cbrt(Math.random()) * CONSTANTS.STARFIELD_RADIUS;
+    verts.push(
+      r*Math.cos(θ)*Math.sin(φ),
+      r*Math.sin(θ)*Math.sin(φ),
+      r*Math.cos(φ)
+    );
+
+    const br = THREE.MathUtils.randFloat(0.8,1);
+    const hue = Math.random()>0.7 ? THREE.MathUtils.randFloat(0.55,0.7):0;
+    const sat = Math.random()>0.8 ? THREE.MathUtils.randFloat(0.1,0.3):0;
+    color.setHSL(hue,sat,br);
+    cols.push(color.r,color.g,color.b);
+
+    sizes.push(CONSTANTS.STAR_BASE_SIZE *
+               THREE.MathUtils.randFloat(CONSTANTS.STAR_MIN_SIZE_FACTOR,
+                                          CONSTANTS.STAR_MAX_SIZE_FACTOR*1.5));
+  }
+
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(verts,3));
+  g.setAttribute('color',    new THREE.Float32BufferAttribute(cols,3));
+  g.setAttribute('size',     new THREE.Float32BufferAttribute(sizes,1));
+
+  const m = new THREE.PointsMaterial({
+    map: starTex, size: CONSTANTS.STAR_BASE_SIZE*2,
+    sizeAttenuation:true, vertexColors:true,
+    transparent:true, depthWrite:false, blending:THREE.AdditiveBlending
+  });
+
+  const stars = new THREE.Points(g,m);
+  scene.add(stars);
+  return stars;
+}
+*/
+
+
+# ===== C:/Users/Alif/Documents/GitHub/solar-system/js/sceneSetup.js =====
+// --- Scene Setup -------------------------------------------------------
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import * as CONSTANTS from "./constants.js";
+
+/* Scene ---------------------------------------------------------------- */
+export function setupScene(environmentTexture) {
+  // MODIFIED: Accept environment texture
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x000000);
+
+  // Set the loaded starfield texture as the environment map
+  if (environmentTexture) {
+    scene.environment = environmentTexture;
+    console.log("[SceneSetup] Environment map assigned to scene.");
+  }
+
+  return scene;
+}
+
+/* Camera --------------------------------------------------------------- */
+export function setupCamera() {
+  const camera = new THREE.PerspectiveCamera(
+    75,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    CONSTANTS.STARFIELD_RADIUS * 3 // far plane covers stars
+  );
+  camera.position.set(150, 100, 150);
+  return camera;
+}
+
+/* Renderer ------------------------------------------------------------- */
+export function setupRenderer() {
+  const renderer = new THREE.WebGLRenderer({
+    antialias: true,
+    powerPreference: "high-performance",
+    alpha: true,
+  });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.physicallyCorrectLights = true;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  document.body.appendChild(renderer.domElement);
+  return renderer;
+}
+
+/* OrbitControls -------------------------------------------------------- */
+export function setupControls(camera, renderer) {
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.05;
+  controls.minDistance = 10;
+  controls.maxDistance = CONSTANTS.STARFIELD_RADIUS * 0.8;
+  controls.target.set(0, 0, 0);
+  return controls;
+}
+
+/* Lighting ------------------------------------------------------------- */
+export function setupLighting(scene) {
+  // Ambient
+  scene.add(
+    new THREE.AmbientLight(0x282828, CONSTANTS.AMBIENT_LIGHT_INTENSITY)
+  );
+
+  // Sun point light
+  const sunLight = new THREE.PointLight(
+    0xffffee,
+    CONSTANTS.SUN_POINT_LIGHT_INTENSITY * 2.5,
+    0,
+    CONSTANTS.SUN_POINT_LIGHT_DECAY
+  );
+  sunLight.position.set(0, 0, 0);
+  sunLight.castShadow = true;
+  sunLight.shadow.mapSize.set(2048, 2048);
+  sunLight.shadow.camera.near = 10;
+  sunLight.shadow.camera.far = CONSTANTS.STARFIELD_RADIUS * 1.2;
+  sunLight.shadow.bias = -0.0001;
+  scene.add(sunLight);
+
+  // Sun glow light (subtle bloom)
+  const glow = new THREE.PointLight(
+    CONSTANTS.SUN_EMISSIVE_COLOR,
+    CONSTANTS.SUN_GLOW_LIGHT_INTENSITY,
+    CONSTANTS.SUN_GLOW_LIGHT_DISTANCE,
+    CONSTANTS.SUN_GLOW_LIGHT_DECAY
+  );
+  glow.position.set(0, 0, 0);
+  scene.add(glow);
+}
+
+/* Resize handler ------------------------------------------------------- */
+// Removed the setTimeout for immediate resizing
+export function handleWindowResize(camera, renderer) {
+  // Clear any pending resize (if we re-add debouncing later)
+  // clearTimeout(resizeTimeout);
+
+  if (!camera || !renderer) return; // Check if objects still exist
+
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+
+  console.log(`[Resize] Updating immediately to ${width}x${height}`); // Add logging
+
+  camera.aspect = width / height;
+  camera.updateProjectionMatrix();
+  renderer.setSize(width, height);
+}
+
+
+# ===== C:/Users/Alif/Documents/GitHub/solar-system/js/main.js =====
+// --- Main Module — Solar System Simulation ----------------------------
+import * as THREE from "three";
+import * as CONSTANTS from "./constants.js";
+
+import * as SceneSetup from "./sceneSetup.js";
+import * as UI from "./ui.js";
+import * as Controls from "./controls.js";
+import * as Animation from "./animation.js";
+
+import { createStarfield } from "./starfield.js";
+import { createSun, createPlanetsAndOrbits } from "./celestialBodies.js";
+import { findCelestialBodyByName } from "./utils.js";
+import { updateScene } from "./animation.js";
+
+/* ---------------------------------------------------------------------- */
+/*                        Global state (exported)                         */
+/* ---------------------------------------------------------------------- */
+let scene, camera, renderer, controls;
+let celestialBodies = []; // everything selectable
+let planets = []; // planet groups only
+let planetConfigs = []; // JSON data
+
+let clock;
+let textureLoader;
+let spacetimeMesh = null;
+let sunMesh;
+
+let isInitialized = false;
+
+export const appState = {
+  get scene() {
+    return scene;
+  },
+  get camera() {
+    return camera;
+  },
+  get controls() {
+    return controls;
+  },
+  get clock() {
+    return clock;
+  },
+  get planets() {
+    return planets;
+  },
+  get simulationSpeed() {
+    return window.simulationSpeed;
+  },
+  get simulatedDays() {
+    return window.simulatedDays;
+  },
+  get spacetimeMesh() {
+    return spacetimeMesh;
+  },
+};
+
+/* ---------------------------------------------------------------------- */
+/*                            Initialization                              */
+/* ---------------------------------------------------------------------- */
+export async function init() {
+  console.log("[Init] starting…");
+  if (isInitialized) {
+    console.warn("init called twice");
+    return;
+  }
+  isInitialized = true;
+
+  try {
+    await loadPlanetData();
+    console.log("[Init] planet JSON loaded");
+
+    /* Clock & texture loader */
+    clock = new THREE.Clock();
+    textureLoader = new THREE.TextureLoader();
+    textureLoader.setPath("./textures/");
+    window.clock = clock;
+
+    /* Load Environment Map Texture FIRST */
+    const environmentTexture = textureLoader.load(
+      "Moon_JPG_Collection/hipparcos star map.jpg",
+      () => {
+        console.log("[Texture] Environment map loaded.");
+      },
+      undefined, // onProgress callback (optional)
+      (err) => {
+        console.error("[Texture] Failed to load environment map:", err);
+      }
+    );
+    environmentTexture.mapping = THREE.EquirectangularReflectionMapping;
+    environmentTexture.colorSpace = THREE.SRGBColorSpace; // Ensure correct color space
+
+    /* Scene / camera / renderer (Pass env map to scene setup) */
+    scene = SceneSetup.setupScene(environmentTexture);
+    camera = SceneSetup.setupCamera();
+    renderer = SceneSetup.setupRenderer();
+    controls = SceneSetup.setupControls(camera, renderer);
+
+    window.scene = scene;
+    window.camera = camera;
+    window.controls = controls;
+
+    /* Lighting & UI */
+    SceneSetup.setupLighting(scene);
+    UI.initUI();
+
+    /* Loading splash */
+    showLoadingScreen(true, "Loading textures…");
+
+    /* Starfield and Sun (Pass pre-loaded env map texture) */
+    createStarfield(scene, environmentTexture);
+    const sunData = createSun(scene, textureLoader);
+    sunMesh = sunData.mesh;
+    celestialBodies.push(sunMesh);
+
+    /* Planets & moons */
+    const planetData = await createPlanetsAndOrbits(
+      scene,
+      textureLoader,
+      planetConfigs
+    );
+    planets = planetData.planets;
+    celestialBodies.push(...planetData.celestialBodies);
+    window.planets = planets;
+
+    /* Dropdown builder */
+    setupPlanetDropdown(planets, sunMesh);
+
+    showLoadingScreen(false);
+
+    /* Event hooks */
+    // --- DEBUG: Log the selectable bodies array ---
+    console.log(
+      "[Init] Selectable bodies before setupPointerEvents:",
+      celestialBodies
+    );
+    if (!celestialBodies || celestialBodies.length === 0) {
+      console.error(
+        "[Init] CRITICAL: celestialBodies array is empty or invalid!"
+      );
+    }
+    // --- END DEBUG ---
+    Controls.setupPointerEvents(scene, camera, renderer, celestialBodies);
+    Controls.setupZoomDetection(renderer, controls);
+    Controls.setupUIControls(planetConfigs, celestialBodies, scene);
+
+    /* Debug list */
+    console.log("Selectable bodies:");
+    celestialBodies.forEach((o, i) =>
+      console.log(`  ${i}: ${o.userData?.name} (${o.type})`)
+    );
+
+    /* Kick off animation loop */
+    startAnimationLoop();
+    console.log("[Init] done");
+  } catch (err) {
+    console.error("Init failed:", err);
+    showErrorMessage(err.message || "Unknown error during init");
+    isInitialized = false;
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+/*                         Animation loop                                 */
+/* ---------------------------------------------------------------------- */
+function startAnimationLoop() {
+  console.log("[Animation] startAnimationLoop called.");
+  let animationFrameId = null; // Store frame ID for potential cancellation
+  const targetWorldPos = new THREE.Vector3(); // Cache vector for target position
+
+  function animate() {
+    animationFrameId = requestAnimationFrame(animate);
+
+    const currentSpeed = window.simulationSpeed ?? 1.0;
+    updateScene(currentSpeed); // move planets etc.
+
+    // --- Camera Target Following Logic ---
+    const currentTarget = Controls.getCameraTarget();
+    const isAnimating = Controls.isCameraAnimating();
+
+    if (currentTarget && !isAnimating && controls) {
+      // If we have a target and the camera isn't doing the Anime.js transition,
+      // keep the controls.target updated to the object's current position.
+      currentTarget.getWorldPosition(targetWorldPos);
+      controls.target.copy(targetWorldPos);
+    }
+    // --- End Camera Target Following ---
+
+    // OrbitControls damping/update
+    if (controls?.enableDamping) controls.update();
+
+    // UI read‑outs
+    UI.updateUIDisplay(currentSpeed);
+
+    // render frame
+    renderer?.render(scene, camera);
+  }
+
+  if (window.clock) {
+    animate(); // Start the loop
+  } else {
+    console.error("[Animation] Clock not initialized, cannot start loop.");
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+/*                       JSON data loader                                 */
+/* ---------------------------------------------------------------------- */
+async function loadPlanetData() {
+  const res = await fetch("./solarsystem_data.json");
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  planetConfigs = await res.json();
+
+  planetConfigs.forEach((cfg) => {
+    /* orbit speed pre‑compute (circular model) ------------------------- */
+    cfg.calculatedOrbitSpeed = cfg.baseOrbitSpeedFactor
+      ? (2 * Math.PI * cfg.baseOrbitSpeedFactor) /
+        CONSTANTS.BASE_ORBIT_SPEED_UNIT_TIME
+      : 0;
+
+    /* rotation speed --------------------------------------------------- */
+    const P = Math.abs(cfg.rotationPeriod || 0);
+    cfg.calculatedRotationSpeed = P
+      ? (2 * Math.PI) / (P * CONSTANTS.DAYS_PER_SIM_SECOND_AT_1X)
+      : 0;
+    cfg.rotationDirection = cfg.rotationPeriod >= 0 ? 1 : -1;
+
+    /* atmosphere colour parsing --------------------------------------- */
+    if (cfg.atmosphere?.exists) {
+      const col = cfg.atmosphere.color;
+      if (typeof col === "string" && col.startsWith("#"))
+        cfg.atmosphere.color = parseInt(col.replace("#", "0x"), 16);
+    }
+
+    /* moons pre‑compute ------------------------------------------------ */
+    cfg.moons?.forEach((m) => {
+      const Pm = Math.abs(m.orbitalPeriod || 0);
+      m.calculatedOrbitSpeed = Pm
+        ? (2 * Math.PI) / (Pm * CONSTANTS.DAYS_PER_SIM_SECOND_AT_1X)
+        : 0;
+      m.orbitDirection = m.orbitalPeriod >= 0 ? 1 : -1;
+
+      const Rm = Math.abs(m.rotationPeriod || 0);
+      m.calculatedRotationSpeed = Rm
+        ? (2 * Math.PI) / (Rm * CONSTANTS.DAYS_PER_SIM_SECOND_AT_1X)
+        : 0;
+      m.rotationDirection = m.rotationPeriod >= 0 ? 1 : -1;
+
+      if (m.atmosphere?.exists) {
+        const col = m.atmosphere.color;
+        if (typeof col === "string" && col.startsWith("#"))
+          m.atmosphere.color = parseInt(col.replace("#", "0x"), 16);
+      }
+    });
+  });
+}
+
+/* ---------------------------------------------------------------------- */
+/*                    Helper: Loading screen                              */
+/* ---------------------------------------------------------------------- */
+function showLoadingScreen(show, msg = "Loading…") {
+  let div = document.getElementById("loadingScreen");
+  if (show) {
+    if (!div) {
+      div = document.createElement("div");
+      div.id = "loadingScreen";
+      // Apply styles directly - ensure opacity is 1 initially
+      Object.assign(div.style, {
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100%",
+        height: "100%",
+        zIndex: 2000,
+        background: "rgba(0,0,0,.8)",
+        color: "#fff",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        fontSize: "24px",
+        fontFamily: "Arial, sans-serif",
+        opacity: 1, // Start fully visible
+      });
+      document.body.appendChild(div);
+    }
+    div.textContent = msg;
+    div.style.display = "flex";
+    div.style.opacity = 1; // Ensure opacity is reset if shown again
+  } else if (div) {
+    // Use Anime.js to fade out
+    anime.remove(div); // Remove previous animations if any
+    anime({
+      targets: div,
+      opacity: [1, 0],
+      duration: 500,
+      easing: "easeOutQuad",
+      complete: () => {
+        div.style.display = "none"; // Hide after fade
+        // Optionally remove the element if it won't be reused
+        // div.remove();
+      },
+    });
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+/*                       Helper: Error overlay                             */
+/* ---------------------------------------------------------------------- */
+function showErrorMessage(msg) {
+  let div = document.getElementById("errorOverlay");
+  if (!div) {
+    div = document.createElement("div");
+    div.id = "errorOverlay";
+    Object.assign(div.style, {
+      position: "fixed",
+      top: "10px",
+      left: "10px",
+      right: "10px",
+      zIndex: 2001,
+      background: "rgba(200,0,0,.9)",
+      color: "#fff",
+      padding: "15px",
+      border: "1px solid darkred",
+      borderRadius: "5px",
+      fontFamily: "Arial,sans-serif",
+      fontSize: "16px",
+      textAlign: "center",
+    });
+    document.body.appendChild(div);
+  }
+  div.innerHTML = `<strong>Initialization Error:</strong> ${msg}<br>Check console (F12) for details.`;
+  div.style.display = "block";
+}
+
+/* ---------------------------------------------------------------------- */
+/*                        Dropdown builder                                */
+/* ---------------------------------------------------------------------- */
+function setupPlanetDropdown(planets, sunMesh) {
+  const sel = document.getElementById("planetNav");
+  if (!sel) {
+    console.error("planetNav dropdown missing");
+    return;
+  }
+
+  sel.innerHTML = ""; // wipe template
+  const defOpt = document.createElement("option");
+  defOpt.value = "";
+  defOpt.textContent = "Select Body..."; // Changed text
+  defOpt.disabled = true;
+  defOpt.selected = true;
+  sel.appendChild(defOpt);
+
+  // Sun
+  if (sunMesh?.userData?.name) {
+    const o = document.createElement("option");
+    o.value = o.textContent = sunMesh.userData.name;
+    sel.appendChild(o);
+  }
+
+  // Planets
+  planets.forEach((g) => {
+    if (g?.userData?.name) {
+      const o = document.createElement("option");
+      o.value = o.textContent = g.userData.name;
+      sel.appendChild(o);
+    }
+  });
+
+  // event handled in Controls.setupUIControls (for live select)
+}
+
+/* ---------------------------------------------------------------------- */
+/*                   DOM event: resize                                    */
+/* ---------------------------------------------------------------------- */
+window.addEventListener("resize", () => {
+  if (window.camera && window.renderer)
+    SceneSetup.handleWindowResize(window.camera, window.renderer);
+});
+
+
+# ===== C:/Users/Alif/Documents/GitHub/solar-system/js/kepler.js =====
+// --- Kepler helper -----------------------------------------------------
+//
+//   import { getOrbitalState } from './kepler.js'
+//
+//   const state = getOrbitalState(
+//       elapsedDays,
+//       {   a : 1.0,            // semi‑major axis  [AU]
+//           e : 0.0167,         // eccentricity
+//           i : 0.000,          // inclination [rad]  (ignored – 2‑D plane)
+//           Ω : 0.000,          // longitude of ascending node [rad] (ignored)
+//           ω : 102.9372*DEG2RAD, // argument of periapsis [rad]
+//           M0: 0.0             // mean anomaly at t=0 [rad]
+//       }
+//   );
+//
+//   // state.{x,y} are in the orbital plane, units = semi‑major‑axis (e.g. AU)
+// ----------------------------------------------------------------------
+
+import * as THREE from "three";
+
+const DEG2RAD = Math.PI / 180;
+
+/* Mean motion --------------------------------------------------------- */
+export function meanMotion(aAU, μ = 0.01720209895 ** 2) {
+  // μ in AU^3 day⁻²: default is (G*(M☉+m)) with M☉ dominant
+  return Math.sqrt(μ / (aAU * aAU * aAU)); // rad · day⁻¹
+}
+
+/* Solve Kepler’s equation  M = E − e·sinE  via Newton–Raphson ---------- */
+export function eccentricAnomaly(M, e, tol = 1e-6) {
+  let E = e < 0.8 ? M : Math.PI; // first guess
+  for (let i = 0; i < 12; i++) {
+    const d = E - e * Math.sin(E) - M;
+    E -= d / (1 - e * Math.cos(E));
+    if (Math.abs(d) < tol) break;
+  }
+  return E;
+}
+
+/* True anomaly -------------------------------------------------------- */
+export function trueAnomaly(E, e) {
+  const cosν = (Math.cos(E) - e) / (1 - e * Math.cos(E));
+  const sinν = (Math.sqrt(1 - e * e) * Math.sin(E)) / (1 - e * Math.cos(E));
+  return Math.atan2(sinν, cosν); // −π … +π
+}
+
+/* Radius (distance from focus) --------------------------------------- */
+export function radius(a, e, ν) {
+  return (a * (1 - e * e)) / (1 + e * Math.cos(ν));
+}
+
+/* Main API ------------------------------------------------------------ */
+export function getOrbitalState(tDays, elems) {
+  const { a, e, ω = 0, M0 = 0 } = elems; // keep flat for now
+
+  // Mean anomaly at time t
+  const n = meanMotion(a); // rad/day
+  const M = THREE.MathUtils.euclideanModulo(M0 + n * tDays, 2 * Math.PI);
+
+  // Eccentric anomaly
+  const E = eccentricAnomaly(M, e);
+
+  // True anomaly & radius
+  const ν = trueAnomaly(E, e);
+  const r = radius(a, e, ν); // in AU if a in AU
+
+  // Position in orbital plane (periapsis along +X)
+  let x = r * Math.cos(ν);
+  let y = r * Math.sin(ν);
+
+  // Rotate by argument of periapsis ω
+  if (ω !== 0) {
+    const cosω = Math.cos(ω),
+      sinω = Math.sin(ω);
+    const xr = x * cosω - y * sinω;
+    const yr = x * sinω + y * cosω;
+    x = xr;
+    y = yr;
+  }
+
+  // Velocity magnitude (vis‑viva) & direction -------------------------
+  const μAU = 0.01720209895 ** 2; // AU^3 day⁻²
+  const vMag = Math.sqrt(μAU * (2 / r - 1 / a)); // AU/day
+  const h = Math.sqrt(μAU * a * (1 - e * e)); // specific angular momentum
+  const vx = -(μAU / h) * Math.sin(ν);
+  const vy = (μAU / h) * (e + Math.cos(ν));
+
+  return { x, y, vx, vy, trueAnomaly: ν };
+}
+
+
+# ===== C:/Users/Alif/Documents/GitHub/solar-system/js/effects.js =====
+// --- Effects Module ----------------------------------------------------
+import * as THREE from "three";
+import * as CONSTANTS from "./constants.js";
+
+/* ---------------------------------------------------------------------- */
+/*         createSpacetimeMesh(scene)  — optional gravity‑well grid       */
+/* ---------------------------------------------------------------------- */
+export function createSpacetimeMesh(scene) {
+  const res = 100; // grid resolution
+  const size = CONSTANTS.ORBIT_SCALE_FACTOR * 35; // overall width
+
+  const geom = new THREE.PlaneGeometry(size * 2, size * 2, res, res);
+
+  const mat = new THREE.ShaderMaterial({
+    uniforms: {
+      time: { value: 0 },
+      sunPosition: { value: new THREE.Vector3(0, 0, 0) },
+      planetPositions: { value: [] }, // 8 * vec3 flattened
+      planetMasses: { value: [] }, // 8 floats
+    },
+    vertexShader: `
+      uniform float time;
+      uniform vec3 sunPosition;
+      uniform vec3 planetPositions[8];
+      uniform float planetMasses[8];
+
+      varying vec2 vUv;
+      varying float vElev;
+
+      float deform(vec3 p, vec3 c, float m){
+        float d = distance(p,c);
+        return m / (1.0 + d*d*0.01);
+      }
+      void main(){
+        vUv = uv;
+        vec3 pos = position;
+
+        float def = 200.0 / (1.0 + distance(pos,sunPosition)*0.01);
+        for(int i=0;i<8;i++)
+          def += deform(pos, planetPositions[i], planetMasses[i]);
+
+        pos.y = -def;
+        vElev = def;
+
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(pos,1.0);
+      }
+    `,
+    fragmentShader: `
+      varying vec2 vUv;
+      varying float vElev;
+      void main(){
+        float gx = abs(fract(vUv.x*20.0)-0.5);
+        float gy = abs(fract(vUv.y*20.0)-0.5);
+        float grid = 1.0 - smoothstep(0.02,0.03,min(gx,gy));
+
+        vec3 base = vec3(0.1,0.3,0.8);
+        vec3 deep = vec3(0.8,0.1,0.5);
+        float nElev = clamp(vElev/100.0,0.0,1.0);
+        vec3 col = mix(base, deep, nElev);
+        col = mix(col, vec3(0.9,0.9,1.0), grid*0.3);
+
+        float edge = 1.0 - smoothstep(0.4,0.5,distance(vUv,vec2(0.5)));
+        gl_FragColor = vec4(col, edge*0.5);
+      }
+    `,
+    transparent: true,
+    side: THREE.DoubleSide,
+  });
+
+  const mesh = new THREE.Mesh(geom, mat);
+  mesh.rotation.x = Math.PI / 2;
+  mesh.position.y = -10;
+  mesh.visible = false; // start hidden
+  scene.add(mesh);
+  return mesh;
+}
+
+/* ---------------------------------------------------------------------- */
+/*      updateSpacetimeMesh(mesh, planets) — call each render frame        */
+/* ---------------------------------------------------------------------- */
+export function updateSpacetimeMesh(mesh, planets) {
+  if (!mesh || !mesh.visible) return;
+
+  const posArr = [],
+    massArr = [];
+  planets.forEach((g) => {
+    const wp = new THREE.Vector3();
+    g.getWorldPosition(wp);
+    posArr.push(wp.x, wp.y, wp.z);
+    massArr.push(g.userData.config.gravityStrength * 50);
+  });
+  while (posArr.length < 24) {
+    posArr.push(0, 0, 0);
+    massArr.push(0);
+  }
+
+  mesh.material.uniforms.time.value += 0.01;
+  mesh.material.uniforms.planetPositions.value = posArr;
+  mesh.material.uniforms.planetMasses.value = massArr;
+}
+
+
+# ===== C:/Users/Alif/Documents/GitHub/solar-system/js/controls.js =====
+// --- Controls Module ---------------------------------------------------
+import * as THREE from "three";
+import * as CONSTANTS from "./constants.js";
+
+// Import just the UI helpers we need
+import { selectObject, deselectObject, getUIReferences } from "./ui.js";
+import { findCelestialBodyByName } from "./utils.js";
+
+/* ---------------------------------------------------------------------- */
+/*                          Internal state                                */
+/* ---------------------------------------------------------------------- */
+let simulationSpeed = 1.0; // shadow copy of global window.simulationSpeed
+let orbitLinesVisible = true;
+
+let cameraTarget = null; // THREE.Object3D currently followed
+let isManualZoom = false; // true while user is scrolling / dragging
+let lastCameraDist = 0;
+
+/* Pointer / ray‑casting helpers --------------------------------------- */
+const pointer = new THREE.Vector2();
+const raycaster = new THREE.Raycaster();
+
+/* Cached vectors to avoid heavy allocations --------------------------- */
+const targetPosition = new THREE.Vector3();
+const cameraOffset = new THREE.Vector3();
+let cameraAnimation = null; // Store the current camera animation instance
+
+/* ---------------------------------------------------------------------- */
+/*                       Public API                                       */
+/* ---------------------------------------------------------------------- */
+
+/**
+ * Attach pointer‑move & click listeners for object selection.
+ */
+export function setupPointerEvents(scene, camera, renderer, selectable) {
+  // Track pointer coords
+  renderer.domElement.addEventListener(
+    "pointermove",
+    (e) => {
+      pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
+      pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
+    },
+    { passive: true }
+  );
+
+  // Click selection
+  renderer.domElement.addEventListener("click", (e) => {
+    console.log("[Click] Event triggered"); // Log click event
+
+    raycaster.setFromCamera(pointer, camera);
+    const hits = raycaster.intersectObjects(selectable, true);
+
+    console.log("[Click] Raycaster hits:", hits); // Log all intersections
+
+    let tgt = null;
+    for (const h of hits) {
+      const o = h.object;
+      if (o.userData?.isSelectable) {
+        tgt = o;
+        break;
+      }
+      if (o.parent?.userData?.isSelectable) {
+        tgt = o.parent;
+        break;
+      }
+      if (o.userData?.clickTarget?.userData?.isSelectable) {
+        tgt = o.userData.clickTarget;
+        break;
+      }
+    }
+
+    if (tgt) {
+      console.log("[Click] Selected target:", tgt.userData.name, tgt); // Log selected target
+      if (tgt !== getUIReferences().selectedObject) {
+        selectObject(tgt);
+        setCameraTarget(tgt); // Use the setter function to trigger animation
+      } else {
+        setCameraTarget(tgt); // Re-trigger animation
+      }
+    } else {
+      console.log("[Click] No selectable target found, deselecting."); // Log deselection
+      if (getUIReferences().selectedObject) {
+        deselectObject();
+        setCameraTarget(null); // Animate back to origin
+      }
+    }
+  });
+}
+
+/**
+ * Hook up all DOM UI controls (speed slider, dropdown, buttons).
+ */
+export function setupUIControls(planetConfigs, selectable, scene) {
+  /* Speed slider ------------------------------------------------------- */
+  const speedSlider = document.getElementById("speedSlider");
+  const speedSpan = document.getElementById("speedValue");
+  if (speedSlider && speedSpan) {
+    simulationSpeed = window.simulationSpeed ?? 1.0;
+    speedSlider.value = simulationSpeed;
+    speedSpan.textContent = simulationSpeed.toFixed(1) + "x";
+
+    speedSlider.addEventListener("input", () => {
+      simulationSpeed = parseFloat(speedSlider.value);
+      window.simulationSpeed = simulationSpeed;
+      speedSpan.textContent = simulationSpeed.toFixed(1) + "x";
+    });
+  }
+
+  /* Planet navigation dropdown ---------------------------------------- */
+  const planetNav = document.getElementById("planetNav");
+  if (planetNav) {
+    planetNav.addEventListener("change", () => {
+      const name = planetNav.value;
+      if (!name) return;
+      const obj = findCelestialBodyByName(name, selectable);
+      if (obj) {
+        selectObject(obj);
+        setCameraTarget(obj);
+      }
+      setTimeout(() => {
+        planetNav.value = "";
+      }, 200);
+    });
+  }
+
+  /* Camera reset ------------------------------------------------------- */
+  document.getElementById("resetCameraBtn")?.addEventListener("click", () => {
+    if (!window.camera || !window.controls) return;
+    window.camera.position.set(150, 100, 150);
+    window.controls.target.set(0, 0, 0);
+    window.controls.update();
+    deselectObject();
+    setCameraTarget(null);
+  });
+
+  /* Toggle orbit‑lines ------------------------------------------------- */
+  const toggleOrbitsBtn = document.getElementById("toggleOrbitsBtn");
+  if (toggleOrbitsBtn && scene) {
+    toggleOrbitsBtn.textContent = orbitLinesVisible
+      ? "Hide Orbits"
+      : "Show Orbits";
+    toggleOrbitsBtn.addEventListener("click", () => {
+      orbitLinesVisible = !orbitLinesVisible;
+      scene.traverse((o) => {
+        if (o.userData?.isOrbitLine) o.visible = orbitLinesVisible;
+      });
+      toggleOrbitsBtn.textContent = orbitLinesVisible
+        ? "Hide Orbits"
+        : "Show Orbits";
+    });
+  }
+
+  /* Playback buttons --------------------------------------------------- */
+  const setSpeed = (s) => {
+    simulationSpeed = s;
+    window.simulationSpeed = s;
+    if (speedSlider) speedSlider.value = s;
+    if (speedSpan) speedSpan.textContent = s.toFixed(1) + "x";
+  };
+  document
+    .getElementById("pauseBtn")
+    ?.addEventListener("click", () => setSpeed(0));
+  document
+    .getElementById("playBtn")
+    ?.addEventListener("click", () => setSpeed(1));
+  document
+    .getElementById("slowDownBtn")
+    ?.addEventListener("click", () =>
+      setSpeed(Math.max(0.1, (window.simulationSpeed || 1) / 2))
+    );
+  document
+    .getElementById("speedUpBtn")
+    ?.addEventListener("click", () =>
+      setSpeed(Math.min(5.0, (window.simulationSpeed || 1) * 2))
+    );
+}
+
+/**
+ * Mark manual zoom when user scrolls wheel or starts orbit‑control drag.
+ */
+export function setupZoomDetection(renderer, controls) {
+  renderer.domElement.addEventListener(
+    "wheel",
+    () => {
+      if (cameraTarget) isManualZoom = true;
+    },
+    { passive: true }
+  );
+  controls.addEventListener("start", () => {
+    if (cameraTarget) isManualZoom = true;
+  });
+}
+
+/* Simple getters / setters -------------------------------------------- */
+export function getCameraTarget() {
+  return cameraTarget;
+}
+
+export function setCameraTarget(obj) {
+  if (obj === cameraTarget) {
+    isManualZoom = false;
+    return;
+  }
+
+  if (obj !== null && !obj?.userData?.isSelectable) {
+    console.warn("setCameraTarget: object not selectable", obj);
+    return;
+  }
+
+  cameraTarget = obj;
+  isManualZoom = false;
+
+  if (cameraAnimation) {
+    cameraAnimation.forEach((anim) => anim.pause());
+    anime.remove(window.camera.position);
+    anime.remove(window.controls.target);
+  }
+
+  animateCameraToTarget(cameraTarget);
+}
+
+// --- NEW: Function to handle camera animation ---
+function animateCameraToTarget(target) {
+  const camera = window.camera;
+  const controls = window.controls;
+  if (!camera || !controls) return;
+
+  let finalTargetPos = new THREE.Vector3(0, 0, 0);
+  let desiredDist = CONSTANTS.DEFAULT_CAMERA_DISTANCE;
+
+  if (target) {
+    target.getWorldPosition(finalTargetPos);
+    const ud = target.userData;
+    const geom = target.geometry || ud?.planetMesh?.geometry;
+
+    if (ud.type === "star") desiredDist = CONSTANTS.SUN_RADIUS * 4;
+    else if (ud.type === "planet" && geom?.parameters?.radius)
+      desiredDist =
+        geom.parameters.radius * CONSTANTS.PLANET_CAMERA_DISTANCE_MULTIPLIER;
+    else if (ud.type === "moon" && geom?.parameters?.radius)
+      desiredDist =
+        geom.parameters.radius * CONSTANTS.MOON_CAMERA_DISTANCE_MULTIPLIER;
+  }
+
+  // Calculate the desired camera position based on the current offset direction
+  const currentOffset = new THREE.Vector3().subVectors(
+    camera.position,
+    controls.target
+  );
+  // Ensure offset has some length to avoid NaN issues if camera is exactly at target
+  if (currentOffset.lengthSq() < 0.001) {
+    currentOffset.set(0, 0.1, 1); // Default offset if too close
+  }
+  const finalCamPos = new THREE.Vector3()
+    .copy(finalTargetPos)
+    .add(currentOffset.normalize().multiplyScalar(desiredDist));
+
+  // --- REFACTORED: Use separate Anime.js calls ---
+  // Stop any previous camera animation
+  if (cameraAnimation) {
+    cameraAnimation.forEach((anim) => anim.pause());
+    anime.remove(camera.position);
+    anime.remove(controls.target);
+  }
+
+  // Animate camera position
+  const camAnim = anime({
+    targets: camera.position,
+    x: finalCamPos.x,
+    y: finalCamPos.y,
+    z: finalCamPos.z,
+    duration: 1200,
+    easing: "easeOutCubic",
+    update: () => {
+      // Check for manual interruption during camera move
+      if (isManualZoom && cameraAnimation) {
+        cameraAnimation.forEach((anim) => anim.pause());
+        anime.remove(camera.position);
+        cameraAnimation = null;
+      }
+    },
+    complete: () => {
+      // Remove this specific animation from the tracking array
+      if (cameraAnimation) {
+        cameraAnimation = cameraAnimation.filter((a) => a !== camAnim);
+        if (cameraAnimation.length === 0) cameraAnimation = null;
+      }
+    },
+  });
+
+  // Animate controls target
+  const targetAnim = anime({
+    targets: controls.target,
+    x: finalTargetPos.x,
+    y: finalTargetPos.y,
+    z: finalTargetPos.z,
+    duration: 1200,
+    easing: "easeOutCubic",
+    update: () => {
+      // Check for manual interruption during target move
+      if (isManualZoom && cameraAnimation) {
+        cameraAnimation.forEach((anim) => anim.pause());
+        anime.remove(controls.target);
+        cameraAnimation = null;
+      }
+    },
+    complete: () => {
+      // Remove this specific animation from the tracking array
+      if (cameraAnimation) {
+        cameraAnimation = cameraAnimation.filter((a) => a !== targetAnim);
+        if (cameraAnimation.length === 0) cameraAnimation = null;
+      }
+    },
+  });
+
+  // Store both animations
+  cameraAnimation = [camAnim, targetAnim];
+  // --- END REFACTOR ---
+}
+
+// --- NEW: Helper to check animation status ---
+export function isCameraAnimating() {
+  return !!cameraAnimation; // True if cameraAnimation array exists and is not null/empty
+}
+
+
+# ===== C:/Users/Alif/Documents/GitHub/solar-system/js/celestialBodies.js =====
+// --- Celestial Bodies Module ------------------------------------------
+import * as THREE from "three";
+import * as CONSTANTS from "./constants.js";
+import { createPlanetMaterial, createOrbitLine, loadTexture } from "./utils.js";
+
+/* ---------------------------------------------------------------------- */
+/*                               Sun                                      */
+/* ---------------------------------------------------------------------- */
+export function createSun(scene, loader) {
+  const tex = loadTexture("sun.jpg", loader);
+  const geom = new THREE.SphereGeometry(CONSTANTS.SUN_RADIUS, 64, 32);
+  const mat = new THREE.MeshStandardMaterial({
+    map: tex,
+    emissive: CONSTANTS.SUN_EMISSIVE_COLOR,
+    emissiveIntensity: CONSTANTS.SUN_EMISSIVE_INTENSITY,
+    emissiveMap: tex,
+  });
+  const sun = new THREE.Mesh(geom, mat);
+  sun.userData = {
+    isSelectable: true,
+    name: "Sun",
+    type: "star",
+    config: {
+      name: "Sun",
+      info: {
+        Mass: "333 000 Earths",
+        Composition: "H 73%, He 25%, metals 2%",
+        Temperature: "5 500 °C surface",
+        Rotation: "~25 days equator",
+        Diameter: `~${(
+          (CONSTANTS.SUN_RADIUS * 2 * CONSTANTS.EARTH_RADIUS_KM) /
+          4.2
+        ).toLocaleString()} km`,
+        Type: "G2V main‑sequence",
+        Age: "4.6 Gyr",
+      },
+    },
+    clickTarget: null,
+  };
+  sun.userData.clickTarget = sun;
+  scene.add(sun);
+  return { mesh: sun, config: sun.userData.config };
+}
+
+/* ---------------------------------------------------------------------- */
+/*                        Planets & moons                                 */
+/* ---------------------------------------------------------------------- */
+export async function createPlanetsAndOrbits(scene, loader, configs) {
+  if (!configs?.length) return { planets: [], celestialBodies: [] };
+
+  const planets = [];
+  const allBodies = [];
+
+  for (const cfg of configs) {
+    const orbitR = cfg.orbitRadiusAU * CONSTANTS.ORBIT_SCALE_FACTOR;
+    const dispR = cfg.scaledRadius;
+
+    /* Planet group (holds mesh, atmosphere, moons) --------------------- */
+    const group = new THREE.Group();
+    group.userData = {
+      isSelectable: true,
+      name: cfg.name,
+      type: "planet",
+      config: cfg,
+      orbitRadius: orbitR,
+      orbitSpeed: cfg.calculatedOrbitSpeed,
+      rotationSpeed: cfg.calculatedRotationSpeed,
+      rotationDirection: cfg.rotationDirection,
+      initialAngle: cfg.initialAngle ?? 0,
+      currentAngle: cfg.initialAngle ?? 0,
+      axialTilt: (cfg.axialTilt ?? 0) * THREE.MathUtils.DEG2RAD,
+    };
+
+    /* Planet mesh ------------------------------------------------------ */
+    const geom = new THREE.SphereGeometry(
+      dispR,
+      CONSTANTS.PLANET_SEGMENTS,
+      CONSTANTS.PLANET_SEGMENTS / 2
+    );
+    const mat = createPlanetMaterial(cfg.textureUrl, loader);
+    const mesh = new THREE.Mesh(geom, mat);
+    mesh.castShadow = mesh.receiveShadow = true;
+    mesh.rotation.order = "YXZ";
+    mesh.rotation.z = group.userData.axialTilt;
+    group.userData.planetMesh = mesh;
+    group.add(mesh);
+    mesh.name = `${cfg.name}_mesh`;
+
+    /* Atmosphere ------------------------------------------------------- */
+    if (cfg.atmosphere?.exists) {
+      const atmoGeom = new THREE.SphereGeometry(
+        dispR * CONSTANTS.ATMOSPHERE_SCALE_FACTOR,
+        CONSTANTS.PLANET_SEGMENTS,
+        CONSTANTS.PLANET_SEGMENTS / 2
+      );
+      const atmoMat = new THREE.MeshBasicMaterial({
+        color: cfg.atmosphere.color ?? 0xffffff,
+        transparent: true,
+        // Significantly reduce opacity to make the outline less visible
+        opacity:
+          (cfg.atmosphere.density ?? 0.3) *
+          CONSTANTS.ATMOSPHERE_OPACITY_MULTIPLIER *
+          0.1, // Reduced multiplier
+        side: THREE.FrontSide, // Changed from BackSide
+      });
+      const atmo = new THREE.Mesh(atmoGeom, atmoMat);
+      atmo.raycast = () => {};
+      group.add(atmo);
+    }
+
+    /* Earth cloud layer ------------------------------------------------ */
+    if (cfg.name === "Earth" && cfg.cloudTextureUrl) {
+      const cloudGeom = new THREE.SphereGeometry(
+        dispR * CONSTANTS.CLOUD_SCALE_FACTOR,
+        CONSTANTS.PLANET_SEGMENTS,
+        CONSTANTS.PLANET_SEGMENTS / 2
+      );
+      const cloudTex = loadTexture(cfg.cloudTextureUrl, loader);
+      const cloudMat = new THREE.MeshStandardMaterial({
+        map: cloudTex,
+        transparent: true,
+        opacity: CONSTANTS.CLOUD_OPACITY,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      });
+      const clouds = new THREE.Mesh(cloudGeom, cloudMat);
+      clouds.raycast = () => {};
+      mesh.userData.cloudMesh = clouds;
+      group.add(clouds);
+    }
+
+    /* Saturn rings ----------------------------------------------------- */
+    if (cfg.name === "Saturn") {
+      await createRings(cfg, dispR, group, loader);
+    }
+
+    /* Initial placement ------------------------------------------------ */
+    group.position.set(
+      orbitR * Math.cos(group.userData.initialAngle),
+      0,
+      orbitR * Math.sin(group.userData.initialAngle)
+    );
+    scene.add(group);
+    planets.push(group);
+    allBodies.push(group);
+
+    /* Orbit line ------------------------------------------------------- */
+    // Use the updated createOrbitLine which takes the config object
+    createOrbitLine(
+      cfg, // Pass the full config
+      CONSTANTS.ORBIT_SCALE_FACTOR, // Pass the scale factor explicitly
+      CONSTANTS.ORBIT_LINE_COLOR,
+      CONSTANTS.ORBIT_SEGMENTS,
+      scene
+    );
+
+    /* Moons ------------------------------------------------------------ */
+    if (cfg.moons?.length) {
+      const moonData = createMoonSystem(cfg, group, dispR, loader);
+      allBodies.push(...moonData.moonBodies);
+    }
+  }
+
+  return { planets, celestialBodies: allBodies };
+}
+
+/* ---------------------------------------------------------------------- */
+/*                            Rings (Saturn)                              */
+/* ---------------------------------------------------------------------- */
+async function createRings(cfg, planetR, group, loader) {
+  const segs = [
+    { inner: planetR * 1.2, outer: planetR * 1.4, color: 0xd4ceb9, op: 0.9 },
+    { inner: planetR * 1.4, outer: planetR * 1.6, color: 0xdbd3bf, op: 0.85 },
+    { inner: planetR * 1.6, outer: planetR * 1.9, color: 0xe2d9c5, op: 0.8 },
+    { inner: planetR * 2.0, outer: planetR * 2.3, color: 0xd4ceb9, op: 0.7 },
+    { inner: planetR * 2.3, outer: planetR * 2.5, color: 0xcec8b5, op: 0.6 },
+  ];
+  const tex = loadTexture("saturn_ring.png", loader);
+
+  const ringGroup = new THREE.Group();
+  for (const s of segs) {
+    const geom = new THREE.RingGeometry(s.inner, s.outer, 128, 8);
+    const mat = new THREE.MeshBasicMaterial({
+      color: s.color,
+      map: tex,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: s.op,
+      depthWrite: false,
+    });
+    const ring = new THREE.Mesh(geom, mat);
+    ring.rotation.x = Math.PI / 2;
+    ring.raycast = () => {};
+    ringGroup.add(ring);
+  }
+  ringGroup.rotation.z =
+    (cfg.ringTilt ?? cfg.axialTilt ?? 0) * THREE.MathUtils.DEG2RAD;
+  group.add(ringGroup);
+}
+
+/* ---------------------------------------------------------------------- */
+/*                              Moons                                     */
+/* ---------------------------------------------------------------------- */
+function createMoonSystem(planetCfg, planetGroup, planetRadius, loader) {
+  const moonGroup = new THREE.Group();
+  moonGroup.userData.parentPlanetName = planetCfg.name;
+  const moonBodies = [];
+
+  planetCfg.moons.forEach((m) => {
+    // --- Corrected Moon Scaling ---
+    // Scale based on actual radius (in Earth radii) converted to km, then scaled down
+    const scaledRadiusFromActual =
+      m.actualRadius *
+      CONSTANTS.EARTH_RADIUS_KM *
+      CONSTANTS.MOON_DISPLAY_SCALE_FACTOR;
+    const moonR = Math.max(CONSTANTS.MIN_MOON_RADIUS, scaledRadiusFromActual);
+    // --- End Corrected Moon Scaling ---
+
+    // Calculate orbit radius relative to planet center
+    const orbitR =
+      planetRadius * 1.5 + // Base distance from planet surface
+      (m.orbitRadiusKm / 1e5) * CONSTANTS.MOON_ORBIT_SCALE_FACTOR; // Scaled orbital distance
+
+    const geom = new THREE.SphereGeometry(
+      moonR,
+      CONSTANTS.MOON_SEGMENTS,
+      CONSTANTS.MOON_SEGMENTS / 2
+    );
+
+    // Only load texture if textureUrl exists
+    const tex = m.textureUrl
+      ? loadTexture(m.textureUrl.toLowerCase(), loader)
+      : null;
+
+    const mat = new THREE.MeshStandardMaterial({
+      map: tex ? tex : null, // Explicitly set to null if no texture
+      color: tex ? 0xffffff : 0xaaaaaa, // Use white if texture, grey otherwise
+      roughness: 0.9, // Explicitly set higher roughness for less gloss
+      metalness: 0.05, // Explicitly set lower metalness for a rocky look
+      // Keep emissive properties but don't map if no texture
+      emissive: 0x333333,
+      emissiveIntensity: 0.4,
+      emissiveMap: tex ? tex : null, // Explicitly set to null if no texture
+    });
+    const moon = new THREE.Mesh(geom, mat);
+
+    /* Moon atmosphere (e.g., Titan) ----------------------------------- */
+    if (m.atmosphere?.exists) {
+      const g = new THREE.SphereGeometry(
+        moonR * CONSTANTS.MOON_ATMOSPHERE_SCALE_FACTOR,
+        CONSTANTS.MOON_SEGMENTS,
+        CONSTANTS.MOON_SEGMENTS / 2
+      );
+      const matA = new THREE.MeshBasicMaterial({
+        color: m.atmosphere.color ?? 0xffffff,
+        transparent: true,
+        opacity:
+          (m.atmosphere.density ?? 0.2) *
+          CONSTANTS.MOON_ATMOSPHERE_OPACITY_MULTIPLIER *
+          1.5,
+        side: THREE.BackSide,
+      });
+      const a = new THREE.Mesh(g, matA);
+      a.raycast = () => {};
+      moon.add(a);
+    }
+
+    /* Self‑lights for tiny moons -------------------------------------- */
+    const light1 = new THREE.PointLight(0xffffff, 1, moonR * 15);
+    const light2 = new THREE.PointLight(0xffffee, 0.5, moonR * 10);
+    light2.position.set(moonR * 3, 0, 0);
+    moon.add(light1);
+    moon.add(light2);
+
+    /* Position & userdata --------------------------------------------- */
+    const θ0 = Math.random() * Math.PI * 2;
+    moon.position.set(orbitR * Math.cos(θ0), 0, orbitR * Math.sin(θ0));
+
+    moon.userData = {
+      isSelectable: true,
+      name: m.name,
+      type: "moon",
+      parentPlanetName: planetCfg.name,
+      config: m,
+      orbitRadius: orbitR,
+      orbitSpeed: m.calculatedOrbitSpeed,
+      orbitDirection: m.orbitDirection,
+      rotationSpeed: m.calculatedRotationSpeed,
+      rotationDirection: m.rotationDirection,
+      initialAngle: θ0,
+      currentAngle: θ0,
+      displayInfo: {
+        Size: `${(m.actualRadius * CONSTANTS.EARTH_RADIUS_KM).toFixed(
+          0
+        )} km radius`,
+        Orbit: `${m.orbitRadiusKm.toLocaleString()} km from ${planetCfg.name}`,
+        OrbitalPeriod: `${Math.abs(m.orbitalPeriod).toFixed(2)} days${
+          m.orbitalPeriod < 0 ? " (retrograde)" : ""
+        }`,
+        RotationPeriod: `${Math.abs(m.rotationPeriod).toFixed(2)} days${
+          m.rotationPeriod === m.orbitalPeriod ? " (tidally locked)" : ""
+        }`,
+        ParentPlanet: planetCfg.name,
+        ...(m.info || {}),
+      },
+      clickTarget: moon,
+    };
+    moon.name = m.name;
+
+    moonBodies.push(moon);
+
+    /* Moon orbit line -------------------------------------------------- */
+    // Moons still use circular orbits for simplicity in this sim
+    const moonOrbitGeom = new THREE.BufferGeometry().setFromPoints(
+      new THREE.EllipseCurve(
+        0,
+        0, // Center x, y
+        orbitR,
+        orbitR, // xRadius, yRadius (circular)
+        0,
+        2 * Math.PI, // Start angle, end angle
+        false, // Clockwise
+        0 // Rotation
+      ).getPoints(CONSTANTS.MOON_ORBIT_SEGMENTS)
+    );
+    // Use the same color and transparency as planet orbits
+    const moonOrbitMat = new THREE.LineBasicMaterial({
+      color: CONSTANTS.ORBIT_LINE_COLOR, // Use the constant directly
+      transparent: true,
+      opacity: 0.5, // Match planet orbit opacity
+    });
+    const moonOrbitLine = new THREE.LineLoop(moonOrbitGeom, moonOrbitMat);
+    moonOrbitLine.rotation.x = Math.PI / 2; // Rotate to XZ plane
+    moonOrbitLine.userData = { isOrbitLine: true, isMoonOrbit: true };
+    moonGroup.add(moonOrbitLine);
+
+    moonGroup.add(moon);
+  });
+
+  planetGroup.add(moonGroup);
+  return { moonSystemGroup: moonGroup, moonBodies };
+}
+
+
+# ===== C:/Users/Alif/Documents/GitHub/solar-system/js/constants.js =====
+// --- Constants and Configuration ---
+import * as THREE from "three";
+
+/* Camera helpers ------------------------------------------------------- */
+export const ORIGIN_VECTOR = new THREE.Vector3(0, 0, 0);
+export const DEFAULT_CAMERA_DISTANCE = 150; // when nothing selected
+export const PLANET_CAMERA_DISTANCE_MULTIPLIER = 8; // ≈ radius × 8
+export const MOON_CAMERA_DISTANCE_MULTIPLIER = 4; // ≈ radius × 4
+export const CAMERA_FOLLOW_LERP_FACTOR = 3; // higher = snappier
+
+/* Basic sizes ---------------------------------------------------------- */
+export const SUN_RADIUS = 25; // render‑unit radius of Sun
+export const EARTH_RADIUS_KM = 6371; // physical radius for info display
+
+/* Colours -------------------------------------------------------------- */
+export const ORBIT_LINE_COLOR = 0x333333; // Made darker
+export const SELECTED_HIGHLIGHT_COLOR = 0x00ffff;
+export const SUN_EMISSIVE_COLOR = 0xffddaa;
+
+/* Scale factors -------------------------------------------------------- */
+export const ORBIT_SCALE_FACTOR = 120; // AU → scene units
+export const MOON_ORBIT_SCALE_FACTOR = 5; // km → scene units (relative to planet)
+export const PLANET_DISPLAY_SCALE_FACTOR = 0.0005; // Earth radii -> scene units
+export const MOON_DISPLAY_SCALE_FACTOR = 0.00005; // Earth radii -> scene units (MUCH Smaller than planets)
+export const MIN_PLANET_RADIUS = 1.0; // Minimum visual size for planets
+export const MIN_MOON_RADIUS = 0.05; // Minimum visual size for moons (Reduced)
+
+export const ATMOSPHERE_SCALE_FACTOR = 1.05;
+export const ATMOSPHERE_OPACITY_MULTIPLIER = 0.3;
+export const MOON_ATMOSPHERE_SCALE_FACTOR = 1.1;
+export const MOON_ATMOSPHERE_OPACITY_MULTIPLIER = 0.4;
+
+export const CLOUD_SCALE_FACTOR = 1.02;
+export const CLOUD_OPACITY = 0.7;
+export const CLOUD_ROTATION_SPEED_MULTIPLIER = 1.1;
+
+/* Saturn rings (visual only) ------------------------------------------ */
+export const SATURN_RING_INNER_RADIUS_FACTOR = 1.2;
+export const SATURN_RING_OUTER_RADIUS_FACTOR = 2.5;
+export const SATURN_RING_OPACITY = 0.9;
+
+/* Asteroid Belt -------------------------------------------------------- */
+export const ASTEROID_BELT_ENABLED = true;
+export const ASTEROID_COUNT = 5000;
+export const ASTEROID_BELT_INNER_RADIUS_AU = 2.2;
+export const ASTEROID_BELT_OUTER_RADIUS_AU = 3.2;
+export const ASTEROID_BELT_THICKNESS_AU = 0.2; // Vertical spread
+export const ASTEROID_MIN_SIZE = 0.01;
+export const ASTEROID_MAX_SIZE = 0.08;
+export const ASTEROID_COLOR = 0x888888;
+
+/* Geometry detail ------------------------------------------------------ */
+export const PLANET_SEGMENTS = 32;
+export const MOON_SEGMENTS = 16;
+export const ORBIT_SEGMENTS = 128;
+export const MOON_ORBIT_SEGMENTS = 64;
+
+/* Star‑field ----------------------------------------------------------- */
+export const STARFIELD_RADIUS = 5000;
+export const STAR_COUNT = 20000;
+export const STAR_BASE_SIZE = 2.0;
+export const STAR_MIN_SIZE_FACTOR = 0.5;
+export const STAR_MAX_SIZE_FACTOR = 1.5;
+
+/* Time scaling --------------------------------------------------------- */
+export const BASE_ORBIT_SPEED_UNIT_TIME = 60; // sim‑sec per Earth‑year when baseOrbitSpeedFactor = 1
+export const DAYS_PER_SIM_SECOND_AT_1X = 365.25 / BASE_ORBIT_SPEED_UNIT_TIME;
+
+/* Lighting ------------------------------------------------------------- */
+export const AMBIENT_LIGHT_INTENSITY = 0.3;
+export const SUN_POINT_LIGHT_INTENSITY = 7;
+export const SUN_POINT_LIGHT_DECAY = 0.8;
+export const SUN_GLOW_LIGHT_INTENSITY = 3;
+export const SUN_GLOW_LIGHT_DISTANCE = 300;
+export const SUN_GLOW_LIGHT_DECAY = 1.0;
+export const DIR_LIGHT_INTENSITY = 0.5;
+export const HEMI_LIGHT_INTENSITY = 0.4;
+export const SUN_EMISSIVE_INTENSITY = 1.5;
+
+/* Material defaults ---------------------------------------------------- */
+export const PLANET_ROUGHNESS = 0.7;
+export const PLANET_METALNESS = 0.1;
+
+/* Utility to create highlight / outline materials --------------------- */
+export function createMaterials() {
+  return {
+    HIGHLIGHT_MATERIAL: new THREE.MeshBasicMaterial({
+      color: SELECTED_HIGHLIGHT_COLOR,
+      wireframe: true,
+    }),
+    OUTLINE_MATERIAL: new THREE.MeshBasicMaterial({
+      color: SELECTED_HIGHLIGHT_COLOR,
+      side: THREE.BackSide,
+    }),
+  };
+}
+
+
+# ===== C:/Users/Alif/Documents/GitHub/solar-system/js/animation.js =====
+// --- Animation Module --------------------------------------------------
+import * as THREE from "three";
+import * as CONSTANTS from "./constants.js";
+import { getOrbitalState } from "./kepler.js"; // Import Kepler helper
+
+import { updateDayCounter } from "./ui.js";
+import { updateSpacetimeMesh } from "./effects.js";
+
+// Flags and state
+let isFirstCall = true; // for THREE.Clock reset on first call
+
+/* ---------------------------------------------------------------------- */
+/*                      Position / Orbit update                           */
+/* ---------------------------------------------------------------------- */
+export function updatePositions(planets, delta, simulationSpeed) {
+  // No delta needed here, we use total elapsed time for Kepler
+  const simulatedDays = window.simulatedDays || 0;
+
+  /* Update each planet group using Kepler's laws --------------------- */
+  planets.forEach((group) => {
+    const ud = group?.userData;
+    const cfg = ud?.config;
+    if (!ud || !cfg) return;
+
+    // Get orbital elements, reading from nested kepler object
+    const elements = {
+      a: cfg.orbitRadiusAU, // Semi-major axis
+      e: cfg.info?.orbitalEccentricity ?? 0, // Eccentricity - CORRECTED PATH
+      // Read from cfg.kepler, assume degrees, convert to radians, default to 0
+      ω: (cfg.kepler?.argPeriapsisDeg ?? 0) * THREE.MathUtils.DEG2RAD,
+      M0: (cfg.kepler?.meanAnomalyDeg ?? 0) * THREE.MathUtils.DEG2RAD,
+      // Inclination (i) and Longitude of Ascending Node (Ω) are ignored by getOrbitalState
+    };
+
+    // Calculate state using Kepler's laws
+    const state = getOrbitalState(simulatedDays, elements);
+
+    // Scale position from AU (returned by getOrbitalState) to scene units
+    const sceneX = state.x * CONSTANTS.ORBIT_SCALE_FACTOR;
+    const sceneZ = state.y * CONSTANTS.ORBIT_SCALE_FACTOR; // Kepler returns y, map to scene's z
+
+    // Set the planet group's position
+    group.position.set(sceneX, 0, sceneZ);
+
+    /* Moons (Keep circular orbits relative to the new planet position) --- */
+    // Calculate time factor for moon's circular motion (using original delta-based logic)
+    const dt_moon = THREE.MathUtils.clamp(delta, 0.001, 0.1);
+    const SPEED_BOOST_MOON = 5.0; // Use the same visual boost as before for consistency
+    const tf_moon = dt_moon * simulationSpeed * SPEED_BOOST_MOON;
+
+    group.traverse((child) => {
+      if (!child.isMesh || child.userData.type !== "moon") return;
+      const mu = child.userData;
+      // Update angle based on delta time
+      mu.currentAngle =
+        (mu.currentAngle ?? 0) + mu.orbitSpeed * mu.orbitDirection * tf_moon;
+      // Set position relative to parent planet
+      child.position.set(
+        mu.orbitRadius * Math.cos(mu.currentAngle),
+        0,
+        mu.orbitRadius * Math.sin(mu.currentAngle)
+      );
+    });
+  });
+}
+
+/* ---------------------------------------------------------------------- */
+/*                       Rotation update                                  */
+/* ---------------------------------------------------------------------- */
+export function updateRotations(planets, delta, simulationSpeed) {
+  const dt = THREE.MathUtils.clamp(delta, 0.001, 0.1);
+  const tf = dt * simulationSpeed;
+
+  planets.forEach((group) => {
+    const ud = group?.userData;
+    if (!ud) return;
+    const mesh = ud.planetMesh;
+    if (!mesh?.isMesh) return;
+
+    const rotSpeed = ud.rotationSpeed ?? 0;
+    mesh.rotation.y += rotSpeed * ud.rotationDirection * tf;
+
+    // cloud layer
+    if (mesh.userData.cloudMesh?.isMesh)
+      mesh.userData.cloudMesh.rotation.y +=
+        rotSpeed * CONSTANTS.CLOUD_ROTATION_SPEED_MULTIPLIER * tf;
+
+    // moons self‑rotation
+    group.traverse((child) => {
+      if (child.isMesh && child.userData.type === "moon") {
+        const mu = child.userData;
+        child.rotation.y += mu.rotationSpeed * mu.rotationDirection * tf;
+      }
+    });
+  });
+}
+
+/* ---------------------------------------------------------------------- */
+/*                   Simulation‑day counter                               */
+/* ---------------------------------------------------------------------- */
+export function updateSimulation(delta, simulationSpeed, currentDays) {
+  const dt = THREE.MathUtils.clamp(delta, 0.001, 0.1);
+  const add =
+    simulationSpeed > 0 && CONSTANTS.DAYS_PER_SIM_SECOND_AT_1X > 0
+      ? dt * simulationSpeed * CONSTANTS.DAYS_PER_SIM_SECOND_AT_1X
+      : 0;
+  const total = (currentDays || 0) + add;
+  updateDayCounter(Math.floor(total));
+  return total;
+}
+
+/* ---------------------------------------------------------------------- */
+/*                        Optional animation loop                         */
+/* ---------------------------------------------------------------------- */
+export function createAnimationLoop(
+  renderer,
+  scene,
+  camera,
+  controls,
+  clock,
+  planets,
+  cameraTarget,
+  spacetimeMesh
+) {
+  let simDays = 0;
+  function animate() {
+    requestAnimationFrame(animate);
+    const delta = clock.getDelta();
+    const speed = window.simulationSpeed ?? 1.0;
+    updatePositions(planets, delta, speed);
+    updateRotations(planets, delta, speed);
+    simDays = updateSimulation(delta, speed, simDays);
+
+    if (spacetimeMesh) updateSpacetimeMesh(spacetimeMesh, planets);
+    renderer.render(scene, camera);
+  }
+  return animate;
+}
+
+/* ---------------------------------------------------------------------- */
+/*                  Main‑loop helper called from main.js                  */
+/* ---------------------------------------------------------------------- */
+export function updateScene(simSpeed) {
+  const clock = window.clock;
+  const planets = window.planets ?? [];
+  const spacetime = window.spacetimeMesh;
+  let currentDays = Number.isFinite(window.simulatedDays)
+    ? window.simulatedDays
+    : 0;
+
+  if (!clock) {
+    console.error("updateScene: clock missing");
+    return;
+  }
+
+  if (isFirstCall) {
+    clock.start();
+    clock.getDelta(); // prime
+    console.log("***** CLOCK RESET *****");
+    isFirstCall = false;
+  }
+
+  const delta = clock.getDelta();
+  const speed = Number.isFinite(simSpeed) && simSpeed >= 0 ? simSpeed : 1.0;
+
+  try {
+    updatePositions(planets, delta, speed);
+    updateRotations(planets, delta, speed);
+    window.simulatedDays = updateSimulation(delta, speed, currentDays);
+
+    if (spacetime?.visible) updateSpacetimeMesh(spacetime, planets);
+  } catch (err) {
+    console.error("updateScene error:", err);
+    window.simulationSpeed = 0; // pause on error
+  }
+}
+
+
+# ===== C:/Users/Alif/Documents/GitHub/solar-system/solarsystem_data.json =====
+[
+  {
+    "name": "Mercury",
+    "actualRadius": 0.383,
+    "scaledRadius": 1.5,
+    "orbitRadiusAU": 0.38709927,
+    "baseOrbitSpeedFactor": 1.607,
+    "gravityStrength": 0.38,
+    "initialAngle": 0.0,
+    "rotationPeriod": 58.646,
+    "retrograde": false,
+    "axialTilt": 0.03,
+    "textureUrl": "mercury.jpg",
+    "atmosphere": { "exists": false },
+    "moons": [],
+    "kepler": {
+      "inclinationDeg": 7.004979,
+      "longAscNodeDeg": 48.330766,
+      "argPeriapsisDeg": 29.124279,
+      "meanAnomalyDeg": 174.795884,
+      "epoch": "J2000"
+    },
+    "info": {
+      "massEarths": 0.055,
+      "densityGcm3": 5.43,
+      "surfaceGravityG": 0.38,
+      "escapeVelocityKms": 4.25,
+      "composition": "Rocky planet with iron‑nickel core",
+      "surfaceTempMinC": -173,
+      "surfaceTempMaxC": 427,
+      "rotationPeriodDays": 58.646,
+      "orbitalPeriodDays": 87.969,
+      "orbitalEccentricity": 0.20563593,
+      "orbitalInclinationDeg": 7.0,
+      "meanOrbitalSpeedKms": 47.36,
+      "albedoBond": 0.119,
+      "distanceAU": 0.387,
+      "moonCount": 0,
+      "ringCount": 0,
+      "magnetosphere": true
+    }
+  },
+  {
+    "name": "Venus",
+    "actualRadius": 0.949,
+    "scaledRadius": 3.8,
+    "orbitRadiusAU": 0.72333566,
+    "baseOrbitSpeedFactor": 1.626,
+    "gravityStrength": 0.91,
+    "initialAngle": 0.7853981633974483,
+    "rotationPeriod": 243.02,
+    "retrograde": true,
+    "axialTilt": 177.3,
+    "textureUrl": "venus.jpg",
+    "atmosphere": {
+      "exists": true,
+      "color": "#fff7d6",
+      "density": 0.7
+    },
+    "moons": [],
+    "kepler": {
+      "inclinationDeg": 3.394662,
+      "longAscNodeDeg": 76.680694,
+      "argPeriapsisDeg": 54.852,
+      "meanAnomalyDeg": 50.416114,
+      "epoch": "J2000"
+    },
+    "info": {
+      "massEarths": 0.815,
+      "densityGcm3": 5.24,
+      "surfaceGravityG": 0.91,
+      "escapeVelocityKms": 10.36,
+      "composition": "Rocky planet with dense CO₂ atmosphere",
+      "surfaceTempMinC": 462,
+      "surfaceTempMaxC": 462,
+      "rotationPeriodDays": 243.02,
+      "orbitalPeriodDays": 224.701,
+      "orbitalEccentricity": 0.00677672,
+      "orbitalInclinationDeg": 3.39,
+      "meanOrbitalSpeedKms": 35.02,
+      "albedoBond": 0.65,
+      "distanceAU": 0.723,
+      "moonCount": 0,
+      "ringCount": 0,
+      "magnetosphere": false
+    }
+  },
+  {
+    "name": "Earth",
+    "actualRadius": 1.0,
+    "scaledRadius": 4.0,
+    "orbitRadiusAU": 1.00000011,
+    "baseOrbitSpeedFactor": 1.0,
+    "gravityStrength": 1.0,
+    "initialAngle": 1.5707963267948966,
+    "rotationPeriod": 1.0,
+    "retrograde": false,
+    "axialTilt": 23.44,
+    "textureUrl": "earth.jpg",
+    "atmosphere": {
+      "exists": true,
+      "color": "#6b8cff",
+      "density": 0.3
+    },
+    "moons": [
+      {
+        "name": "Moon",
+        "actualRadius": 0.273,
+        "orbitRadiusKm": 384400,
+        "orbitalPeriod": 27.3217,
+        "rotationPeriod": 27.3217,
+        "retrograde": false,
+        "textureUrl": "Moon_JPG_Collection/ganymede.jpg"
+      }
+    ],
+    "kepler": {
+      "inclinationDeg": 0.0,
+      "longAscNodeDeg": 348.73936,
+      "argPeriapsisDeg": 114.20783,
+      "meanAnomalyDeg": 357.529109,
+      "epoch": "J2000"
+    },
+    "info": {
+      "massEarths": 1.0,
+      "densityGcm3": 5.51,
+      "surfaceGravityG": 1.0,
+      "escapeVelocityKms": 11.186,
+      "composition": "Rocky planet with N₂‑O₂ atmosphere",
+      "surfaceTempMinC": -88,
+      "surfaceTempMaxC": 58,
+      "rotationPeriodDays": 1.0,
+      "orbitalPeriodDays": 365.256,
+      "orbitalEccentricity": 0.01670863,
+      "orbitalInclinationDeg": 0.0,
+      "meanOrbitalSpeedKms": 29.78,
+      "albedoBond": 0.306,
+      "distanceAU": 1.0,
+      "moonCount": 1,
+      "ringCount": 0,
+      "magnetosphere": true
+    }
+  },
+  {
+    "name": "Mars",
+    "actualRadius": 0.532,
+    "scaledRadius": 2.0,
+    "orbitRadiusAU": 1.52371034,
+    "baseOrbitSpeedFactor": 0.5316,
+    "gravityStrength": 0.38,
+    "initialAngle": 2.356194490192345,
+    "rotationPeriod": 1.026,
+    "retrograde": false,
+    "axialTilt": 25.2,
+    "textureUrl": "mars.jpg",
+    "atmosphere": {
+      "exists": true,
+      "color": "#d09470",
+      "density": 0.1
+    },
+    "moons": [
+      {
+        "name": "Phobos",
+        "actualRadius": 0.0018,
+        "orbitRadiusKm": 9378,
+        "orbitalPeriod": 0.319,
+        "rotationPeriod": 0.319,
+        "retrograde": false,
+        "textureUrl": "Moon_JPG_Collection/Phobos.jpg"
+      },
+      {
+        "name": "Deimos",
+        "actualRadius": 0.001,
+        "orbitRadiusKm": 23460,
+        "orbitalPeriod": 1.262,
+        "rotationPeriod": 1.262,
+        "retrograde": false,
+        "textureUrl": "Moon_JPG_Collection/Deimos.jpg"
+      }
+    ],
+    "kepler": {
+      "inclinationDeg": 1.850333,
+      "longAscNodeDeg": 49.57854,
+      "argPeriapsisDeg": 286.537,
+      "meanAnomalyDeg": 19.373,
+      "epoch": "J2000"
+    },
+    "info": {
+      "massEarths": 0.107,
+      "densityGcm3": 3.93,
+      "surfaceGravityG": 0.38,
+      "escapeVelocityKms": 5.03,
+      "composition": "Rocky planet with thin CO₂ atmosphere",
+      "surfaceTempMinC": -153,
+      "surfaceTempMaxC": 20,
+      "rotationPeriodDays": 1.026,
+      "orbitalPeriodDays": 686.98,
+      "orbitalEccentricity": 0.0933941,
+      "orbitalInclinationDeg": 1.85,
+      "meanOrbitalSpeedKms": 24.07,
+      "albedoBond": 0.25,
+      "distanceAU": 1.524,
+      "moonCount": 2,
+      "ringCount": 0,
+      "magnetosphere": false
+    }
+  },
+  {
+    "name": "Jupiter",
+    "actualRadius": 11.209,
+    "scaledRadius": 20.0,
+    "orbitRadiusAU": 5.202887,
+    "baseOrbitSpeedFactor": 0.0843,
+    "gravityStrength": 2.53,
+    "initialAngle": 3.141592653589793,
+    "rotationPeriod": 0.4135,
+    "retrograde": false,
+    "axialTilt": 3.1,
+    "textureUrl": "jupiter.jpg",
+    "atmosphere": {
+      "exists": true,
+      "color": "#f0e8d8",
+      "density": 0.5
+    },
+    "moons": [
+      {
+        "name": "Io",
+        "actualRadius": 0.286,
+        "orbitRadiusKm": 421800,
+        "orbitalPeriod": 1.769,
+        "rotationPeriod": 1.769,
+        "retrograde": false,
+        "textureUrl": "Moon_JPG_Collection/Io.jpg"
+      },
+      {
+        "name": "Europa",
+        "actualRadius": 0.245,
+        "orbitRadiusKm": 671100,
+        "orbitalPeriod": 3.551,
+        "rotationPeriod": 3.551,
+        "retrograde": false,
+        "textureUrl": "Moon_JPG_Collection/Europa.jpg"
+      },
+      {
+        "name": "Ganymede",
+        "actualRadius": 0.413,
+        "orbitRadiusKm": 1070400,
+        "orbitalPeriod": 7.155,
+        "rotationPeriod": 7.155,
+        "retrograde": false,
+        "textureUrl": "Moon_JPG_Collection/Ganymede.jpg"
+      },
+      {
+        "name": "Callisto",
+        "actualRadius": 0.378,
+        "orbitRadiusKm": 1882700,
+        "orbitalPeriod": 16.689,
+        "rotationPeriod": 16.689,
+        "retrograde": false,
+        "textureUrl": "Moon_JPG_Collection/Callisto.jpg"
+      }
+    ],
+    "kepler": {
+      "inclinationDeg": 1.30594,
+      "longAscNodeDeg": 100.55615,
+      "argPeriapsisDeg": 14.75385,
+      "meanAnomalyDeg": 20.02,
+      "epoch": "J2000"
+    },
+    "info": {
+      "massEarths": 317.8,
+      "densityGcm3": 1.33,
+      "surfaceGravityG": 2.53,
+      "escapeVelocityKms": 59.5,
+      "composition": "Gas giant (H₂, He)",
+      "surfaceTempMinC": -108,
+      "surfaceTempMaxC": -108,
+      "rotationPeriodDays": 0.4135,
+      "orbitalPeriodDays": 4332.59,
+      "orbitalEccentricity": 0.04838624,
+      "orbitalInclinationDeg": 1.31,
+      "meanOrbitalSpeedKms": 13.07,
+      "albedoBond": 0.503,
+      "distanceAU": 5.203,
+      "moonCount": 79,
+      "ringCount": 1,
+      "magnetosphere": true
+    }
+  },
+  {
+    "name": "Saturn",
+    "actualRadius": 9.449,
+    "scaledRadius": 17.0,
+    "orbitRadiusAU": 9.53667594,
+    "baseOrbitSpeedFactor": 0.0339,
+    "gravityStrength": 1.07,
+    "initialAngle": 3.9269908169872414,
+    "rotationPeriod": 0.444,
+    "retrograde": false,
+    "axialTilt": 26.7,
+    "ringTilt": 26.7,
+    "textureUrl": "saturn.jpg",
+    "ringTextureUrl": "saturn_ring.png",
+    "atmosphere": {
+      "exists": true,
+      "color": "#f0e6d2",
+      "density": 0.4
+    },
+    "moons": [
+      {
+        "name": "Mimas",
+        "actualRadius": 0.031,
+        "orbitRadiusKm": 185520,
+        "orbitalPeriod": 0.942,
+        "rotationPeriod": 0.942,
+        "retrograde": false,
+        "textureUrl": "Moon_JPG_Collection/Mimas.jpg"
+      },
+      {
+        "name": "Enceladus",
+        "actualRadius": 0.04,
+        "orbitRadiusKm": 238020,
+        "orbitalPeriod": 1.37,
+        "rotationPeriod": 1.37,
+        "retrograde": false,
+        "textureUrl": "Moon_JPG_Collection/Enceladus.jpg"
+      },
+      {
+        "name": "Tethys",
+        "actualRadius": 0.083,
+        "orbitRadiusKm": 294660,
+        "orbitalPeriod": 1.888,
+        "rotationPeriod": 1.888,
+        "retrograde": false
+      },
+      {
+        "name": "Dione",
+        "actualRadius": 0.088,
+        "orbitRadiusKm": 377400,
+        "orbitalPeriod": 2.737,
+        "rotationPeriod": 2.737,
+        "retrograde": false,
+        "textureUrl": "Moon_JPG_Collection/Dione.jpg"
+      },
+      {
+        "name": "Rhea",
+        "actualRadius": 0.12,
+        "orbitRadiusKm": 527040,
+        "orbitalPeriod": 4.518,
+        "rotationPeriod": 4.518,
+        "retrograde": false,
+        "textureUrl": "Moon_JPG_Collection/Rhea.jpg"
+      },
+      {
+        "name": "Titan",
+        "actualRadius": 0.404,
+        "orbitRadiusKm": 1221870,
+        "orbitalPeriod": 15.95,
+        "rotationPeriod": 15.95,
+        "retrograde": false,
+        "atmosphere": { "exists": true, "color": "#ffa500", "density": 0.3 }
+      },
+      {
+        "name": "Iapetus",
+        "actualRadius": 0.115,
+        "orbitRadiusKm": 3561300,
+        "orbitalPeriod": 79.33,
+        "rotationPeriod": 79.33,
+        "retrograde": false,
+        "textureUrl": "Moon_JPG_Collection/Iapetus.jpg"
+      }
+    ],
+    "kepler": {
+      "inclinationDeg": 2.483456,
+      "longAscNodeDeg": 113.71504,
+      "argPeriapsisDeg": 92.43194,
+      "meanAnomalyDeg": 317.02,
+      "epoch": "J2000"
+    },
+    "info": {
+      "massEarths": 95.16,
+      "densityGcm3": 0.687,
+      "surfaceGravityG": 1.07,
+      "escapeVelocityKms": 35.5,
+      "composition": "Gas giant (H₂, He) with extensive ring system",
+      "surfaceTempMinC": -139,
+      "surfaceTempMaxC": -139,
+      "rotationPeriodDays": 0.444,
+      "orbitalPeriodDays": 10759.22,
+      "orbitalEccentricity": 0.0541506,
+      "orbitalInclinationDeg": 2.49,
+      "meanOrbitalSpeedKms": 9.68,
+      "albedoBond": 0.342,
+      "distanceAU": 9.539,
+      "moonCount": 82,
+      "ringCount": 7,
+      "magnetosphere": true
+    }
+  },
+  {
+    "name": "Uranus",
+    "actualRadius": 4.007,
+    "scaledRadius": 10.0,
+    "orbitRadiusAU": 19.18916464,
+    "baseOrbitSpeedFactor": 0.0119,
+    "gravityStrength": 0.89,
+    "initialAngle": 4.71238898038469,
+    "rotationPeriod": 0.718,
+    "retrograde": true,
+    "axialTilt": 97.8,
+    "textureUrl": "uranus.jpg",
+    "atmosphere": {
+      "exists": true,
+      "color": "#d1e7e7",
+      "density": 0.3
+    },
+    "moons": [
+      {
+        "name": "Miranda",
+        "actualRadius": 0.037,
+        "orbitRadiusKm": 129900,
+        "orbitalPeriod": 1.413,
+        "rotationPeriod": 1.413,
+        "retrograde": false,
+        "textureUrl": "Moon_JPG_Collection/Miranda.jpg"
+      },
+      {
+        "name": "Ariel",
+        "actualRadius": 0.091,
+        "orbitRadiusKm": 190900,
+        "orbitalPeriod": 2.52,
+        "rotationPeriod": 2.52,
+        "retrograde": false,
+        "textureUrl": "Moon_JPG_Collection/Ariel.jpg"
+      },
+      {
+        "name": "Umbriel",
+        "actualRadius": 0.092,
+        "orbitRadiusKm": 266000,
+        "orbitalPeriod": 4.144,
+        "rotationPeriod": 4.144,
+        "retrograde": false
+      },
+      {
+        "name": "Titania",
+        "actualRadius": 0.124,
+        "orbitRadiusKm": 436300,
+        "orbitalPeriod": 8.706,
+        "rotationPeriod": 8.706,
+        "retrograde": false
+      },
+      {
+        "name": "Oberon",
+        "actualRadius": 0.119,
+        "orbitRadiusKm": 583500,
+        "orbitalPeriod": 13.463,
+        "rotationPeriod": 13.463,
+        "retrograde": false,
+        "textureUrl": "Moon_JPG_Collection/Oberon.jpg"
+      }
+    ],
+    "kepler": {
+      "inclinationDeg": 0.77,
+      "longAscNodeDeg": 74.22988,
+      "argPeriapsisDeg": 170.96424,
+      "meanAnomalyDeg": 142.239,
+      "epoch": "J2000"
+    },
+    "info": {
+      "massEarths": 14.54,
+      "densityGcm3": 1.27,
+      "surfaceGravityG": 0.89,
+      "escapeVelocityKms": 21.3,
+      "composition": "Ice giant (H₂, He, CH₄)",
+      "surfaceTempMinC": -197,
+      "surfaceTempMaxC": -197,
+      "rotationPeriodDays": 0.718,
+      "orbitalPeriodDays": 30685,
+      "orbitalEccentricity": 0.04716771,
+      "orbitalInclinationDeg": 0.77,
+      "meanOrbitalSpeedKms": 6.8,
+      "albedoBond": 0.3,
+      "distanceAU": 19.191,
+      "moonCount": 27,
+      "ringCount": 13,
+      "magnetosphere": true
+    }
+  },
+  {
+    "name": "Neptune",
+    "actualRadius": 3.883,
+    "scaledRadius": 10.0,
+    "orbitRadiusAU": 30.06992276,
+    "baseOrbitSpeedFactor": 0.00607,
+    "gravityStrength": 1.14,
+    "initialAngle": 5.497787143782138,
+    "rotationPeriod": 0.671,
+    "retrograde": false,
+    "axialTilt": 28.3,
+    "textureUrl": "neptune.jpg",
+    "atmosphere": {
+      "exists": true,
+      "color": "#4b70dd",
+      "density": 0.3
+    },
+    "moons": [
+      {
+        "name": "Triton",
+        "actualRadius": 0.212,
+        "orbitRadiusKm": 354759,
+        "orbitalPeriod": 5.877,
+        "rotationPeriod": 5.877,
+        "retrograde": true
+      }
+    ],
+    "kepler": {
+      "inclinationDeg": 1.769952,
+      "longAscNodeDeg": 131.72169,
+      "argPeriapsisDeg": 44.97135,
+      "meanAnomalyDeg": 256.784,
+      "epoch": "J2000"
+    },
+    "info": {
+      "massEarths": 17.15,
+      "densityGcm3": 1.64,
+      "surfaceGravityG": 1.14,
+      "escapeVelocityKms": 23.5,
+      "composition": "Ice giant (H₂, He, CH₄)",
+      "surfaceTempMinC": -201,
+      "surfaceTempMaxC": -201,
+      "rotationPeriodDays": 0.671,
+      "orbitalPeriodDays": 60190,
+      "orbitalEccentricity": 0.00858587,
+      "orbitalInclinationDeg": 1.77,
+      "meanOrbitalSpeedKms": 5.43,
+      "albedoBond": 0.29,
+      "distanceAU": 30.069,
+      "moonCount": 14,
+      "ringCount": 5,
+      "magnetosphere": true
+    }
+  }
+]
+
+

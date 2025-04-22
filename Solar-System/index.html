@@ -1,159 +1,476 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Improved Solar System with Spacetime Curvature (NASA Textures)</title>
-  <style>
-    body { margin: 0; overflow: hidden; background-color: #000; }
-    canvas { display: block; } /* Prevent scroll bars */
-    #controls {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      color: white;
-      font-family: Arial, sans-serif;
-      background: rgba(0, 0, 0, 0.5);
-      padding: 8px;
-      border-radius: 5px;
-      font-size: 0.9em;
-      max-width: 220px; /* Adjust width if needed */
-    }
-    #controls label { display: block; margin-bottom: 5px; }
-    #controls input[type="range"] { vertical-align: middle; width: 100px; } /* Adjust range width */
-    #controls span { display: inline-block; width: 35px; text-align: right; } /* Align values */
-    
-    /* Move planet navigation below controls */
-    #planetNavContainer {
-      position: absolute;
-      top: 90px; /* Position below controls */
-      left: 10px; /* Left aligned now */
-      z-index: 999;
-      color: white;
-      font-family: Arial, sans-serif;
-      background: rgba(0, 0, 0, 0.7);
-      padding: 8px 12px;
-      border-radius: 5px;
-      font-size: 0.9em;
-      display: flex;
-      flex-direction: column;
-      width: 220px; /* Match controls width */
-    }
-    #planetNavContainer label {
-      margin-bottom: 5px;
-      font-weight: bold;
-    }
-    #planetNav {
-      padding: 4px;
-      background: rgba(30, 30, 40, 0.8);
-      color: white;
-      border: 1px solid rgba(100, 100, 120, 0.6);
-      border-radius: 3px;
-      cursor: pointer;
-      width: 100%; /* Full width of container */
-    }
-    #planetNav option {
-      background-color: rgba(20, 20, 30, 0.9);
-    }
-    
-    /* Fixed size card for planet info */
-    #info {
-      position: absolute;
-      bottom: 10px;
-      left: 10px;
-      color: white;
-      font-family: Arial, sans-serif;
-      background: rgba(0, 0, 0, 0.7);
-      padding: 10px;
-      border-radius: 5px;
-      display: none; /* Hidden by default */
-      width: 280px; /* Fixed width */
-      height: 320px; /* Fixed height */
-      overflow-y: auto; /* Scroll if content exceeds height */
-    }
-    #info h3 { margin-top: 0; font-size: 1.1em; }
-    #info p { margin: 5px 0; font-size: 0.9em; }
-    
-    /* New styles for toggle button and day counter */
-    #toggleMeshBtn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      z-index: 999;
-      padding: 8px;
-      background: rgba(0, 0, 0, 0.5);
-      color: white;
-      border: none;
-      border-radius: 5px;
-      font-family: Arial, sans-serif;
-      cursor: pointer;
-    }
-    #dayCounter {
-      position: absolute;
-      top: 60px;
-      right: 10px;
-      z-index: 999;
-      color: white;
-      font-family: Arial, sans-serif;
-      background: rgba(0, 0, 0, 0.5);
-      padding: 8px;
-      border-radius: 5px;
-      font-size: 0.9em;
-    }
-  </style>
-</head>
-<body>
-  <div id="controls">
-    <label>Speed: <input type="range" id="speedSlider" min="0.1" max="5" step="0.1" value="1"> <span id="speedValue">1.0x</span></label><br>
-  </div>
-  
-  <!-- Planet Navigation Dropdown (moved to left) -->
-  <div id="planetNavContainer">
-    <label for="planetNav">Go to:</label>
-    <select id="planetNav">
-      <option value="">Select Planet</option>
-      <option value="Sun">Sun</option>
-      <option value="Mercury">Mercury</option>
-      <option value="Venus">Venus</option>
-      <option value="Earth">Earth</option>
-      <option value="Mars">Mars</option>
-      <option value="Jupiter">Jupiter</option>
-      <option value="Saturn">Saturn</option>
-      <option value="Uranus">Uranus</option>
-      <option value="Neptune">Neptune</option>
-      <!-- Add moon options -->
-      <option value="Moon">Earth's Moon</option>
-      <option value="Io">Io (Jupiter)</option>
-      <option value="Europa">Europa (Jupiter)</option>
-      <option value="Ganymede">Ganymede (Jupiter)</option>
-      <option value="Callisto">Callisto (Jupiter)</option>
-      <option value="Titan">Titan (Saturn)</option>
-      <option value="Triton">Triton (Neptune)</option>
-    </select>
-  </div>
-  
-  <div id="info">
-    <h3>Selected Planet</h3>
-    <p>Name: <span id="info-name"></span></p>
-    <p>Orbit: <span id="info-orbit"></span> AU</p>
-    <p>Size: <span id="info-size"></span></p>
-    <div id="info-details"></div>
-  </div>
-  
-  <!-- New Toggle Button and Day Counter -->
-  <button id="toggleMeshBtn">Toggle Space-Time Mesh</button>
-  <div id="dayCounter">Days: 0</div>
-  
-  <!-- Textures sourced from SolarSystemScope.com (often derived from NASA/ESA data) -->
-  <!-- For production, download and host these locally. -->
-  <script type="importmap">
-    {
-      "imports": {
-        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-      }
-    }
-  </script>
-  <script type="module" src="script.js"></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Solar System Simulation</title>
 
+    <!-- Favicon Links -->
+    <link rel="icon" href="assets/favicon.ico" sizes="any" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="assets/favicon-16.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="assets/favicon-32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="48x48"
+      href="assets/favicon-48.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="64x64"
+      href="assets/favicon-64.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="128x128"
+      href="assets/favicon-128.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="256x256"
+      href="assets/favicon-256.png"
+    />
+    <link rel="apple-touch-icon" href="assets/Favicon.png" />
+    <!-- Assuming Favicon.png is the largest/preferred -->
+
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        background-color: #000;
+        color: white; /* Added default text color */
+      }
+      canvas {
+        display: block;
+      }
+
+      /* ---- Theme Base ---- */
+      :root {
+        --border-color: #555;
+        --groove-bg: #333;
+        --handle-bg: #555;
+        --handle-border: #2a82da;
+        --handle-hover: #3d8fe0;
+        --bg-color: #333;
+        --text-color: white;
+        --highlight-color: #2a82da;
+        --highlighted-text: white;
+        --indicator-bg: #333;
+        --checked-bg: #2a82da;
+        --hover-bg: #444;
+        --pressed-bg: #2a82da;
+        --pressed-text: white;
+        --track-bg: #333;
+      }
+
+      /* ---- collapsible left‑hand menu ---- */
+      #menuContainer {
+        position: absolute;
+        left: 0;
+        top: 10px;
+        z-index: 1000;
+        /* transition: transform 0.3s ease; */ /* REMOVED CSS Transition */
+      }
+      #menuToggle {
+        position: absolute;
+        top: 50%;
+        right: -24px; /* Adjusted position */
+        background: var(--bg-color);
+        color: var(--text-color);
+        border: 1px solid var(--border-color);
+        border-left: none; /* Remove left border */
+        border-radius: 0 8px 8px 0; /* More rounded */
+        width: 24px;
+        height: 40px; /* Reduced height */
+        cursor: pointer;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        transform: translateY(-50%);
+      }
+      #menuToggle:hover {
+        background: var(--hover-bg);
+      }
+      #menuToggle::after {
+        content: "◀";
+        font-size: 14px;
+      }
+      #menuContainer.collapsed #menuToggle::after {
+        content: "▶";
+      }
+
+      /* ---- Controls panel ---- */
+      #controls,
+      #planetNavContainer,
+      #additionalControls {
+        position: relative;
+        margin: 0 0 8px 10px; /* Reduced bottom margin */
+        width: 220px;
+        color: var(--text-color);
+        font-family: Arial, sans-serif;
+        background: rgba(30, 30, 30, 0.85); /* Neutral dark grey */
+        padding: 10px 12px; /* Adjusted padding */
+        border-radius: 8px; /* More rounded */
+        font-size: 0.9em;
+        border: 1px solid var(--border-color); /* Added border */
+      }
+
+      /* ---- Slider (#speedSlider) ---- */
+      #controls label {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      #controls input[type="range"] {
+        flex-grow: 1; /* Allow slider to take space */
+        -webkit-appearance: none;
+        appearance: none;
+        height: 8px;
+        background: transparent;
+        cursor: pointer;
+        margin: 0; /* Remove default margin */
+      }
+      #controls input[type="range"]::-webkit-slider-runnable-track {
+        height: 8px;
+        background: var(--groove-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+      }
+      #controls input[type="range"]::-moz-range-track {
+        height: 8px;
+        background: var(--groove-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+      }
+      #controls input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        margin-top: -4px; /* Adjust vertical position */
+        width: 14px;
+        height: 14px;
+        background: var(--handle-bg);
+        border: 1px solid var(--handle-border);
+        border-radius: 7px;
+      }
+      #controls input[type="range"]::-moz-range-thumb {
+        width: 14px;
+        height: 14px;
+        background: var(--handle-bg);
+        border: 1px solid var(--handle-border);
+        border-radius: 7px;
+        border: none; /* FF adds own border */
+      }
+      #controls input[type="range"]:hover::-webkit-slider-thumb {
+        background: var(--handle-hover);
+      }
+      #controls input[type="range"]:hover::-moz-range-thumb {
+        background: var(--handle-hover);
+      }
+      #speedValue {
+        min-width: 3em;
+        text-align: right;
+      } /* Ensure space for value */
+
+      /* ---- ComboBox (#planetNav) ---- */
+      #planetNavContainer label {
+        margin-right: 5px;
+        display: block;
+        margin-bottom: 4px; /* Stack label */
+      }
+      select#planetNav {
+        flex-grow: 1; /* Allow select to take space */
+        width: 100%; /* Make select full width */
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        border: 1px solid var(--border-color);
+        padding: 4px;
+        border-radius: 2px;
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23CCCCCC%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+        background-repeat: no-repeat;
+        background-position: right 8px top 50%;
+        background-size: 0.65em auto;
+        padding-right: 25px; /* Space for arrow */
+      }
+      select#planetNav option {
+        background-color: var(--bg-color);
+        color: var(--text-color);
+      }
+      /* Highlight color for options is browser default, difficult to override reliably */
+
+      /* ---- Push Buttons (.controlBtn) ---- */
+      .controlBtn {
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        border: 1px solid var(--border-color);
+        padding: 8px; /* Increased padding */
+        border-radius: 5px; /* More rounded */
+        cursor: pointer;
+        text-align: center;
+        font-size: 0.9em;
+        transition: background-color 0.2s;
+        margin: 3px 0; /* Keep existing */
+        display: block; /* Make buttons block level */
+        width: 100%; /* Make buttons full width */
+        box-sizing: border-box; /* Include padding/border in width */
+      }
+      .controlBtn:hover {
+        background-color: var(--hover-bg);
+      }
+      .controlBtn:active {
+        background-color: var(--pressed-bg);
+        color: var(--pressed-text);
+      }
+      .btnRow {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px; /* Increased gap */
+        margin-top: 8px; /* Increased margin */
+      }
+      .btnRow .controlBtn {
+        flex: 1;
+        margin: 0;
+      } /* Override margin for row buttons */
+
+      /* ---- Info card ---- */
+      #info {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        width: 280px;
+        max-height: 320px; /* Use max-height */
+        overflow-y: auto;
+        z-index: 998;
+        background: rgba(30, 30, 30, 0.85); /* Match panel background */
+        color: var(--text-color);
+        font-family: Arial, sans-serif;
+        padding: 10px;
+        border-radius: 8px; /* Match panel radius */
+        display: none;
+        /* transform: translateX(-100%); */ /* Initial state set by JS */
+        /* opacity: 0; */ /* Initial state set by JS */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        border: 1px solid var(--border-color); /* Added border */
+      }
+      #info h3 {
+        margin: 0 0 8px;
+        font-size: 1.1em;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 5px;
+      }
+      #info p {
+        margin: 6px 0;
+        font-size: 0.9em;
+        line-height: 1.4;
+      }
+      #info p strong {
+        color: #cccccc; /* Changed from #aaaaff to light grey */
+      } /* Keep existing highlight */
+      #info hr {
+        border-color: var(--border-color);
+        margin: 8px 0;
+      } /* Style hr */
+
+      /* ---- Scrollbar (for #info) ---- */
+      #info::-webkit-scrollbar {
+        width: 10px; /* Slightly thinner */
+      }
+      #info::-webkit-scrollbar-track {
+        background: var(--track-bg);
+        border-radius: 0 8px 8px 0; /* Match panel radius */
+      }
+      #info::-webkit-scrollbar-thumb {
+        background: var(--handle-bg);
+        border-radius: 5px; /* More rounded */
+        border: 1px solid var(--border-color);
+      }
+      #info::-webkit-scrollbar-thumb:hover {
+        background: var(--handle-hover);
+      }
+      /* Basic Firefox scrollbar styling */
+      #info {
+        scrollbar-width: thin;
+        scrollbar-color: var(--handle-bg) var(--track-bg);
+      }
+
+      #dayCounter,
+      #scaleIndicator {
+        position: absolute;
+        right: 10px;
+        color: var(--text-color);
+        font-family: Arial, sans-serif;
+        background: rgba(30, 30, 30, 0.85); /* Match panel background */
+        padding: 8px;
+        border-radius: 8px; /* Match panel radius */
+        font-size: 0.9em;
+        border: 1px solid var(--border-color); /* Added border */
+      }
+      #dayCounter {
+        top: 10px;
+      }
+      #scaleIndicator {
+        top: 55px;
+      } /* Adjusted position */
+
+      /* ---- Loading Screen ---- */
+      #loadingScreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 2000;
+        background: rgba(0, 0, 0, 0.8);
+        color: #fff;
+        display: flex; /* Use flex to center content */
+        justify-content: center;
+        align-items: center;
+        font-size: 24px;
+        font-family: Arial, sans-serif;
+        /* transition: opacity .5s ease-out; */ /* REMOVED CSS Transition */
+        opacity: 1; /* Start visible */
+      }
+
+      /* ---- Error Overlay ---- */
+      #errorOverlay {
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        z-index: 2001;
+        background: rgba(200, 0, 0, 0.9);
+        color: #fff;
+        padding: 15px;
+        border: 1px solid darkred;
+        border-radius: 5px;
+        font-family: Arial, sans-serif;
+        font-size: 16px;
+        text-align: center;
+        display: none; /* Hidden initially */
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen">Loading...</div>
+    <!-- Error Overlay -->
+    <div id="errorOverlay"></div>
+
+    <!-- Collapsible menu -->
+    <div id="menuContainer">
+      <button id="menuToggle" aria-label="Toggle menu"></button>
+
+      <div id="controls">
+        <label
+          >Speed:
+          <input
+            type="range"
+            id="speedSlider"
+            min="0.1"
+            max="5"
+            step="0.1"
+            value="1"
+          />
+          <span id="speedValue">1.0x</span>
+        </label>
+      </div>
+
+      <div id="planetNavContainer">
+        <label for="planetNav">Go to:</label>
+        <select id="planetNav">
+          <option value="">-- Select Body --</option>
+          <optgroup label="Star"><option value="Sun">Sun</option></optgroup>
+          <optgroup label="Planets">
+            <option>Mercury</option>
+            <option>Venus</option>
+            <option>Earth</option>
+            <option>Mars</option>
+            <option>Jupiter</option>
+            <option>Saturn</option>
+            <option>Uranus</option>
+            <option>Neptune</option>
+          </optgroup>
+          <optgroup label="Moons">
+            <option>Moon</option>
+            <option>Phobos</option>
+            <option>Deimos</option>
+            <option>Io</option>
+            <option>Europa</option>
+            <option>Ganymede</option>
+            <option>Callisto</option>
+            <option>Mimas</option>
+            <option>Enceladus</option>
+            <option>Tethys</option>
+            <option>Dione</option>
+            <option>Rhea</option>
+            <option>Titan</option>
+            <option>Iapetus</option>
+            <option>Miranda</option>
+            <option>Ariel</option>
+            <option>Umbriel</option>
+            <option>Titania</option>
+            <option>Oberon</option>
+            <option>Triton</option>
+          </optgroup>
+        </select>
+      </div>
+
+      <div id="additionalControls">
+        <button id="resetCameraBtn" class="controlBtn">Reset Camera</button>
+        <button id="toggleOrbitsBtn" class="controlBtn">Toggle Orbits</button>
+        <div class="btnRow">
+          <button id="pauseBtn" class="controlBtn">Pause</button>
+          <button id="playBtn" class="controlBtn">Play&nbsp;(1x)</button>
+        </div>
+        <div class="btnRow">
+          <button id="slowDownBtn" class="controlBtn">Speed&nbsp;÷2</button>
+          <button id="speedUpBtn" class="controlBtn">Speed&nbsp;×2</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Info card -->
+    <div id="info">
+      <h3>Selected Body</h3>
+      <p>Name: <span id="info-name">N/A</span></p>
+      <p id="info-orbit"></p>
+      <p id="info-size"></p>
+      <hr style="border-color: #444; margin: 8px 0" />
+      <div id="info-details"></div>
+    </div>
+
+    <div id="dayCounter">Days: 0</div>
+    <!-- <div id="scaleIndicator">Scale: Enhanced Visibility</div> -->
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+
+    <!-- three.js import map -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+
+    <script type="module">
+      import { init } from "./js/main.js";
+      document.addEventListener("DOMContentLoaded", init);
+    </script>
+  </body>
 </html>
