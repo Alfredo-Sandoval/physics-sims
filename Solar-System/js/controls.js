@@ -23,7 +23,6 @@ const raycaster = new THREE.Raycaster();
 /* Cached vectors to avoid heavy allocations --------------------------- */
 const targetPosition = new THREE.Vector3();
 const cameraOffset = new THREE.Vector3();
-let cameraAnimation = null; // Store the current camera animation instance
 
 /* ---------------------------------------------------------------------- */
 /*                       Public API                                       */
@@ -46,13 +45,10 @@ export function setupPointerEvents(scene, camera, renderer, selectable) {
 
   // Click selection
   renderer.domElement.addEventListener("click", (e) => {
-    console.log("[Click] Event triggered"); // Log click event
-
+    console.log("[DEBUG] Click event at:", e.clientX, e.clientY);
     raycaster.setFromCamera(pointer, camera);
     const hits = raycaster.intersectObjects(selectable, true);
-
-    console.log("[Click] Raycaster hits:", hits); // Log all intersections
-
+    console.log("[DEBUG] Raycaster hits:", hits);
     let tgt = null;
     for (const h of hits) {
       const o = h.object;
@@ -71,7 +67,7 @@ export function setupPointerEvents(scene, camera, renderer, selectable) {
     }
 
     if (tgt) {
-      console.log("[Click] Selected target:", tgt.userData.name, tgt); // Log selected target
+      console.log("[DEBUG] Selected target:", tgt.userData.name, tgt);
       if (tgt !== getUIReferences().selectedObject) {
         selectObject(tgt);
         setCameraTarget(tgt); // Use the setter function to trigger animation
@@ -79,7 +75,7 @@ export function setupPointerEvents(scene, camera, renderer, selectable) {
         setCameraTarget(tgt); // Re-trigger animation
       }
     } else {
-      console.log("[Click] No selectable target found, deselecting."); // Log deselection
+      console.log("[DEBUG] No selectable target found, deselecting.");
       if (getUIReferences().selectedObject) {
         deselectObject();
         setCameraTarget(null); // Animate back to origin
@@ -197,9 +193,20 @@ export function getCameraTarget() {
   return cameraTarget;
 }
 
+// ADDED: Getter for isManualZoom
+export function getIsManualZoom() {
+  return isManualZoom;
+}
+
 export function setCameraTarget(obj) {
+  console.log("[DEBUG] setCameraTarget called with:", obj);
+  // Simplified: Only set the target and reset manual zoom flag.
+  // The main animation loop will handle the lerp movement.
   if (obj === cameraTarget) {
+    // If clicking the same target again, maybe reset zoom/offset smoothly?
+    // For now, just reset manual zoom flag to allow lerp to continue.
     isManualZoom = false;
+    // Potentially add logic here to smoothly reset camera distance if desired.
     return;
   }
 
@@ -208,118 +215,9 @@ export function setCameraTarget(obj) {
     return;
   }
 
-  cameraTarget = obj;
-  isManualZoom = false;
-
-  if (cameraAnimation) {
-    cameraAnimation.forEach((anim) => anim.pause());
-    anime.remove(window.camera.position);
-    anime.remove(window.controls.target);
-  }
-
-  animateCameraToTarget(cameraTarget);
-}
-
-// --- NEW: Function to handle camera animation ---
-function animateCameraToTarget(target) {
-  const camera = window.camera;
-  const controls = window.controls;
-  if (!camera || !controls) return;
-
-  let finalTargetPos = new THREE.Vector3(0, 0, 0);
-  let desiredDist = CONSTANTS.DEFAULT_CAMERA_DISTANCE;
-
-  if (target) {
-    target.getWorldPosition(finalTargetPos);
-    const ud = target.userData;
-    const geom = target.geometry || ud?.planetMesh?.geometry;
-
-    if (ud.type === "star") desiredDist = CONSTANTS.SUN_RADIUS * 4;
-    else if (ud.type === "planet" && geom?.parameters?.radius)
-      desiredDist =
-        geom.parameters.radius * CONSTANTS.PLANET_CAMERA_DISTANCE_MULTIPLIER;
-    else if (ud.type === "moon" && geom?.parameters?.radius)
-      desiredDist =
-        geom.parameters.radius * CONSTANTS.MOON_CAMERA_DISTANCE_MULTIPLIER;
-  }
-
-  // Calculate the desired camera position based on the current offset direction
-  const currentOffset = new THREE.Vector3().subVectors(
-    camera.position,
-    controls.target
+  console.log(
+    `[Controls] Setting camera target to: ${obj ? obj.userData.name : "null"}`
   );
-  // Ensure offset has some length to avoid NaN issues if camera is exactly at target
-  if (currentOffset.lengthSq() < 0.001) {
-    currentOffset.set(0, 0.1, 1); // Default offset if too close
-  }
-  const finalCamPos = new THREE.Vector3()
-    .copy(finalTargetPos)
-    .add(currentOffset.normalize().multiplyScalar(desiredDist));
-
-  // --- REFACTORED: Use separate Anime.js calls ---
-  // Stop any previous camera animation
-  if (cameraAnimation) {
-    cameraAnimation.forEach((anim) => anim.pause());
-    anime.remove(camera.position);
-    anime.remove(controls.target);
-  }
-
-  // Animate camera position
-  const camAnim = anime({
-    targets: camera.position,
-    x: finalCamPos.x,
-    y: finalCamPos.y,
-    z: finalCamPos.z,
-    duration: 1200,
-    easing: "easeOutCubic",
-    update: () => {
-      // Check for manual interruption during camera move
-      if (isManualZoom && cameraAnimation) {
-        cameraAnimation.forEach((anim) => anim.pause());
-        anime.remove(camera.position);
-        cameraAnimation = null;
-      }
-    },
-    complete: () => {
-      // Remove this specific animation from the tracking array
-      if (cameraAnimation) {
-        cameraAnimation = cameraAnimation.filter((a) => a !== camAnim);
-        if (cameraAnimation.length === 0) cameraAnimation = null;
-      }
-    },
-  });
-
-  // Animate controls target
-  const targetAnim = anime({
-    targets: controls.target,
-    x: finalTargetPos.x,
-    y: finalTargetPos.y,
-    z: finalTargetPos.z,
-    duration: 1200,
-    easing: "easeOutCubic",
-    update: () => {
-      // Check for manual interruption during target move
-      if (isManualZoom && cameraAnimation) {
-        cameraAnimation.forEach((anim) => anim.pause());
-        anime.remove(controls.target);
-        cameraAnimation = null;
-      }
-    },
-    complete: () => {
-      // Remove this specific animation from the tracking array
-      if (cameraAnimation) {
-        cameraAnimation = cameraAnimation.filter((a) => a !== targetAnim);
-        if (cameraAnimation.length === 0) cameraAnimation = null;
-      }
-    },
-  });
-
-  // Store both animations
-  cameraAnimation = [camAnim, targetAnim];
-  // --- END REFACTOR ---
-}
-
-// --- NEW: Helper to check animation status ---
-export function isCameraAnimating() {
-  return !!cameraAnimation; // True if cameraAnimation array exists and is not null/empty
+  cameraTarget = obj;
+  isManualZoom = false; // Reset manual zoom flag on new target selection
 }

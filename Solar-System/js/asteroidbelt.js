@@ -29,6 +29,47 @@ export function createAsteroidBelt(scene, loader) {
     flatShading: true,
   });
 
+  const toRadians = (deg) => (deg * Math.PI) / 180;
+
+  // Helper: Generate a random asteroid orbit and return position
+  function randomAsteroidPosition(innerR, outerR, thick) {
+    // Semi-major axis (distance from Sun)
+    const a = THREE.MathUtils.randFloat(innerR, outerR);
+    // Eccentricity (0 = circle, up to ~0.3 for real asteroids)
+    const e = THREE.MathUtils.randFloat(0, 0.3);
+    // Inclination (tilt, up to ±20°)
+    const inc = toRadians(THREE.MathUtils.randFloatSpread(20));
+    // Longitude of perihelion
+    const omega = Math.random() * Math.PI * 2;
+    // Mean anomaly (position along orbit)
+    const M = Math.random() * Math.PI * 2;
+
+    // Solve for true anomaly (approximate: for small e, ν ≈ M + 2e sin(M))
+    const nu = M + 2 * e * Math.sin(M);
+    // Distance from focus (Sun)
+    const r = (a * (1 - e * e)) / (1 + e * Math.cos(nu));
+
+    // Position in orbital plane
+    let x = r * Math.cos(nu);
+    let z = r * Math.sin(nu);
+    let y = 0;
+
+    // Rotate by inclination
+    const cosInc = Math.cos(inc);
+    const sinInc = Math.sin(inc);
+    const yRot = z * sinInc;
+    z = z * cosInc;
+    y = yRot + (Math.random() - 0.5) * thick * 0.5; // add some vertical scatter
+
+    // Rotate by longitude of perihelion
+    const cosO = Math.cos(omega);
+    const sinO = Math.sin(omega);
+    const xRot = x * cosO - z * sinO;
+    const zRot = x * sinO + z * cosO;
+
+    return [xRot, y, zRot];
+  }
+
   // -- LAYER 1 : “big boys” (individualised InstancedMesh) ------------
   const bigCount = Math.floor(CONSTANTS.ASTEROID_COUNT * 0.1);
   const bigGeom = new THREE.IcosahedronGeometry(1, 1);
@@ -50,12 +91,10 @@ export function createAsteroidBelt(scene, loader) {
 
   let p = 0;
   for (let i = 0; i < dustCount; i++) {
-    const r = THREE.MathUtils.randFloat(innerR, outerR);
-    const θ = Math.random() * Math.PI * 2;
-    const y = (Math.random() - 0.5) * thick;
-    positions[p] = Math.cos(θ) * r;
+    const [x, y, z] = randomAsteroidPosition(innerR, outerR, thick);
+    positions[p] = x;
     positions[p + 1] = y;
-    positions[p + 2] = Math.sin(θ) * r;
+    positions[p + 2] = z;
     sizes[i] = THREE.MathUtils.randFloat(4, 10);
     p += 3;
   }
@@ -84,10 +123,8 @@ export function createAsteroidBelt(scene, loader) {
 
   const populate = (mesh, count, sMin, sMax) => {
     for (let i = 0; i < count; i++) {
-      const r = THREE.MathUtils.randFloat(innerR, outerR);
-      const θ = Math.random() * Math.PI * 2;
-      const y = (Math.random() - 0.5) * thick;
-      dummy.position.set(Math.cos(θ) * r, y, Math.sin(θ) * r);
+      const [x, y, z] = randomAsteroidPosition(innerR, outerR, thick);
+      dummy.position.set(x, y, z);
       dummy.rotation.set(
         Math.random() * Math.PI,
         Math.random() * Math.PI,

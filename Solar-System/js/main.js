@@ -171,22 +171,54 @@ function startAnimationLoop() {
   console.log("[Animation] startAnimationLoop called.");
   let animationFrameId = null; // Store frame ID for potential cancellation
   const targetWorldPos = new THREE.Vector3(); // Cache vector for target position
+  const cameraOffset = new THREE.Vector3(); // Cache vector for camera offset
+  const idealCamPos = new THREE.Vector3(); // Cache vector for ideal camera position
 
   function animate() {
     animationFrameId = requestAnimationFrame(animate);
+
+    // Get delta time for lerping
+    const delta = window.clock.getDelta();
 
     const currentSpeed = window.simulationSpeed ?? 1.0;
     updateScene(currentSpeed); // move planets etc.
 
     // --- Camera Target Following Logic ---
     const currentTarget = Controls.getCameraTarget();
-    const isAnimating = Controls.isCameraAnimating();
+    const isManualZoom = Controls.getIsManualZoom();
 
-    if (currentTarget && !isAnimating && controls) {
-      // If we have a target and the camera isn't doing the Anime.js transition,
-      // keep the controls.target updated to the object's current position.
+    // Follow selected target: only when a target is set, and not during manual pan/zoom
+    if (currentTarget && controls && camera && !isManualZoom) {
+      // Target's current position
       currentTarget.getWorldPosition(targetWorldPos);
-      controls.target.copy(targetWorldPos);
+      // Determine follow distance based on object type
+      let desiredDist = CONSTANTS.DEFAULT_CAMERA_DISTANCE;
+      const ud = currentTarget.userData;
+      const geom = currentTarget.geometry || ud?.planetMesh?.geometry;
+      if (ud.type === "star") desiredDist = CONSTANTS.SUN_RADIUS * 4;
+      else if (ud.type === "planet" && geom?.parameters?.radius)
+        desiredDist =
+          geom.parameters.radius * CONSTANTS.PLANET_CAMERA_DISTANCE_MULTIPLIER;
+      else if (ud.type === "moon" && geom?.parameters?.radius)
+        desiredDist =
+          geom.parameters.radius * CONSTANTS.MOON_CAMERA_DISTANCE_MULTIPLIER;
+
+      // Compute ideal camera offset and position
+      cameraOffset.copy(camera.position).sub(controls.target);
+      if (cameraOffset.lengthSq() < 0.01) {
+        cameraOffset.set(0, 0.1, 1).normalize().multiplyScalar(desiredDist);
+      } else {
+        cameraOffset.normalize().multiplyScalar(desiredDist);
+      }
+      idealCamPos.copy(targetWorldPos).add(cameraOffset);
+
+      // Smoothly interpolate camera and controls.target toward the ideal positions
+      const lerpFactor = Math.min(
+        CONSTANTS.CAMERA_FOLLOW_LERP_FACTOR * delta,
+        1.0
+      );
+      camera.position.lerp(idealCamPos, lerpFactor);
+      controls.target.lerp(targetWorldPos, lerpFactor);
     }
     // --- End Camera Target Following ---
 
