@@ -25,7 +25,7 @@ A collection of interactive physics simulations built using HTML, CSS, and JavaS
     * Earth clouds with rotation.
     * Saturn's ring system.
   * Major moons for Jupiter, Saturn, and Neptune with proper orbits and rotations.
-  * **Asteroid belt generated from real NASA/JPL asteroid orbital data** (see `mpcorb_extended.json`).
+  * **Asteroid belt generated from real NASA/JPL asteroid orbital data** (see `mpcorb_extended.json`). #TODO
   * Interactive selection system - click on any celestial body to view detailed information.
   * Information panel showing physical properties, composition, and other planetary data.
   * Navigation dropdown to quickly focus the camera on specific planets, moons, or asteroids.
