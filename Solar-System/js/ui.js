@@ -126,8 +126,10 @@ export function displayObjectInfo(obj) {
     populateDetails(cfg.info);
   } else if (ud.type === "planet") {
     infoOrbit.textContent = `${cfg.orbitRadiusAU} AU`;
-    infoSize.textContent = `${cfg.actualRadius.toFixed(3)} Earth radii (${(
-      cfg.actualRadius * CONSTANTS.EARTH_RADIUS_KM
+    infoSize.textContent = `${cfg.actualRadiusEarthRadii.toFixed(
+      3
+    )} Earth radii (${(
+      cfg.actualRadiusEarthRadii * CONSTANTS.EARTH_RADIUS_KM
     ).toLocaleString()} km)`;
     populateDetails(cfg.info);
   } else if (ud.type === "moon") {
@@ -198,19 +200,57 @@ export function selectObject(obj, follow = true) {
 
   selectedObject = obj;
 
+  // Create outline for the main mesh (planet or sun)
   const mesh = obj.userData.planetMesh ?? obj;
-  if (mesh.isMesh) {
-    originalMaterials.set(mesh, mesh.material);
-
+  if (mesh && mesh.isMesh) {
     const outlineGeom = mesh.geometry.clone();
-    const outlineMat = materials.OUTLINE_MATERIAL;
+
+    // Create a unique material instance for this outline
+    const outlineMat = new THREE.MeshBasicMaterial({
+      color: CONSTANTS.SELECTED_HIGHLIGHT_COLOR,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.6,
+      depthWrite: false,
+    });
+
     const outline = new THREE.Mesh(outlineGeom, outlineMat);
     outline.scale.multiplyScalar(CONSTANTS.OUTLINE_SCALE);
     outline.position.copy(mesh.position);
     outline.rotation.copy(mesh.rotation);
-    mesh.parent.add(outline);
+
+    // Add outline to the same parent as the mesh
+    const parent = mesh.parent || obj;
+    parent.add(outline);
     outlineMeshes.set(obj, outline);
+
+    // Single flash effect
+    let flashTime = 0;
+    const flashDuration = 0.5; // 0.5 seconds
+    const originalOpacity = 0.6;
+
+    const flash = () => {
+      if (
+        flashTime < flashDuration &&
+        outline.material &&
+        outlineMeshes.has(obj)
+      ) {
+        flashTime += 0.016; // ~60fps
+        const progress = flashTime / flashDuration;
+        const opacity =
+          originalOpacity + 0.4 * Math.sin(progress * Math.PI * 2); // Flash effect
+        outline.material.opacity = Math.max(0.2, Math.min(1.0, opacity));
+        requestAnimationFrame(flash);
+      } else if (outline.material && outlineMeshes.has(obj)) {
+        outline.material.opacity = originalOpacity; // Return to normal
+      }
+    };
+
+    requestAnimationFrame(flash);
+
+    console.log(`Added outline to ${obj.userData.name}`);
   }
+
   displayObjectInfo(obj);
   return { cameraTarget: follow ? obj : null };
 }
@@ -218,20 +258,34 @@ export function selectObject(obj, follow = true) {
 export function deselectObject() {
   if (!selectedObject) return;
 
+  // Remove outline with proper cleanup
   const outline = outlineMeshes.get(selectedObject);
   if (outline) {
-    outline.parent.remove(outline);
+    if (outline.parent) {
+      outline.parent.remove(outline);
+    }
+
+    // Properly dispose of resources
+    if (outline.geometry) {
+      outline.geometry.dispose();
+    }
+    if (outline.material) {
+      if (outline.material.map) outline.material.map.dispose();
+      outline.material.dispose();
+    }
+
     outlineMeshes.delete(selectedObject);
+    console.log(`Removed outline from ${selectedObject.userData.name}`);
   }
 
+  // Restore original material if changed
   const mesh = selectedObject.userData.planetMesh ?? selectedObject;
-  if (mesh.isMesh && originalMaterials.has(mesh)) {
+  if (mesh && mesh.isMesh && originalMaterials.has(mesh)) {
     mesh.material = originalMaterials.get(mesh);
     originalMaterials.delete(mesh);
   }
 
   displayObjectInfo(null);
-
   selectedObject = null;
 }
 
@@ -333,6 +387,36 @@ export function updateUIDisplay(simSpeed) {
       });
     }
   }
+}
+
+/* ---------------------------------------------------------------------- */
+/*                      Outline position update                           */
+/* ---------------------------------------------------------------------- */
+export function updateOutlines() {
+  outlineMeshes.forEach((outline, obj) => {
+    if (!outline || !obj) {
+      console.warn("Invalid outline or object found, cleaning up...");
+      outlineMeshes.delete(obj);
+      return;
+    }
+
+    // Get the main mesh (planet or moon)
+    const mesh = obj.userData.planetMesh ?? obj;
+    if (!mesh || !mesh.isMesh) {
+      console.warn(
+        `Invalid mesh for ${obj.userData?.name}, cleaning up outline...`
+      );
+      if (outline.parent) outline.parent.remove(outline);
+      if (outline.geometry) outline.geometry.dispose();
+      if (outline.material) outline.material.dispose();
+      outlineMeshes.delete(obj);
+      return;
+    }
+
+    // Update outline position to match the mesh
+    outline.position.copy(mesh.position);
+    outline.rotation.copy(mesh.rotation);
+  });
 }
 
 /* ---------------------------------------------------------------------- */

@@ -19,6 +19,9 @@ let lastCameraDist = 0;
 /* Pointer / ray‑casting helpers --------------------------------------- */
 const pointer = new THREE.Vector2();
 const raycaster = new THREE.Raycaster();
+// Improve raycaster precision for small objects
+raycaster.near = 0.1;
+raycaster.far = 10000;
 
 /* Cached vectors to avoid heavy allocations --------------------------- */
 const targetPosition = new THREE.Vector3();
@@ -50,43 +53,61 @@ export function setupPointerEvents(scene, camera, renderer, selectable) {
     },
     { passive: true }
   );
-
   // Click selection
   renderer.domElement.addEventListener("click", (e) => {
-    console.log("[DEBUG] Click event at:", e.clientX, e.clientY);
+    // Prevent default to avoid any browser behavior
+    e.preventDefault();
+
+    // Update pointer position at click time to ensure accuracy
+    pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
+    pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
     raycaster.setFromCamera(pointer, camera);
     const hits = raycaster.intersectObjects(selectable, true);
-    console.log("[DEBUG] Raycaster hits:", hits);
+
     let tgt = null;
-    for (const h of hits) {
-      const o = h.object;
-      if (o.userData?.isSelectable) {
-        tgt = o;
+    // Find the first selectable object in the hit list
+    for (const hit of hits) {
+      const obj = hit.object;
+
+      // Check if object has a click target
+      if (obj.userData?.clickTarget?.userData?.isSelectable) {
+        tgt = obj.userData.clickTarget;
         break;
       }
-      if (o.parent?.userData?.isSelectable) {
-        tgt = o.parent;
+
+      // Check the object itself
+      if (obj.userData?.isSelectable) {
+        tgt = obj;
         break;
       }
-      if (o.userData?.clickTarget?.userData?.isSelectable) {
-        tgt = o.userData.clickTarget;
-        break;
+
+      // Check parent hierarchy - go up until we find a selectable object
+      let parent = obj.parent;
+      while (parent) {
+        if (parent.userData?.isSelectable) {
+          tgt = parent;
+          break;
+        }
+        parent = parent.parent;
       }
+
+      if (tgt) break;
     }
 
     if (tgt) {
-      console.log("[DEBUG] Selected target:", tgt.userData.name, tgt);
+      console.log("[DEBUG] Selected:", tgt.userData.name);
       if (tgt !== getUIReferences().selectedObject) {
         selectObject(tgt);
-        setCameraTarget(tgt); // Use the setter function to trigger animation
+        setCameraTarget(tgt);
       } else {
         setCameraTarget(tgt); // Re-trigger animation
       }
     } else {
-      console.log("[DEBUG] No selectable target found, deselecting.");
+      console.log("[DEBUG] No target found, deselecting");
       if (getUIReferences().selectedObject) {
         deselectObject();
-        setCameraTarget(null); // Animate back to origin
+        setCameraTarget(null);
       }
     }
   });

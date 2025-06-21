@@ -252,40 +252,37 @@ async function loadPlanetData() {
     cfg.calculatedOrbitSpeed = cfg.baseOrbitSpeedFactor
       ? (2 * Math.PI * cfg.baseOrbitSpeedFactor) /
         CONSTANTS.BASE_ORBIT_SPEED_UNIT_TIME
-      : 0;
-
-    /* rotation speed --------------------------------------------------- */
-    const P = Math.abs(cfg.rotationPeriod || 0);
+      : 0; /* rotation speed --------------------------------------------------- */
+    const P = Math.abs(cfg.rotationPeriodDays || 0);
     cfg.calculatedRotationSpeed = P
       ? (2 * Math.PI) / (P * CONSTANTS.DAYS_PER_SIM_SECOND_AT_1X)
       : 0;
-    cfg.rotationDirection = cfg.rotationPeriod >= 0 ? 1 : -1;
-
-    /* atmosphere colour parsing --------------------------------------- */
+    cfg.rotationDirection =
+      cfg.rotationPeriodDays >= 0
+        ? 1
+        : -1; /* atmosphere colour parsing --------------------------------------- */
     if (cfg.atmosphere?.exists) {
-      const col = cfg.atmosphere.color;
+      const col = cfg.atmosphere.colorHex;
       if (typeof col === "string" && col.startsWith("#"))
-        cfg.atmosphere.color = parseInt(col.replace("#", "0x"), 16);
-    }
-
-    /* moons pre‑compute ------------------------------------------------ */
+        cfg.atmosphere.colorHex = parseInt(col.replace("#", "0x"), 16);
+    } /* moons pre‑compute ------------------------------------------------ */
     cfg.moons?.forEach((m) => {
-      const Pm = Math.abs(m.orbitalPeriod || 0);
+      const Pm = Math.abs(m.orbitalPeriodDays || 0);
       m.calculatedOrbitSpeed = Pm
         ? (2 * Math.PI) / (Pm * CONSTANTS.DAYS_PER_SIM_SECOND_AT_1X)
         : 0;
-      m.orbitDirection = m.orbitalPeriod >= 0 ? 1 : -1;
+      m.orbitDirection = m.orbitalPeriodDays >= 0 ? 1 : -1;
 
-      const Rm = Math.abs(m.rotationPeriod || 0);
+      const Rm = Math.abs(m.rotationPeriodDays || 0);
       m.calculatedRotationSpeed = Rm
         ? (2 * Math.PI) / (Rm * CONSTANTS.DAYS_PER_SIM_SECOND_AT_1X)
         : 0;
-      m.rotationDirection = m.rotationPeriod >= 0 ? 1 : -1;
+      m.rotationDirection = m.rotationPeriodDays >= 0 ? 1 : -1;
 
       if (m.atmosphere?.exists) {
-        const col = m.atmosphere.color;
+        const col = m.atmosphere.colorHex;
         if (typeof col === "string" && col.startsWith("#"))
-          m.atmosphere.color = parseInt(col.replace("#", "0x"), 16);
+          m.atmosphere.colorHex = parseInt(col.replace("#", "0x"), 16);
       }
     });
   });

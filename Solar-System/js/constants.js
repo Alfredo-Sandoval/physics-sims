@@ -17,37 +17,40 @@ export const ORBIT_LINE_COLOR = 0x333333; // Made darker
 export const SELECTED_HIGHLIGHT_COLOR = 0x00ffff;
 export const SUN_EMISSIVE_COLOR = 0xffddaa;
 
+/* Selection/Outline ---------------------------------------------------- */
+export const OUTLINE_SCALE = 1.05; // Scale factor for selection outline
+
 /* Scale factors -------------------------------------------------------- */
 export const ORBIT_SCALE_FACTOR = 120; // AU → scene units
 export const MOON_ORBIT_SCALE_FACTOR = 5; // km → scene units (relative to planet)
 export const PLANET_DISPLAY_SCALE_FACTOR = 0.0005; // Earth radii -> scene units
-export const MOON_DISPLAY_SCALE_FACTOR = 0.00005; // Earth radii -> scene units (MUCH Smaller than planets)
-export const MIN_PLANET_RADIUS = 1.0; // Minimum visual size for planets
-export const MIN_MOON_RADIUS = 0.05; // Minimum visual size for moons (Reduced)
+export const MOON_DISPLAY_SCALE_FACTOR = 0.0001; // Earth radii -> scene units (much smaller for proper spacing)
+export const MIN_PLANET_RADIUS = 1.5; // Minimum visual size for planets (reduced from 3.0)
+export const MIN_MOON_RADIUS = 0.08; // Minimum visual size for moons (much smaller)
 
 export const ATMOSPHERE_SCALE_FACTOR = 1.05;
 export const ATMOSPHERE_OPACITY_MULTIPLIER = 0.3;
-export const MOON_ATMOSPHERE_SCALE_FACTOR = 1.1;
-export const MOON_ATMOSPHERE_OPACITY_MULTIPLIER = 0.4;
+export const MOON_ATMOSPHERE_SCALE_FACTOR = 1.05; // Much smaller atmosphere
+export const MOON_ATMOSPHERE_OPACITY_MULTIPLIER = 0.1; // Much less visible
 
 export const CLOUD_SCALE_FACTOR = 1.02;
 export const CLOUD_OPACITY = 0.7;
 export const CLOUD_ROTATION_SPEED_MULTIPLIER = 1.1;
 
 /* Saturn rings (visual only) ------------------------------------------ */
-export const SATURN_RING_INNER_RADIUS_FACTOR = 1.2;
-export const SATURN_RING_OUTER_RADIUS_FACTOR = 2.5;
-export const SATURN_RING_OPACITY = 0.9;
+export const SATURN_RING_INNER_RADIUS_FACTOR = 1.15;
+export const SATURN_RING_OUTER_RADIUS_FACTOR = 2.2;
+export const SATURN_RING_OPACITY = 1.0; // Make fully opaque for visibility
 
 /* Asteroid Belt -------------------------------------------------------- */
 export const ASTEROID_BELT_ENABLED = true;
-export const ASTEROID_COUNT = 5000;
+export const ASTEROID_COUNT = 2000; // Reduced for better performance
 export const ASTEROID_BELT_INNER_RADIUS_AU = 2.2;
 export const ASTEROID_BELT_OUTER_RADIUS_AU = 3.2;
-export const ASTEROID_BELT_THICKNESS_AU = 0.2; // Vertical spread
-export const ASTEROID_MIN_SIZE = 0.01;
-export const ASTEROID_MAX_SIZE = 0.08;
-export const ASTEROID_COLOR = 0x888888;
+export const ASTEROID_BELT_THICKNESS_AU = 0.15; // Reduced vertical spread
+export const ASTEROID_MIN_SIZE = 0.02; // Slightly larger minimum
+export const ASTEROID_MAX_SIZE = 0.12; // Slightly larger maximum
+export const ASTEROID_COLOR = 0x998877; // More brownish rock color
 
 /* Geometry detail ------------------------------------------------------ */
 export const PLANET_SEGMENTS = 32;
@@ -90,7 +93,10 @@ export function createMaterials() {
     }),
     OUTLINE_MATERIAL: new THREE.MeshBasicMaterial({
       color: SELECTED_HIGHLIGHT_COLOR,
-      side: THREE.BackSide,
+      wireframe: true, // Use wireframe for proper outline effect
+      transparent: true,
+      opacity: 0.6, // Slightly more visible wireframe
+      depthWrite: false,
     }),
   };
 }

@@ -3,7 +3,7 @@ import * as THREE from "three";
 import * as CONSTANTS from "./constants.js";
 import { getOrbitalState } from "./kepler.js";
 
-import { updateDayCounter } from "./ui.js";
+import { updateDayCounter, updateOutlines } from "./ui.js";
 import { updateAsteroidBelt } from "./asteroidbelt.js"; // Added import for asteroid belt updates
 
 // Flags and state
@@ -17,7 +17,7 @@ export function updatePositions(planets, delta, simulationSpeed) {
   const simulatedDays = window.simulatedDays || 0;
 
   /* Update each planet group using Kepler's laws --------------------- */
-  planets.forEach((group) => {
+  planets.forEach((group, index) => {
     const ud = group?.userData;
     const cfg = ud?.config;
     if (!ud || !cfg) return;
@@ -35,6 +35,20 @@ export function updatePositions(planets, delta, simulationSpeed) {
     const { x, y } = getOrbitalState(simulatedDays, elements);
 
     // Map AU → scene units
+    const sceneX = x * CONSTANTS.ORBIT_SCALE_FACTOR;
+    const sceneZ = y * CONSTANTS.ORBIT_SCALE_FACTOR;
+
+    // Debug logging for first few planets
+    if (index < 3 && simulatedDays < 15) {
+      console.log(
+        `Planet ${cfg.name}: AU(${x.toFixed(3)}, ${y.toFixed(
+          3
+        )}) -> Scene(${sceneX.toFixed(1)}, ${sceneZ.toFixed(1)}), visible: ${
+          group.visible
+        }, children: ${group.children.length}`
+      );
+    }
+
     group.position.set(
       x * CONSTANTS.ORBIT_SCALE_FACTOR,
       0,
@@ -122,6 +136,7 @@ export function createAnimationLoop(
     const speed = window.simulationSpeed ?? 1.0;
     updatePositions(planets, delta, speed);
     updateRotations(planets, delta, speed);
+    updateOutlines(); // Update outline positions to follow moving objects
     simDays = updateSimulation(delta, speed, simDays);
 
     if (window.asteroidBelt)
@@ -157,11 +172,11 @@ export function updateScene(simSpeed) {
 
   const delta = clock.getDelta();
   const speed = Number.isFinite(simSpeed) && simSpeed >= 0 ? simSpeed : 1.0;
-
   try {
     updatePositions(planets, delta, speed);
     updateRotations(planets, delta, speed);
     updateAsteroidBelt(belt, delta, speed); // ← NEW
+    updateOutlines(); // Update outline positions to follow moving objects
     window.simulatedDays = updateSimulation(delta, speed, currentDays);
   } catch (err) {
     console.error("updateScene error:", err);

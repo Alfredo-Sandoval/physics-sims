@@ -1,18 +1,25 @@
 [
   {
     "name": "Mercury",
-    "actualRadius": 0.383,
-    "scaledRadius": 1.5,
+
     "orbitRadiusAU": 0.38709927,
+    "initialAngleRad": 0.0,
     "baseOrbitSpeedFactor": 1.607,
-    "gravityStrength": 0.38,
-    "initialAngle": 0.0,
-    "rotationPeriod": 58.646,
-    "retrograde": false,
-    "axialTilt": 0.03,
-    "textureUrl": "mercury.jpg",
+
+    "rotationPeriodDays": 58.646,
+    "retrogradeRotation": false,
+    "axialTiltDeg": 0.03,
+
+    "actualRadiusEarthRadii": 0.383,
+    "scaledRadiusDisplayUnits": 1.5,
+    "surfaceGravityG": 0.38,
+
     "atmosphere": { "exists": false },
+
     "moons": [],
+
+    "rings": null,
+
     "kepler": {
       "inclinationDeg": 7.004979,
       "longAscNodeDeg": 48.330766,
@@ -20,15 +27,19 @@
       "meanAnomalyDeg": 174.795884,
       "epoch": "J2000"
     },
+
+    "coolFacts": [
+      "Orbital eccentricity ~0.206—the most elongated of all planets.",
+      "One Mercurian day lasts two Mercurian years."
+    ],
+
     "info": {
       "massEarths": 0.055,
       "densityGcm3": 5.43,
-      "surfaceGravityG": 0.38,
       "escapeVelocityKms": 4.25,
-      "composition": "Rocky planet with iron‑nickel core",
+      "composition": "Rocky planet with iron-nickel core",
       "surfaceTempMinC": -173,
       "surfaceTempMaxC": 427,
-      "rotationPeriodDays": 58.646,
       "orbitalPeriodDays": 87.969,
       "orbitalEccentricity": 0.20563593,
       "orbitalInclinationDeg": 7.0,
@@ -38,7 +49,9 @@
       "moonCount": 0,
       "ringCount": 0,
       "magnetosphere": true
-    }
+    },
+
+    "textureUrl": "mercury.jpg"
   },
   {
     "name": "Venus",
