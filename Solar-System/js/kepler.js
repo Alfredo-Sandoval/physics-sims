@@ -28,10 +28,23 @@ export function meanMotion(aAU, μ = 0.01720209895 ** 2) {
 
 /* Solve Kepler’s equation  M = E − e·sinE  via Newton–Raphson ---------- */
 export function eccentricAnomaly(M, e, tol = 1e-6) {
+  // Clamp eccentricity to prevent mathematical instability
+  e = Math.max(0, Math.min(0.99, e));
+
   let E = e < 0.8 ? M : Math.PI; // first guess
   for (let i = 0; i < 12; i++) {
-    const d = E - e * Math.sin(E) - M;
-    E -= d / (1 - e * Math.cos(E));
+    const sinE = Math.sin(E);
+    const cosE = Math.cos(E);
+    const denominator = 1 - e * cosE;
+
+    // Prevent division by zero
+    if (Math.abs(denominator) < 1e-10) {
+      console.warn("Numerical instability in eccentric anomaly calculation");
+      break;
+    }
+
+    const d = E - e * sinE - M;
+    E -= d / denominator;
     if (Math.abs(d) < tol) break;
   }
   return E;
@@ -39,8 +52,16 @@ export function eccentricAnomaly(M, e, tol = 1e-6) {
 
 /* True anomaly -------------------------------------------------------- */
 export function trueAnomaly(E, e) {
-  const cosν = (Math.cos(E) - e) / (1 - e * Math.cos(E));
-  const sinν = (Math.sqrt(1 - e * e) * Math.sin(E)) / (1 - e * Math.cos(E));
+  const denominator = 1 - e * Math.cos(E);
+
+  // Prevent division by zero for parabolic/hyperbolic orbits
+  if (Math.abs(denominator) < 1e-10) {
+    console.warn("Near-parabolic orbit detected, using approximation");
+    return E; // Fallback approximation
+  }
+
+  const cosν = (Math.cos(E) - e) / denominator;
+  const sinν = (Math.sqrt(Math.max(0, 1 - e * e)) * Math.sin(E)) / denominator;
   return Math.atan2(sinν, cosν); // −π … +π
 }
 
@@ -52,6 +73,22 @@ export function radius(a, e, ν) {
 /* Main API ------------------------------------------------------------ */
 export function getOrbitalState(tDays, elems) {
   const { a, e, ω = 0, M0 = 0 } = elems; // keep flat for now
+
+  // Validate inputs
+  if (!Number.isFinite(a) || a <= 0) {
+    console.error("Invalid semi-major axis:", a);
+    return { x: 0, y: 0, vx: 0, vy: 0, trueAnomaly: 0 };
+  }
+
+  if (!Number.isFinite(e) || e < 0) {
+    console.error("Invalid eccentricity:", e);
+    return { x: 0, y: 0, vx: 0, vy: 0, trueAnomaly: 0 };
+  }
+
+  if (!Number.isFinite(tDays)) {
+    console.error("Invalid time:", tDays);
+    return { x: 0, y: 0, vx: 0, vy: 0, trueAnomaly: 0 };
+  }
 
   // Mean anomaly at time t
   const n = meanMotion(a); // rad/day
@@ -79,11 +116,16 @@ export function getOrbitalState(tDays, elems) {
   }
 
   // Velocity magnitude (vis‑viva) & direction -------------------------
-  const μAU = 0.01720209895 ** 2; // AU^3 day⁻²
-  const vMag = Math.sqrt(μAU * (2 / r - 1 / a)); // AU/day
+  const μAU = 0.01720209895 ** 2; // AU^3 day⁻²  const vMag = Math.sqrt(μAU * (2 / r - 1 / a)); // AU/day
   const h = Math.sqrt(μAU * a * (1 - e * e)); // specific angular momentum
   const vx = -(μAU / h) * Math.sin(ν);
   const vy = (μAU / h) * (e + Math.cos(ν));
+
+  // Validate final results
+  if (!Number.isFinite(x) || !Number.isFinite(y)) {
+    console.error("Invalid orbital position calculated:", { x, y, a, e, ν });
+    return { x: a, y: 0, vx: 0, vy: 0, trueAnomaly: 0 }; // Fallback to circular orbit
+  }
 
   return { x, y, vx, vy, trueAnomaly: ν };
 }

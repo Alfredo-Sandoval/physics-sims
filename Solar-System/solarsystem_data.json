@@ -165,7 +165,7 @@
         "orbitalPeriod": 0.319,
         "rotationPeriod": 0.319,
         "retrograde": false,
-        "textureUrl": "Moon_JPG_Collection/Phobos.jpg"
+        "textureUrl": "Moon_JPG_Collection/phobos.jpg"
       },
       {
         "name": "Deimos",
@@ -174,7 +174,7 @@
         "orbitalPeriod": 1.262,
         "rotationPeriod": 1.262,
         "retrograde": false,
-        "textureUrl": "Moon_JPG_Collection/Deimos.jpg"
+        "textureUrl": "Moon_JPG_Collection/deimos.jpg"
       }
     ],
     "kepler": {
@@ -229,7 +229,7 @@
         "orbitalPeriod": 1.769,
         "rotationPeriod": 1.769,
         "retrograde": false,
-        "textureUrl": "Moon_JPG_Collection/Io.jpg"
+        "textureUrl": "Moon_JPG_Collection/io.jpg"
       },
       {
         "name": "Europa",
@@ -238,7 +238,7 @@
         "orbitalPeriod": 3.551,
         "rotationPeriod": 3.551,
         "retrograde": false,
-        "textureUrl": "Moon_JPG_Collection/Europa.jpg"
+        "textureUrl": "Moon_JPG_Collection/europa.jpg"
       },
       {
         "name": "Ganymede",
@@ -247,7 +247,7 @@
         "orbitalPeriod": 7.155,
         "rotationPeriod": 7.155,
         "retrograde": false,
-        "textureUrl": "Moon_JPG_Collection/Ganymede.jpg"
+        "textureUrl": "Moon_JPG_Collection/ganymede.jpg"
       },
       {
         "name": "Callisto",
@@ -256,7 +256,7 @@
         "orbitalPeriod": 16.689,
         "rotationPeriod": 16.689,
         "retrograde": false,
-        "textureUrl": "Moon_JPG_Collection/Callisto.jpg"
+        "textureUrl": "Moon_JPG_Collection/callisto.jpg"
       }
     ],
     "kepler": {
@@ -313,7 +313,7 @@
         "orbitalPeriod": 0.942,
         "rotationPeriod": 0.942,
         "retrograde": false,
-        "textureUrl": "Moon_JPG_Collection/Mimas.jpg"
+        "textureUrl": "Moon_JPG_Collection/mimas.jpg"
       },
       {
         "name": "Enceladus",
@@ -322,7 +322,7 @@
         "orbitalPeriod": 1.37,
         "rotationPeriod": 1.37,
         "retrograde": false,
-        "textureUrl": "Moon_JPG_Collection/Enceladus.jpg"
+        "textureUrl": "Moon_JPG_Collection/enceladus.jpg"
       },
       {
         "name": "Tethys",
@@ -339,7 +339,7 @@
         "orbitalPeriod": 2.737,
         "rotationPeriod": 2.737,
         "retrograde": false,
-        "textureUrl": "Moon_JPG_Collection/Dione.jpg"
+        "textureUrl": "Moon_JPG_Collection/dione.jpg"
       },
       {
         "name": "Rhea",
@@ -348,7 +348,7 @@
         "orbitalPeriod": 4.518,
         "rotationPeriod": 4.518,
         "retrograde": false,
-        "textureUrl": "Moon_JPG_Collection/Rhea.jpg"
+        "textureUrl": "Moon_JPG_Collection/rhea.jpg"
       },
       {
         "name": "Titan",
@@ -366,7 +366,7 @@
         "orbitalPeriod": 79.33,
         "rotationPeriod": 79.33,
         "retrograde": false,
-        "textureUrl": "Moon_JPG_Collection/Iapetus.jpg"
+        "textureUrl": "Moon_JPG_Collection/iapetus.jpg"
       }
     ],
     "kepler": {
@@ -421,7 +421,7 @@
         "orbitalPeriod": 1.413,
         "rotationPeriod": 1.413,
         "retrograde": false,
-        "textureUrl": "Moon_JPG_Collection/Miranda.jpg"
+        "textureUrl": "Moon_JPG_Collection/miranda.jpg"
       },
       {
         "name": "Ariel",
@@ -430,7 +430,7 @@
         "orbitalPeriod": 2.52,
         "rotationPeriod": 2.52,
         "retrograde": false,
-        "textureUrl": "Moon_JPG_Collection/Ariel.jpg"
+        "textureUrl": "Moon_JPG_Collection/ariel.jpg"
       },
       {
         "name": "Umbriel",
@@ -455,7 +455,7 @@
         "orbitalPeriod": 13.463,
         "rotationPeriod": 13.463,
         "retrograde": false,
-        "textureUrl": "Moon_JPG_Collection/Oberon.jpg"
+        "textureUrl": "Moon_JPG_Collection/oberon.jpg"
       }
     ],
     "kepler": {

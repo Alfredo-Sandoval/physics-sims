@@ -32,10 +32,18 @@ const cameraOffset = new THREE.Vector3();
  * Attach pointer‑move & click listeners for object selection.
  */
 export function setupPointerEvents(scene, camera, renderer, selectable) {
+  // Throttle pointer move events for performance
+  let lastPointerUpdate = 0;
+  const POINTER_THROTTLE_MS = 16; // ~60fps
+
   // Track pointer coords
   renderer.domElement.addEventListener(
     "pointermove",
     (e) => {
+      const now = performance.now();
+      if (now - lastPointerUpdate < POINTER_THROTTLE_MS) return;
+      lastPointerUpdate = now;
+
       // Update BOTH X and Y coordinates (X was missing)
       pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
       pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;

@@ -17,6 +17,7 @@ export function loadTexture(filename, loader) {
     console.error("loadTexture: missing filename or loader");
     return new THREE.Texture(); // placeholder
   }
+
   const tex = loader.load(
     filename,
     (t) => {
@@ -24,7 +25,19 @@ export function loadTexture(filename, loader) {
       t.needsUpdate = true;
     },
     undefined,
-    (err) => console.error(`Texture load failed: ${filename}`, err)
+    (err) => {
+      console.error(`Texture load failed: ${filename}`, err);
+      // Create a simple colored texture as fallback
+      const canvas = document.createElement("canvas");
+      canvas.width = canvas.height = 64;
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#666666";
+      ctx.fillRect(0, 0, 64, 64);
+      const fallbackTex = new THREE.CanvasTexture(canvas);
+      fallbackTex.colorSpace = THREE.SRGBColorSpace;
+      tex.image = canvas;
+      tex.needsUpdate = true;
+    }
   );
   return tex;
 }
