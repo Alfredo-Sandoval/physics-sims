@@ -150,3 +150,22 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+
+# AI Agent files
+claude.md
+*.claude.md
+.claude/
+.cursor/
+cursor.md
+.copilot/
+copilot.md
+.ai/
+ai-*
+agent-*
+*.agent.md
+.anthropic/
+.openai/
+prompt.md
+prompts/
+conversation.md
+conversations/
