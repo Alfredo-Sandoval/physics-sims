@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(python:*)",
+      "Bash(rm:*)",
+      "Bash(ls:*)",
+      "Bash(node:*)",
+      "Bash(grep:*)",
+      "Bash(powershell:*)",
+      "Bash(dir:*)"
+    ],
+    "deny": []
+  }
+}

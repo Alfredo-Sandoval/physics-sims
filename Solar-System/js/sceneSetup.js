@@ -1,3 +1,4 @@
+// File: Solar-System/js/sceneSetup.js
 // --- Scene Setup -------------------------------------------------------
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
@@ -26,7 +27,7 @@ export function setupCamera() {
     0.1,
     CONSTANTS.STARFIELD_RADIUS * 3 // far plane covers stars
   );
-  camera.position.set(150, 100, 150);
+  camera.position.set(200, 150, 200); // Start at reasonable distance
   return camera;
 }
 
@@ -36,25 +37,73 @@ export function setupRenderer() {
     antialias: true,
     powerPreference: "high-performance",
     alpha: true,
+    preserveDrawingBuffer: false, // Save memory
+    stencil: false, // Save memory
   });
   renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(window.devicePixelRatio);
+  // Limit pixel ratio to prevent excessive memory usage on high-DPI displays
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.autoUpdate = false; // Manual shadow updates for better performance
   renderer.physicallyCorrectLights = true;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
+  // Memory optimizations
+  renderer.debug.checkShaderErrors = false;
   document.body.appendChild(renderer.domElement);
   return renderer;
 }
 
 /* OrbitControls -------------------------------------------------------- */
 export function setupControls(camera, renderer) {
+  // Completely fresh OrbitControls instance
   const controls = new OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
-  controls.dampingFactor = 0.05;
-  controls.minDistance = 10;
-  controls.maxDistance = CONSTANTS.STARFIELD_RADIUS * 0.8;
+  
+  // Reset everything to absolute defaults
+  controls.reset();
+  
+  // DISABLE OrbitControls zoom completely
+  controls.enableZoom = false;
+  controls.enableRotate = true;
+  controls.enablePan = true;
   controls.target.set(0, 0, 0);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.1;
+  
+  // Force update
+  controls.update();
+  
+  console.log("[SceneSetup] OrbitControls created with zoom DISABLED");
+  
+  // Manual zoom implementation
+  const minDistance = 50;
+  const maxDistance = 800;
+  const zoomSpeed = 0.05; // Much smaller increments
+  
+  renderer.domElement.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    
+    // Stop camera following when user manually zooms
+    if (window.setCameraFollowTarget) {
+      window.setCameraFollowTarget(null);
+    }
+    
+    const currentDistance = camera.position.distanceTo(controls.target);
+    const zoomDelta = e.deltaY * zoomSpeed;
+    
+    console.log(`[MANUAL ZOOM] Delta: ${e.deltaY}, Current: ${currentDistance.toFixed(1)}, Zoom delta: ${zoomDelta.toFixed(2)}`);
+    
+    // Calculate new distance
+    const newDistance = Math.max(minDistance, Math.min(maxDistance, currentDistance + zoomDelta));
+    
+    // Move camera towards/away from target
+    const direction = camera.position.clone().sub(controls.target).normalize();
+    camera.position.copy(controls.target).add(direction.multiplyScalar(newDistance));
+    
+    console.log(`[MANUAL ZOOM] New distance: ${newDistance.toFixed(1)}`);
+    
+  }, { passive: false });
+  
   return controls;
 }
 
@@ -74,10 +123,12 @@ export function setupLighting(scene) {
   );
   sunLight.position.set(0, 0, 0);
   sunLight.castShadow = true;
-  sunLight.shadow.mapSize.set(2048, 2048);
-  sunLight.shadow.camera.near = 10;
-  sunLight.shadow.camera.far = CONSTANTS.STARFIELD_RADIUS * 1.2;
-  sunLight.shadow.bias = -0.0001;
+  sunLight.shadow.mapSize.set(1024, 1024); // Reduced from 2048 for better performance
+  sunLight.shadow.camera.near = 20; // Optimized near plane
+  sunLight.shadow.camera.far = 500; // Reduced far plane for better shadow quality
+  sunLight.shadow.bias = -0.0005; // Adjusted bias for lower resolution
+  sunLight.shadow.radius = 4; // Soft shadow radius
+  sunLight.shadow.blurSamples = 8; // Reduced blur samples
   scene.add(sunLight);
 
   // Sun glow light (subtle bloom)

@@ -1,3 +1,4 @@
+<!-- File: Solar-System/index.html -->
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -79,36 +80,47 @@
       #menuContainer {
         position: absolute;
         left: 0;
-        top: 10px;
+        top: 15px;
         z-index: 1000;
-        /* transition: transform 0.3s ease; */ /* REMOVED CSS Transition */
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transform: translateX(0);
+      }
+      #menuContainer.collapsed {
+        transform: translateX(-100%);
       }
       #menuToggle {
         position: absolute;
         top: 50%;
-        right: -24px; /* Adjusted position */
-        background: var(--bg-color);
+        right: -40px;
+        background: linear-gradient(135deg, var(--bg-color) 0%, #2a2a2a 100%);
         color: var(--text-color);
         border: 1px solid var(--border-color);
-        border-left: none; /* Remove left border */
-        border-radius: 0 8px 8px 0; /* More rounded */
-        width: 24px;
-        height: 40px; /* Reduced height */
+        border-left: none;
+        border-radius: 0 12px 12px 0;
+        width: 40px;
+        height: 50px;
         cursor: pointer;
         display: flex;
         justify-content: center;
         align-items: center;
         transform: translateY(-50%);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 2px 0 8px rgba(0, 0, 0, 0.3);
       }
       #menuToggle:hover {
-        background: var(--hover-bg);
+        background: linear-gradient(135deg, var(--hover-bg) 0%, #444 100%);
+        transform: translateY(-50%) translateX(2px);
+        box-shadow: 4px 0 12px rgba(0, 0, 0, 0.4);
       }
       #menuToggle::after {
         content: "◀";
-        font-size: 14px;
+        font-size: 16px;
+        font-weight: bold;
+        transition: transform 0.3s ease;
       }
       #menuContainer.collapsed #menuToggle::after {
         content: "▶";
+        transform: scale(1.1);
       }
 
       /* ---- Controls panel ---- */
@@ -116,67 +128,90 @@
       #planetNavContainer,
       #additionalControls {
         position: relative;
-        margin: 0 0 8px 10px; /* Reduced bottom margin */
-        width: 220px;
+        margin: 0 0 12px 15px;
+        width: 240px;
         color: var(--text-color);
-        font-family: Arial, sans-serif;
-        background: rgba(30, 30, 30, 0.85); /* Neutral dark grey */
-        padding: 10px 12px; /* Adjusted padding */
-        border-radius: 8px; /* More rounded */
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, rgba(35, 35, 35, 0.95) 0%, rgba(25, 25, 25, 0.95) 100%);
+        padding: 15px 18px;
+        border-radius: 12px;
         font-size: 0.9em;
-        border: 1px solid var(--border-color); /* Added border */
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(10px);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      #controls:hover,
+      #planetNavContainer:hover,
+      #additionalControls:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.3);
+        border-color: rgba(255, 255, 255, 0.15);
       }
 
       /* ---- Slider (#speedSlider) ---- */
       #controls label {
         display: flex;
         align-items: center;
-        gap: 5px;
+        gap: 8px;
+        font-weight: 500;
       }
       #controls input[type="range"] {
-        flex-grow: 1; /* Allow slider to take space */
+        flex-grow: 1;
         -webkit-appearance: none;
         appearance: none;
-        height: 8px;
+        height: 6px;
         background: transparent;
         cursor: pointer;
-        margin: 0; /* Remove default margin */
+        margin: 0;
+        transition: all 0.3s ease;
       }
       #controls input[type="range"]::-webkit-slider-runnable-track {
-        height: 8px;
-        background: var(--groove-bg);
-        border: 1px solid var(--border-color);
-        border-radius: 4px;
+        height: 6px;
+        background: linear-gradient(135deg, var(--groove-bg) 0%, #2a2a2a 100%);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
       }
       #controls input[type="range"]::-moz-range-track {
-        height: 8px;
-        background: var(--groove-bg);
-        border: 1px solid var(--border-color);
-        border-radius: 4px;
+        height: 6px;
+        background: linear-gradient(135deg, var(--groove-bg) 0%, #2a2a2a 100%);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
       }
       #controls input[type="range"]::-webkit-slider-thumb {
         -webkit-appearance: none;
         appearance: none;
-        margin-top: -4px; /* Adjust vertical position */
-        width: 14px;
-        height: 14px;
-        background: var(--handle-bg);
-        border: 1px solid var(--handle-border);
-        border-radius: 7px;
+        margin-top: -6px;
+        width: 18px;
+        height: 18px;
+        background: linear-gradient(135deg, var(--handle-bg) 0%, #666 100%);
+        border: 2px solid var(--handle-border);
+        border-radius: 9px;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
       }
       #controls input[type="range"]::-moz-range-thumb {
-        width: 14px;
-        height: 14px;
-        background: var(--handle-bg);
-        border: 1px solid var(--handle-border);
-        border-radius: 7px;
-        border: none; /* FF adds own border */
+        width: 18px;
+        height: 18px;
+        background: linear-gradient(135deg, var(--handle-bg) 0%, #666 100%);
+        border: 2px solid var(--handle-border);
+        border-radius: 9px;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
       }
       #controls input[type="range"]:hover::-webkit-slider-thumb {
-        background: var(--handle-hover);
+        background: linear-gradient(135deg, var(--handle-hover) 0%, #777 100%);
+        transform: scale(1.1);
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
       }
       #controls input[type="range"]:hover::-moz-range-thumb {
-        background: var(--handle-hover);
+        background: linear-gradient(135deg, var(--handle-hover) 0%, #777 100%);
+        transform: scale(1.1);
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
       }
       #speedValue {
         min-width: 3em;
@@ -190,21 +225,36 @@
         margin-bottom: 4px; /* Stack label */
       }
       select#planetNav {
-        flex-grow: 1; /* Allow select to take space */
-        width: 100%; /* Make select full width */
-        background-color: var(--bg-color);
+        flex-grow: 1;
+        width: 100%;
+        background: linear-gradient(135deg, var(--bg-color) 0%, #2a2a2a 100%);
         color: var(--text-color);
-        border: 1px solid var(--border-color);
-        padding: 4px;
-        border-radius: 2px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 8px 12px;
+        border-radius: 8px;
         appearance: none;
         -webkit-appearance: none;
         -moz-appearance: none;
-        background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23CCCCCC%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+        background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23FFFFFF%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
         background-repeat: no-repeat;
-        background-position: right 8px top 50%;
+        background-position: right 12px top 50%;
         background-size: 0.65em auto;
-        padding-right: 25px; /* Space for arrow */
+        padding-right: 35px;
+        font-size: 0.9em;
+        font-weight: 500;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      }
+      select#planetNav:hover {
+        background: linear-gradient(135deg, var(--hover-bg) 0%, #444 100%);
+        border-color: rgba(255, 255, 255, 0.15);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      }
+      select#planetNav:focus {
+        outline: none;
+        border-color: var(--highlight-color);
+        box-shadow: 0 0 0 2px rgba(42, 130, 218, 0.3);
       }
       select#planetNav option {
         background-color: var(--bg-color);
@@ -214,26 +264,48 @@
 
       /* ---- Push Buttons (.controlBtn) ---- */
       .controlBtn {
-        background-color: var(--bg-color);
+        background: linear-gradient(135deg, var(--bg-color) 0%, #2a2a2a 100%);
         color: var(--text-color);
-        border: 1px solid var(--border-color);
-        padding: 8px; /* Increased padding */
-        border-radius: 5px; /* More rounded */
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 10px 12px;
+        border-radius: 8px;
         cursor: pointer;
         text-align: center;
         font-size: 0.9em;
-        transition: background-color 0.2s;
-        margin: 3px 0; /* Keep existing */
-        display: block; /* Make buttons block level */
-        width: 100%; /* Make buttons full width */
-        box-sizing: border-box; /* Include padding/border in width */
+        font-weight: 500;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        margin: 4px 0;
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        position: relative;
+        overflow: hidden;
+      }
+      .controlBtn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+        transition: left 0.5s ease;
+      }
+      .controlBtn:hover::before {
+        left: 100%;
       }
       .controlBtn:hover {
-        background-color: var(--hover-bg);
+        background: linear-gradient(135deg, var(--hover-bg) 0%, #444 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        border-color: rgba(255, 255, 255, 0.15);
       }
       .controlBtn:active {
-        background-color: var(--pressed-bg);
+        background: linear-gradient(135deg, var(--pressed-bg) 0%, #1a5a9a 100%);
         color: var(--pressed-text);
+        transform: translateY(0);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
       }
       .btnRow {
         display: flex;
@@ -249,37 +321,178 @@
       /* ---- Info card ---- */
       #info {
         position: absolute;
-        bottom: 10px;
-        left: 10px;
-        width: 280px;
-        max-height: 320px; /* Use max-height */
+        width: 480px;
+        max-height: 70vh;
         overflow-y: auto;
         z-index: 998;
-        background: rgba(30, 30, 30, 0.85); /* Match panel background */
+        background: linear-gradient(135deg, rgba(20, 20, 30, 0.98) 0%, rgba(10, 10, 20, 0.98) 100%);
         color: var(--text-color);
-        font-family: Arial, sans-serif;
-        padding: 10px;
-        border-radius: 8px; /* Match panel radius */
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        padding: 25px;
+        border-radius: 20px;
         display: none;
-        /* transform: translateX(-100%); */ /* Initial state set by JS */
-        /* opacity: 0; */ /* Initial state set by JS */
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-        border: 1px solid var(--border-color); /* Added border */
+        transform: scale(0.8) translateY(20px);
+        opacity: 0;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.8), 0 10px 20px rgba(0, 0, 0, 0.6);
+        border: 3px solid rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(25px);
+        pointer-events: auto;
       }
-      #info h3 {
-        margin: 0 0 8px;
+      
+      #info.show {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+      }
+      
+      #info::before {
+        content: '';
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        background: linear-gradient(45deg, rgba(64, 224, 208, 0.3), rgba(72, 61, 139, 0.3), rgba(255, 20, 147, 0.3));
+        border-radius: 18px;
+        z-index: -1;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+      
+      #info:hover::before {
+        opacity: 1;
+      }
+      .info-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+      }
+
+      #info-title {
+        margin: 0;
+        font-size: 1.5em;
+        font-weight: 600;
+        color: #ffffff;
+        text-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
+      }
+
+      .info-type-badge {
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 0.8em;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        background: rgba(100, 181, 246, 0.2);
+        color: #64b5f6;
+        border: 1px solid rgba(100, 181, 246, 0.3);
+      }
+
+      .info-type-badge.star {
+        background: rgba(255, 215, 0, 0.2);
+        color: #ffd700;
+        border-color: rgba(255, 215, 0, 0.3);
+      }
+
+      .info-type-badge.planet {
+        background: rgba(76, 175, 80, 0.2);
+        color: #4caf50;
+        border-color: rgba(76, 175, 80, 0.3);
+      }
+
+      .info-type-badge.moon {
+        background: rgba(158, 158, 158, 0.2);
+        color: #9e9e9e;
+        border-color: rgba(158, 158, 158, 0.3);
+      }
+
+      .info-quick-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 15px;
+        margin-bottom: 25px;
+      }
+
+      .quick-stat {
+        text-align: center;
+        padding: 12px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .stat-label {
+        font-size: 0.8em;
+        color: rgba(255, 255, 255, 0.7);
+        margin-bottom: 5px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .stat-value {
         font-size: 1.1em;
-        border-bottom: 1px solid var(--border-color);
-        padding-bottom: 5px;
+        font-weight: 600;
+        color: #64b5f6;
+        font-family: 'Courier New', monospace;
       }
-      #info p {
-        margin: 6px 0;
+
+      .info-section {
+        margin-bottom: 20px;
+        padding: 15px;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .info-section h4 {
+        margin: 0 0 12px 0;
+        font-size: 1.1em;
+        font-weight: 600;
+        color: #ffffff;
+        text-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+      }
+
+      .info-content {
+        color: rgba(255, 255, 255, 0.9);
+        line-height: 1.5;
+      }
+
+      .info-content p {
+        margin: 8px 0;
         font-size: 0.9em;
-        line-height: 1.4;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
       }
-      #info p strong {
-        color: #cccccc; /* Changed from #aaaaff to light grey */
-      } /* Keep existing highlight */
+
+      .info-content p strong {
+        color: #64b5f6;
+        font-weight: 500;
+        min-width: 120px;
+      }
+
+      .cool-facts {
+        background: rgba(255, 193, 7, 0.1);
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 193, 7, 0.2);
+      }
+
+      .cool-facts p {
+        margin: 10px 0;
+        font-style: italic;
+        color: #ffc107;
+        display: block !important;
+        text-align: left;
+      }
+
+      .cool-facts p:before {
+        content: "💡 ";
+        margin-right: 8px;
+      }
       #info hr {
         border-color: var(--border-color);
         margin: 8px 0;
@@ -325,6 +538,248 @@
       #scaleIndicator {
         top: 55px;
       } /* Adjusted position */
+
+      /* ---- Planet Labels ---- */
+      .planet-label {
+        position: absolute;
+        color: #ffffff;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-size: 14px;
+        font-weight: 600;
+        pointer-events: auto;
+        z-index: 1000;
+        text-shadow: 
+          0 0 10px rgba(255, 255, 255, 0.5),
+          2px 2px 4px rgba(0, 0, 0, 0.9),
+          0 0 20px rgba(255, 255, 255, 0.3);
+        transition: opacity 0.2s ease;
+        white-space: nowrap;
+        letter-spacing: 0.8px;
+        cursor: pointer;
+        transform-origin: center center;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(5px);
+        border-radius: 8px;
+        padding: 4px 8px;
+      }
+
+      .planet-label-line {
+        display: none; /* Hide all label lines */
+      }
+
+      .planet-label:hover {
+        transform: scale(1.1) translateY(-2px);
+        background: rgba(0, 0, 0, 0.9);
+        text-shadow: 
+          0 0 15px rgba(255, 255, 255, 0.8),
+          2px 2px 4px rgba(0, 0, 0, 0.9),
+          0 0 25px rgba(255, 255, 255, 0.5);
+      }
+
+
+      .planet-label.sun {
+        color: #ffd700;
+        text-shadow: 
+          0 0 15px rgba(255, 215, 0, 0.8),
+          2px 2px 4px rgba(0, 0, 0, 0.9),
+          0 0 30px rgba(255, 215, 0, 0.6);
+        font-size: 16px;
+        background: rgba(255, 215, 0, 0.2);
+      }
+
+      .planet-label.sun:hover {
+        background: rgba(255, 215, 0, 0.3);
+      }
+
+
+      .planet-label.moon {
+        color: #cccccc;
+        font-size: 11px;
+        font-weight: 500;
+        display: none; /* Hidden by default */
+        background: rgba(204, 204, 204, 0.1);
+        text-shadow: 
+          0 0 8px rgba(204, 204, 204, 0.4),
+          1px 1px 3px rgba(0, 0, 0, 0.8);
+      }
+
+
+      /* Extended info panel on hover */
+      .planet-label-extended {
+        position: absolute;
+        background: rgba(0, 0, 0, 0.9);
+        color: #ffffff;
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 400;
+        backdrop-filter: blur(10px);
+        opacity: 0;
+        pointer-events: none;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 1001;
+        min-width: 180px;
+        line-height: 1.5;
+        transform: translateY(10px);
+      }
+
+      .planet-label:hover .planet-label-extended {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      /* Planet-specific label colors */
+      .planet-label[data-planet="Mercury"] {
+        background: rgba(166, 166, 166, 0.15);
+      }
+
+      .planet-label[data-planet="Venus"] {
+        background: rgba(255, 165, 0, 0.15);
+      }
+
+      .planet-label[data-planet="Earth"] {
+        background: rgba(100, 149, 237, 0.15);
+      }
+
+      .planet-label[data-planet="Mars"] {
+        background: rgba(205, 92, 92, 0.15);
+      }
+
+      .planet-label[data-planet="Jupiter"] {
+        background: rgba(255, 140, 0, 0.15);
+      }
+
+      .planet-label[data-planet="Saturn"] {
+        background: rgba(218, 165, 32, 0.15);
+      }
+
+      .planet-label[data-planet="Uranus"] {
+        background: rgba(64, 224, 208, 0.15);
+      }
+
+      .planet-label[data-planet="Neptune"] {
+        background: rgba(30, 144, 255, 0.15);
+      }
+
+      /* ---- Mars Launch Window Panel ---- */
+      #marsLaunchWindow {
+        position: relative;
+        margin: 0 0 12px 15px;
+        width: 240px;
+        color: var(--text-color);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, rgba(139, 69, 19, 0.15) 0%, rgba(160, 82, 45, 0.15) 100%);
+        border: 2px solid rgba(205, 92, 92, 0.3);
+        padding: 15px 18px;
+        border-radius: 12px;
+        font-size: 0.9em;
+        box-shadow: 0 4px 16px rgba(139, 69, 19, 0.2), 0 2px 8px rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(10px);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      #marsLaunchWindow:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(139, 69, 19, 0.3), 0 4px 12px rgba(0, 0, 0, 0.4);
+        border-color: rgba(205, 92, 92, 0.5);
+      }
+
+      .launch-window-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid rgba(205, 92, 92, 0.3);
+      }
+
+      .launch-window-header h4 {
+        margin: 0;
+        font-size: 1.1em;
+        font-weight: 600;
+        color: #ff6b6b;
+        text-shadow: 0 0 10px rgba(255, 107, 107, 0.3);
+      }
+
+      .launch-status {
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.8em;
+        font-weight: 500;
+        background: rgba(255, 107, 107, 0.2);
+        color: #ff6b6b;
+        border: 1px solid rgba(255, 107, 107, 0.3);
+      }
+
+      .launch-status.optimal {
+        background: rgba(46, 204, 113, 0.2);
+        color: #2ecc71;
+        border-color: rgba(46, 204, 113, 0.3);
+      }
+
+      .launch-status.approaching {
+        background: rgba(255, 193, 7, 0.2);
+        color: #ffc107;
+        border-color: rgba(255, 193, 7, 0.3);
+      }
+
+      .launch-info {
+        margin-bottom: 12px;
+      }
+
+      .launch-metric {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 4px 0;
+        font-size: 0.85em;
+      }
+
+      .metric-label {
+        color: rgba(255, 255, 255, 0.8);
+        font-weight: 500;
+      }
+
+      .metric-value {
+        color: #ff6b6b;
+        font-weight: 600;
+        font-family: 'Courier New', monospace;
+        text-shadow: 0 0 5px rgba(255, 107, 107, 0.3);
+      }
+
+      .launch-controls {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .launch-btn {
+        background: linear-gradient(135deg, #ff6b6b 0%, #d63031 100%) !important;
+        color: white !important;
+        border: 1px solid rgba(255, 107, 107, 0.3) !important;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .launch-btn::before {
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent) !important;
+      }
+
+      .launch-btn:hover {
+        background: linear-gradient(135deg, #ff5252 0%, #c62828 100%) !important;
+        box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4) !important;
+      }
+
+      .trajectory-btn {
+        background: linear-gradient(135deg, #6c5ce7 0%, #5a4fcf 100%) !important;
+        color: white !important;
+        border: 1px solid rgba(108, 92, 231, 0.3) !important;
+      }
+
+      .trajectory-btn:hover {
+        background: linear-gradient(135deg, #5f3dc4 0%, #4c63d2 100%) !important;
+        box-shadow: 0 4px 12px rgba(108, 92, 231, 0.4) !important;
+      }
 
       /* ---- Loading Screen ---- */
       #loadingScreen {
@@ -441,16 +896,86 @@
           <button id="speedUpBtn" class="controlBtn">Speed&nbsp;×2</button>
         </div>
       </div>
+
+      <div id="marsLaunchWindow">
+        <div class="launch-window-header">
+          <h4>🚀 Mars Launch Window</h4>
+          <div class="launch-status" id="launchStatus">Calculating...</div>
+        </div>
+        <div class="launch-info">
+          <div class="launch-metric">
+            <span class="metric-label">Next Window:</span>
+            <span class="metric-value" id="nextLaunchDate">--</span>
+          </div>
+          <div class="launch-metric">
+            <span class="metric-label">Days Until:</span>
+            <span class="metric-value" id="daysUntilLaunch">--</span>
+          </div>
+          <div class="launch-metric">
+            <span class="metric-label">Window Duration:</span>
+            <span class="metric-value" id="windowDuration">~30 days</span>
+          </div>
+          <div class="launch-metric">
+            <span class="metric-label">Earth-Mars Angle:</span>
+            <span class="metric-value" id="earthMarsAngle">--°</span>
+          </div>
+        </div>
+        <div class="launch-controls">
+          <button id="jumpToLaunchBtn" class="controlBtn launch-btn">Jump to Launch Window</button>
+          <button id="showTrajectoryBtn" class="controlBtn trajectory-btn">Show Trajectory</button>
+        </div>
+      </div>
     </div>
 
     <!-- Info card -->
     <div id="info">
-      <h3>Selected Body</h3>
-      <p>Name: <span id="info-name">N/A</span></p>
-      <p id="info-orbit"></p>
-      <p id="info-size"></p>
-      <hr style="border-color: #444; margin: 8px 0" />
-      <div id="info-details"></div>
+      <div class="info-header">
+        <h3 id="info-title">Select a Celestial Body</h3>
+        <div class="info-type-badge" id="info-type-badge">Unknown</div>
+      </div>
+      
+      <div class="info-quick-stats">
+        <div class="quick-stat">
+          <div class="stat-label">Distance</div>
+          <div class="stat-value" id="info-distance">--</div>
+        </div>
+        <div class="quick-stat">
+          <div class="stat-label">Size</div>
+          <div class="stat-value" id="info-size">--</div>
+        </div>
+        <div class="quick-stat">
+          <div class="stat-label">Type</div>
+          <div class="stat-value" id="info-body-type">--</div>
+        </div>
+      </div>
+
+      <div class="info-section">
+        <h4>🌍 Physical Properties</h4>
+        <div id="info-physical" class="info-content">
+          <p>Select a celestial body to view its properties</p>
+        </div>
+      </div>
+
+      <div class="info-section">
+        <h4>🚀 Orbital Mechanics</h4>
+        <div id="info-orbital" class="info-content">
+          <p>Orbital information will appear here</p>
+        </div>
+      </div>
+
+      <div class="info-section" id="cool-facts-section" style="display: none;">
+        <h4>✨ Cool Facts</h4>
+        <div id="info-cool-facts" class="info-content cool-facts">
+          <p>Amazing facts about this celestial body</p>
+        </div>
+      </div>
+
+      <div class="info-section">
+        <h4>📊 Detailed Data</h4>
+        <div id="info-details" class="info-content">
+          <p>Detailed information will appear here</p>
+        </div>
+      </div>
     </div>
 
     <div id="dayCounter">Days: 0</div>
@@ -469,8 +994,32 @@
     </script>
 
     <script type="module">
-      import { init } from "./js/main.js";
-      document.addEventListener("DOMContentLoaded", init);
+      console.log("[HTML] Script starting...");
+      try {
+        console.log("[HTML] Importing main module...");
+        const { init } = await import("./js/main.js");
+        console.log("[HTML] Module imported successfully");
+
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", () => {
+            console.log("[HTML] DOMContentLoaded event fired, calling init...");
+            init();
+          });
+        } else {
+          console.log("[HTML] DOM already loaded, calling init immediately...");
+          init();
+        }
+      } catch (err) {
+        console.error("[HTML] Detailed Error:", err);
+        console.error("[HTML] Error name:", err.name);
+        console.error("[HTML] Error message:", err.message);
+        console.error("[HTML] Error stack:", err.stack);
+        const loadingScreen = document.getElementById("loadingScreen");
+        if (loadingScreen) {
+          loadingScreen.innerHTML =
+            "Failed to load: " + err.message + "<br>Check console for details.";
+        }
+      }
     </script>
   </body>
 </html>

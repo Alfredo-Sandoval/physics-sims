@@ -3,10 +3,7 @@ import * as THREE from "three";
 import * as CONSTANTS from "./constants.js";
 import { createPlanetMaterial, createOrbitLine, loadTexture } from "./utils.js";
 
-/* --------------------------------------------        color: cfg.atmosphere.colorHex ?? 0xffffff        RotationPeriod: `${Math.abs(m.rotationPeriodDays).toFixed(2)} days${
-          m.rotationPeriodDays === m.orbitalPeriodDays ? " (tidally locked)" : ""        transparent: true,
-        opacity:
-          (cfg.atmosphere.densityRelative ?? 0.3) *---------------------- */
+/* ---------------------------------------------------------------------- */
 /*                               Sun                                      */
 /* ---------------------------------------------------------------------- */
 export function createSun(scene, loader) {
@@ -30,10 +27,10 @@ export function createSun(scene, loader) {
         Composition: "H 73%, He 25%, metals 2%",
         Temperature: "5 500 °C surface",
         Rotation: "~25 days equator",
-        Diameter: `~${(
+        Diameter: "~" + (
           (CONSTANTS.SUN_RADIUS * 2 * CONSTANTS.EARTH_RADIUS_KM) /
           4.2
-        ).toLocaleString()} km`,
+        ).toLocaleString() + " km",
         Type: "G2V main‑sequence",
         Age: "4.6 Gyr",
       },
@@ -56,11 +53,9 @@ export async function createPlanetsAndOrbits(scene, loader, configs) {
 
   for (const cfg of configs) {
     const orbitR = cfg.orbitRadiusAU * CONSTANTS.ORBIT_SCALE_FACTOR;
-    // Use normal scaling with reasonable minimum size
-    const dispR = Math.max(
-      cfg.scaledRadiusDisplayUnits,
-      CONSTANTS.MIN_PLANET_RADIUS
-    );
+    // Use pre-scaled radius from JSON for balanced visual sizing
+    const dispR = cfg.scaledRadius || 
+      Math.max(CONSTANTS.MIN_PLANET_RADIUS, cfg.actualRadius * CONSTANTS.PLANET_DISPLAY_SCALE_FACTOR);
 
     /* Planet group (holds mesh, atmosphere, moons) --------------------- */
     const group = new THREE.Group();
@@ -86,21 +81,20 @@ export async function createPlanetsAndOrbits(scene, loader, configs) {
     );
     const mat = createPlanetMaterial(cfg.textureUrl, loader);
     const mesh = new THREE.Mesh(geom, mat);
-    mesh.castShadow = mesh.receiveShadow = true;
+    // Only enable shadows for larger planets (performance optimization)
+    const shouldHaveShadows = dispR > CONSTANTS.MIN_PLANET_RADIUS * 2;
+    mesh.castShadow = shouldHaveShadows;
+    mesh.receiveShadow = true; // All planets receive shadows
     mesh.rotation.order = "YXZ";
     mesh.rotation.z = group.userData.axialTilt;
     // Set up click target to point to the selectable parent group
     mesh.userData.clickTarget = group;
     group.userData.planetMesh = mesh;
     group.add(mesh);
-    mesh.name = `${cfg.name}_mesh`;
+    mesh.name = cfg.name + "_mesh";
 
-    // Debug logging
-    console.log(
-      `Created planet ${cfg.name}: radius=${dispR}, material=${mat.type}, geometry=${geom.type}, position will be set by animation`
-    );
     if (!mat.map && cfg.textureUrl) {
-      console.warn(`Texture missing for ${cfg.name}: ${cfg.textureUrl}`);
+      console.warn("Texture missing for " + cfg.name + ": " + cfg.textureUrl);
     }
 
     /* Atmosphere ------------------------------------------------------- */
@@ -185,12 +179,12 @@ export async function createPlanetsAndOrbits(scene, loader, configs) {
 /*                            Rings (Saturn)                              */
 /* ---------------------------------------------------------------------- */
 async function createRings(cfg, planetR, group, loader) {
-  console.log(`Creating rings for ${cfg.name}, planet radius: ${planetR}`);
+  console.log("Creating rings for " + cfg.name + ", planet radius: " + planetR);
 
   // Use the rings object from the new JSON structure
   const ringConfig = cfg.rings;
   if (!ringConfig || !ringConfig.textureUrl) {
-    console.log(`No ring texture specified for ${cfg.name}`);
+    console.log("No ring texture specified for " + cfg.name);
     return;
   }
 
@@ -200,10 +194,10 @@ async function createRings(cfg, planetR, group, loader) {
   const innerRadius = planetR * CONSTANTS.SATURN_RING_INNER_RADIUS_FACTOR;
   const outerRadius = planetR * CONSTANTS.SATURN_RING_OUTER_RADIUS_FACTOR;
 
-  console.log(`Ring radii: inner=${innerRadius}, outer=${outerRadius}`);
+  console.log("Ring radii: inner=" + innerRadius + ", outer=" + outerRadius);
 
-  // Much higher quality geometry
-  const geom = new THREE.RingGeometry(innerRadius, outerRadius, 128, 32);
+  // Reduced geometry detail to prevent OOM issues (was 128, 32)
+  const geom = new THREE.RingGeometry(innerRadius, outerRadius, 64, 16);
 
   // Revert to MeshStandardMaterial and add alphaTest
   const mat = new THREE.MeshStandardMaterial({
@@ -223,7 +217,7 @@ async function createRings(cfg, planetR, group, loader) {
   ring.rotation.z = (ringConfig.tiltDeg ?? 0) * THREE.MathUtils.DEG2RAD;
 
   group.add(ring);
-  console.log(`Ring added to ${cfg.name} group, material:`, mat);
+  console.log("Ring added to " + cfg.name + " group, material:", mat);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -235,18 +229,15 @@ function createMoonSystem(planetCfg, planetGroup, planetRadius, loader) {
   const moonBodies = [];
 
   planetCfg.moons.forEach((m) => {
-    // --- Reasonable Moon Scaling for Better Visibility ---
-    // Scale based on actual radius with modest visibility enhancement
-    const scaledRadiusFromActual =
-      m.actualRadiusEarthRadii *
-      CONSTANTS.EARTH_RADIUS_KM *
-      CONSTANTS.MOON_DISPLAY_SCALE_FACTOR;
-    // Apply reasonable minimum size and very moderate scaling
+    // Size moons proportionally to their actual size and parent planet
+    const moonActualRadius = m.actualRadius || m.actualRadiusEarthRadii || 0.1;
+    const baseMoonSize = moonActualRadius * CONSTANTS.MOON_DISPLAY_SCALE_FACTOR;
+    // Scale relative to parent planet size for better visual balance
+    const planetScale = Math.min(1.0, planetRadius / 10); // Larger planets = relatively smaller moons
     const moonR = Math.max(
-      CONSTANTS.MIN_MOON_RADIUS, // Small minimum size
-      scaledRadiusFromActual * 3 // 3x size multiplier for visibility (since base scale is much smaller)
+      CONSTANTS.MIN_MOON_RADIUS,
+      Math.min(baseMoonSize * planetScale, CONSTANTS.MAX_MOON_RADIUS)
     );
-    // --- End Moon Scaling ---
 
     // Calculate orbit radius relative to planet center
     const orbitR =
@@ -259,20 +250,22 @@ function createMoonSystem(planetCfg, planetGroup, planetRadius, loader) {
       CONSTANTS.MOON_SEGMENTS / 2
     );
 
-    // Only load texture if textureUrl exists
-    const tex = m.textureUrl
-      ? loadTexture(m.textureUrl.toLowerCase(), loader)
-      : null;
+    // Load texture with proper error handling and path correction
+    let tex = null;
+    if (m.textureUrl) {
+      // Check if texture is in Moon_JPG_Collection subdirectory
+      const texturePath = m.textureUrl.includes('/') ? m.textureUrl : `Moon_JPG_Collection/${m.textureUrl}`;
+      tex = loadTexture(texturePath, loader);
+    }
 
     const mat = new THREE.MeshStandardMaterial({
-      map: tex ? tex : null, // Explicitly set to null if no texture
-      color: tex ? 0xffffff : 0xaaaaaa, // Use white if texture, grey otherwise
-      roughness: 0.9, // Explicitly set higher roughness for less gloss
-      metalness: 0.05, // Explicitly set lower metalness for a rocky look
-      // Keep emissive properties but don't map if no texture
-      emissive: 0x333333,
-      emissiveIntensity: 0.4,
-      emissiveMap: tex ? tex : null, // Explicitly set to null if no texture
+      map: tex,
+      color: tex ? 0xffffff : 0xcccccc, // Light grey if no texture
+      roughness: CONSTANTS.MOON_ROUGHNESS,
+      metalness: CONSTANTS.MOON_METALNESS,
+      // Reduce emissive to let texture show through better
+      emissive: 0x111111,
+      emissiveIntensity: 0.1,
     });
     const moon = new THREE.Mesh(geom, mat);
 
@@ -294,17 +287,19 @@ function createMoonSystem(planetCfg, planetGroup, planetRadius, loader) {
       const a = new THREE.Mesh(g, matA);
       a.raycast = () => {};
       moon.add(a);
-      console.log(
-        `Added atmosphere to ${m.name} with color ${m.atmosphere.colorHex} and opacity ${matA.opacity}`
-      );
     }
 
-    /* Self‑lights for tiny moons -------------------------------------- */
-    const light1 = new THREE.PointLight(0xffffff, 1, moonR * 15);
-    const light2 = new THREE.PointLight(0xffffee, 0.5, moonR * 10);
-    light2.position.set(moonR * 3, 0, 0);
-    moon.add(light1);
-    moon.add(light2);
+    /* Self‑lights for tiny moons (optimized) ------------------------- */
+    // Only add self-lighting for very small moons that need it
+    if (moonR < CONSTANTS.MIN_MOON_RADIUS * 2) {
+      const light1 = new THREE.PointLight(0xffffff, 0.5, moonR * 10);
+      light1.castShadow = false; // Disable shadow casting for performance
+      moon.add(light1);
+    }
+    
+    // Moons don't cast shadows but can receive them
+    moon.castShadow = false;
+    moon.receiveShadow = true;
 
     /* Position & userdata --------------------------------------------- */
     const θ0 = Math.random() * Math.PI * 2;
@@ -324,16 +319,16 @@ function createMoonSystem(planetCfg, planetGroup, planetRadius, loader) {
       initialAngle: θ0,
       currentAngle: θ0,
       displayInfo: {
-        Size: `${(m.actualRadiusEarthRadii * CONSTANTS.EARTH_RADIUS_KM).toFixed(
+        Size: (m.actualRadius * CONSTANTS.EARTH_RADIUS_KM).toFixed(
           0
-        )} km radius`,
-        Orbit: `${m.orbitRadiusKm.toLocaleString()} km from ${planetCfg.name}`,
-        OrbitalPeriod: `${Math.abs(m.orbitalPeriodDays).toFixed(2)} days${
-          m.orbitalPeriodDays < 0 ? " (retrograde)" : ""
-        }`,
-        RotationPeriod: `${Math.abs(m.rotationPeriod).toFixed(2)} days${
+        ) + " km radius",
+        Orbit: m.orbitRadiusKm.toLocaleString() + " km from " + planetCfg.name,
+        OrbitalPeriod: Math.abs(m.orbitalPeriod).toFixed(2) + " days" + (
+          m.orbitalPeriod < 0 ? " (retrograde)" : ""
+        ),
+        RotationPeriod: Math.abs(m.rotationPeriod).toFixed(2) + " days" + (
           m.rotationPeriod === m.orbitalPeriod ? " (tidally locked)" : ""
-        }`,
+        ),
         ParentPlanet: planetCfg.name,
         ...(m.info || {}),
       },
@@ -373,4 +368,77 @@ function createMoonSystem(planetCfg, planetGroup, planetRadius, loader) {
 
   planetGroup.add(moonGroup);
   return { moonSystemGroup: moonGroup, moonBodies };
+}
+
+/* ---------------------------------------------------------------------- */
+/*                      Memory Management / Cleanup                       */
+/* ---------------------------------------------------------------------- */
+
+/**
+ * Dispose of a Three.js object and its children recursively
+ * @param {THREE.Object3D} object - The object to dispose
+ */
+export function disposeObject(object) {
+  if (!object) return;
+
+  // Recursively dispose children first
+  if (object.children && object.children.length > 0) {
+    for (let i = object.children.length - 1; i >= 0; i--) {
+      disposeObject(object.children[i]);
+    }
+  }
+
+  // Dispose geometry
+  if (object.geometry) {
+    object.geometry.dispose();
+  }
+
+  // Dispose material(s)
+  if (object.material) {
+    if (Array.isArray(object.material)) {
+      object.material.forEach(material => {
+        disposeMaterial(material);
+      });
+    } else {
+      disposeMaterial(object.material);
+    }
+  }
+
+  // Remove from parent if it has one
+  if (object.parent) {
+    object.parent.remove(object);
+  }
+}
+
+/**
+ * Dispose of a Three.js material and its textures
+ * @param {THREE.Material} material - The material to dispose
+ */
+function disposeMaterial(material) {
+  if (!material) return;
+
+  // Dispose all texture properties
+  Object.keys(material).forEach(key => {
+    const value = material[key];
+    if (value && typeof value.dispose === 'function') {
+      value.dispose();
+    }
+  });
+
+  // Dispose the material itself
+  material.dispose();
+}
+
+/**
+ * Clean up celestial bodies to prevent memory leaks
+ * @param {Array} celestialBodies - Array of celestial body objects
+ */
+export function cleanupCelestialBodies(celestialBodies) {
+  if (!celestialBodies || !Array.isArray(celestialBodies)) return;
+
+  celestialBodies.forEach(body => {
+    disposeObject(body);
+  });
+  
+  celestialBodies.length = 0; // Clear the array
 }

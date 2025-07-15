@@ -1,3 +1,4 @@
+// File: Solar-System/js/controls.js
 // --- Controls Module ---------------------------------------------------
 import * as THREE from "three";
 import * as CONSTANTS from "./constants.js";
@@ -12,9 +13,7 @@ import { findCelestialBodyByName } from "./utils.js";
 let simulationSpeed = 1.0; // shadow copy of global window.simulationSpeed
 let orbitLinesVisible = true;
 
-let cameraTarget = null; // THREE.Object3D currently followed
-let isManualZoom = false; // true while user is scrolling / dragging
-let lastCameraDist = 0;
+// Camera targeting variables removed - using standard orbit controls
 
 /* Pointer / ray‑casting helpers --------------------------------------- */
 const pointer = new THREE.Vector2();
@@ -53,6 +52,8 @@ export function setupPointerEvents(scene, camera, renderer, selectable) {
     },
     { passive: true }
   );
+  
+  // REMOVED: Wheel event listener that was conflicting with OrbitControls
   // Click selection
   renderer.domElement.addEventListener("click", (e) => {
     // Prevent default to avoid any browser behavior
@@ -96,18 +97,20 @@ export function setupPointerEvents(scene, camera, renderer, selectable) {
     }
 
     if (tgt) {
-      console.log("[DEBUG] Selected:", tgt.userData.name);
       if (tgt !== getUIReferences().selectedObject) {
         selectObject(tgt);
-        setCameraTarget(tgt);
-      } else {
-        setCameraTarget(tgt); // Re-trigger animation
+        // Start following the clicked object
+        if (window.setCameraFollowTarget) {
+          window.setCameraFollowTarget(tgt);
+        }
       }
     } else {
-      console.log("[DEBUG] No target found, deselecting");
       if (getUIReferences().selectedObject) {
         deselectObject();
-        setCameraTarget(null);
+        // Stop following when clicking empty space
+        if (window.setCameraFollowTarget) {
+          window.setCameraFollowTarget(null);
+        }
       }
     }
   });
@@ -141,7 +144,10 @@ export function setupUIControls(planetConfigs, selectable, scene) {
       const obj = findCelestialBodyByName(name, selectable);
       if (obj) {
         selectObject(obj);
-        setCameraTarget(obj);
+        // Start following the selected object
+        if (window.setCameraFollowTarget) {
+          window.setCameraFollowTarget(obj);
+        }
       }
       setTimeout(() => {
         planetNav.value = "";
@@ -156,7 +162,6 @@ export function setupUIControls(planetConfigs, selectable, scene) {
     window.controls.target.set(0, 0, 0);
     window.controls.update();
     deselectObject();
-    setCameraTarget(null);
   });
 
   /* Toggle orbit‑lines ------------------------------------------------- */
@@ -205,48 +210,17 @@ export function setupUIControls(planetConfigs, selectable, scene) {
  * Mark manual zoom when user scrolls wheel or starts orbit‑control drag.
  */
 export function setupZoomDetection(renderer, controls) {
-  renderer.domElement.addEventListener(
-    "wheel",
-    () => {
-      if (cameraTarget) isManualZoom = true;
-    },
-    { passive: true }
-  );
-  controls.addEventListener("start", () => {
-    if (cameraTarget) isManualZoom = true;
-  });
+  // Zoom detection disabled - no auto-targeting anymore
+  console.log("[Controls] Zoom detection disabled - using standard OrbitControls");
 }
 
 /* Simple getters / setters -------------------------------------------- */
 export function getCameraTarget() {
-  return cameraTarget;
+  return null; // Always return null - no targeting
 }
 
-// ADDED: Getter for isManualZoom
 export function getIsManualZoom() {
-  return isManualZoom;
+  return false; // Always return false - no manual zoom tracking
 }
 
-export function setCameraTarget(obj) {
-  console.log("[DEBUG] setCameraTarget called with:", obj);
-  // Simplified: Only set the target and reset manual zoom flag.
-  // The main animation loop will handle the lerp movement.
-  if (obj === cameraTarget) {
-    // If clicking the same target again, maybe reset zoom/offset smoothly?
-    // For now, just reset manual zoom flag to allow lerp to continue.
-    isManualZoom = false;
-    // Potentially add logic here to smoothly reset camera distance if desired.
-    return;
-  }
-
-  if (obj !== null && !obj?.userData?.isSelectable) {
-    console.warn("setCameraTarget: object not selectable", obj);
-    return;
-  }
-
-  console.log(
-    `[Controls] Setting camera target to: ${obj ? obj.userData.name : "null"}`
-  );
-  cameraTarget = obj;
-  isManualZoom = false; // Reset manual zoom flag on new target selection
-}
+// Camera targeting functions removed - using standard orbit controls

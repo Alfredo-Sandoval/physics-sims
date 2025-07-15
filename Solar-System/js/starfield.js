@@ -1,3 +1,4 @@
+// File: Solar-System/js/starfield.js
 // --- Starfield Module --------------------------------------------------
 import * as THREE from "three";
 import * as CONSTANTS from "./constants.js";

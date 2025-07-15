@@ -1,3 +1,4 @@
+// File: Solar-System/js/constants.js
 // --- Constants and Configuration ---
 import * as THREE from "three";
 
@@ -21,12 +22,13 @@ export const SUN_EMISSIVE_COLOR = 0xffddaa;
 export const OUTLINE_SCALE = 1.05; // Scale factor for selection outline
 
 /* Scale factors -------------------------------------------------------- */
-export const ORBIT_SCALE_FACTOR = 120; // AU → scene units
-export const MOON_ORBIT_SCALE_FACTOR = 5; // km → scene units (relative to planet)
-export const PLANET_DISPLAY_SCALE_FACTOR = 0.0005; // Earth radii -> scene units
-export const MOON_DISPLAY_SCALE_FACTOR = 0.0001; // Earth radii -> scene units (much smaller for proper spacing)
-export const MIN_PLANET_RADIUS = 1.5; // Minimum visual size for planets (reduced from 3.0)
-export const MIN_MOON_RADIUS = 0.08; // Minimum visual size for moons (much smaller)
+export const ORBIT_SCALE_FACTOR = 100; // AU → scene units (balanced for visibility)
+export const MOON_ORBIT_SCALE_FACTOR = 0.0002; // km → scene units (tiny to keep moons close to planets)
+export const PLANET_DISPLAY_SCALE_FACTOR = 2; // Fallback scaling for planets without scaledRadius
+export const MOON_DISPLAY_SCALE_FACTOR = 1.5; // Moon scaling relative to planet size
+export const MIN_PLANET_RADIUS = 1.0; // Minimum visual size for planets
+export const MIN_MOON_RADIUS = 0.15; // Minimum visual size for moons
+export const MAX_MOON_RADIUS = 2; // Maximum visual size for moons
 
 export const ATMOSPHERE_SCALE_FACTOR = 1.05;
 export const ATMOSPHERE_OPACITY_MULTIPLIER = 0.3;
@@ -42,25 +44,52 @@ export const SATURN_RING_INNER_RADIUS_FACTOR = 1.15;
 export const SATURN_RING_OUTER_RADIUS_FACTOR = 2.2;
 export const SATURN_RING_OPACITY = 1.0; // Make fully opaque for visibility
 
+/* Material properties -------------------------------------------------- */
+export const PLANET_ROUGHNESS = 0.9;
+export const PLANET_METALNESS = 0.05;
+export const MOON_ROUGHNESS = 0.95;
+export const MOON_METALNESS = 0.02;
+export const ASTEROID_ROUGHNESS_BROWN = 0.95;
+export const ASTEROID_ROUGHNESS_GRAY = 0.9;
+export const ASTEROID_ROUGHNESS_DARK = 0.98;
+export const ASTEROID_METALNESS_BROWN = 0.02;
+export const ASTEROID_METALNESS_GRAY = 0.05;
+export const ASTEROID_METALNESS_DARK = 0.01;
+
+/* Asteroid colors ------------------------------------------------------ */
+export const ASTEROID_COLOR_BROWN = 0x8B7355;
+export const ASTEROID_COLOR_GRAY = 0x696969;
+export const ASTEROID_COLOR_DARK_BROWN = 0x654321;
+
+/* Error handling and validation ---------------------------------------- */
+export const NULL_GUARD = (obj, property) => obj && obj[property] !== undefined && obj[property] !== null;
+export const SAFE_GET = (obj, path, defaultValue = null) => {
+  try {
+    return path.split('.').reduce((o, p) => o && o[p], obj) || defaultValue;
+  } catch {
+    return defaultValue;
+  }
+};
+
 /* Asteroid Belt -------------------------------------------------------- */
 export const ASTEROID_BELT_ENABLED = true;
-export const ASTEROID_COUNT = 2000; // Reduced for better performance
+export const ASTEROID_COUNT = 800; // Reduced from 1500 to prevent OOM issues
 export const ASTEROID_BELT_INNER_RADIUS_AU = 2.2;
 export const ASTEROID_BELT_OUTER_RADIUS_AU = 3.2;
 export const ASTEROID_BELT_THICKNESS_AU = 0.15; // Reduced vertical spread
-export const ASTEROID_MIN_SIZE = 0.02; // Slightly larger minimum
-export const ASTEROID_MAX_SIZE = 0.12; // Slightly larger maximum
+export const ASTEROID_MIN_SIZE = 0.1; // Much larger minimum for visibility
+export const ASTEROID_MAX_SIZE = 0.4; // Much larger maximum for visibility
 export const ASTEROID_COLOR = 0x998877; // More brownish rock color
 
 /* Geometry detail ------------------------------------------------------ */
-export const PLANET_SEGMENTS = 32;
-export const MOON_SEGMENTS = 16;
-export const ORBIT_SEGMENTS = 128;
-export const MOON_ORBIT_SEGMENTS = 64;
+export const PLANET_SEGMENTS = 24; // Reduced from 32 to prevent OOM
+export const MOON_SEGMENTS = 12; // Reduced from 16 to prevent OOM
+export const ORBIT_SEGMENTS = 64; // Reduced from 128 to prevent OOM
+export const MOON_ORBIT_SEGMENTS = 32; // Reduced from 64 to prevent OOM
 
 /* Star‑field ----------------------------------------------------------- */
 export const STARFIELD_RADIUS = 5000;
-export const STAR_COUNT = 20000;
+export const STAR_COUNT = 8000; // Reduced from 20000 to prevent OOM
 export const STAR_BASE_SIZE = 2.0;
 export const STAR_MIN_SIZE_FACTOR = 0.5;
 export const STAR_MAX_SIZE_FACTOR = 1.5;
@@ -81,8 +110,6 @@ export const HEMI_LIGHT_INTENSITY = 0.4;
 export const SUN_EMISSIVE_INTENSITY = 1.5;
 
 /* Material defaults ---------------------------------------------------- */
-export const PLANET_ROUGHNESS = 0.7;
-export const PLANET_METALNESS = 0.1;
 
 /* Utility to create highlight / outline materials --------------------- */
 export function createMaterials() {

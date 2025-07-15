@@ -1,18 +1,16 @@
 [
   {
     "name": "Mercury",
-
+    "actualRadius": 0.383,
+    "scaledRadius": 1.5,
     "orbitRadiusAU": 0.38709927,
-    "initialAngleRad": 0.0,
     "baseOrbitSpeedFactor": 1.607,
-
-    "rotationPeriodDays": 58.646,
-    "retrogradeRotation": false,
-    "axialTiltDeg": 0.03,
-
-    "actualRadiusEarthRadii": 0.383,
-    "scaledRadiusDisplayUnits": 1.5,
-    "surfaceGravityG": 0.38,
+    "gravityStrength": 0.38,
+    "initialAngle": 0.0,
+    "rotationPeriod": 58.646,
+    "retrograde": false,
+    "axialTilt": 0.03,
+    "textureUrl": "mercury.jpg",
 
     "atmosphere": { "exists": false },
 
@@ -40,7 +38,7 @@
       "composition": "Rocky planet with iron-nickel core",
       "surfaceTempMinC": -173,
       "surfaceTempMaxC": 427,
-      "orbitalPeriodDays": 87.969,
+      "orbitalPeriod": 87.969,
       "orbitalEccentricity": 0.20563593,
       "orbitalInclinationDeg": 7.0,
       "meanOrbitalSpeedKms": 47.36,
@@ -78,6 +76,13 @@
       "meanAnomalyDeg": 50.416114,
       "epoch": "J2000"
     },
+    "coolFacts": [
+      "Venus rotates backwards (retrograde) - the Sun rises in the west!",
+      "A day on Venus (243 Earth days) is longer than its year (224 Earth days).",
+      "Venus is the hottest planet in our solar system at 462°C, hotter than Mercury!",
+      "The atmospheric pressure on Venus is 90 times that of Earth - like being 900m underwater."
+    ],
+
     "info": {
       "massEarths": 0.815,
       "densityGcm3": 5.24,
@@ -87,7 +92,7 @@
       "surfaceTempMinC": 462,
       "surfaceTempMaxC": 462,
       "rotationPeriodDays": 243.02,
-      "orbitalPeriodDays": 224.701,
+      "orbitalPeriod": 224.701,
       "orbitalEccentricity": 0.00677672,
       "orbitalInclinationDeg": 3.39,
       "meanOrbitalSpeedKms": 35.02,
@@ -123,7 +128,7 @@
         "orbitalPeriod": 27.3217,
         "rotationPeriod": 27.3217,
         "retrograde": false,
-        "textureUrl": "Moon_JPG_Collection/ganymede.jpg"
+        "textureUrl": "Moon_JPG_Collection/callisto.jpg"
       }
     ],
     "kepler": {
@@ -133,6 +138,13 @@
       "meanAnomalyDeg": 357.529109,
       "epoch": "J2000"
     },
+    "coolFacts": [
+      "Earth is the only known planet with life - home to over 8.7 million species!",
+      "Earth's magnetic field protects us from deadly solar radiation.",
+      "A year on Earth is actually 365.25 days long - that's why we have leap years!",
+      "Earth is the densest planet in our solar system at 5.51 g/cm³."
+    ],
+
     "info": {
       "massEarths": 1.0,
       "densityGcm3": 5.51,
@@ -142,7 +154,7 @@
       "surfaceTempMinC": -88,
       "surfaceTempMaxC": 58,
       "rotationPeriodDays": 1.0,
-      "orbitalPeriodDays": 365.256,
+      "orbitalPeriod": 365.256,
       "orbitalEccentricity": 0.01670863,
       "orbitalInclinationDeg": 0.0,
       "meanOrbitalSpeedKms": 29.78,
@@ -206,7 +218,7 @@
       "surfaceTempMinC": -153,
       "surfaceTempMaxC": 20,
       "rotationPeriodDays": 1.026,
-      "orbitalPeriodDays": 686.98,
+      "orbitalPeriod": 686.98,
       "orbitalEccentricity": 0.0933941,
       "orbitalInclinationDeg": 1.85,
       "meanOrbitalSpeedKms": 24.07,
@@ -215,7 +227,14 @@
       "moonCount": 2,
       "ringCount": 0,
       "magnetosphere": false
-    }
+    },
+
+    "coolFacts": [
+      "Mars has the largest volcano in the solar system - Olympus Mons is 21km high!",
+      "A day on Mars is just 37 minutes longer than a day on Earth.",
+      "Mars has seasons like Earth due to its 25° axial tilt.",
+      "Mars appears red because of iron oxide (rust) on its surface."
+    ]
   },
   {
     "name": "Jupiter",
@@ -288,7 +307,7 @@
       "surfaceTempMinC": -108,
       "surfaceTempMaxC": -108,
       "rotationPeriodDays": 0.4135,
-      "orbitalPeriodDays": 4332.59,
+      "orbitalPeriod": 4332.59,
       "orbitalEccentricity": 0.04838624,
       "orbitalInclinationDeg": 1.31,
       "meanOrbitalSpeedKms": 13.07,
@@ -297,7 +316,14 @@
       "moonCount": 79,
       "ringCount": 1,
       "magnetosphere": true
-    }
+    },
+
+    "coolFacts": [
+      "Jupiter is so massive it could fit all other planets inside it!",
+      "Jupiter's Great Red Spot is a storm larger than Earth that has raged for 400+ years.",
+      "Jupiter acts as a 'cosmic vacuum cleaner' protecting inner planets from asteroids.",
+      "Jupiter has 79 known moons - more than any other planet!"
+    ]
   },
   {
     "name": "Saturn",
@@ -343,7 +369,8 @@
         "orbitRadiusKm": 294660,
         "orbitalPeriod": 1.888,
         "rotationPeriod": 1.888,
-        "retrograde": false
+        "retrograde": false,
+        "textureUrl": "Moon_JPG_Collection/mimas.jpg"
       },
       {
         "name": "Dione",
@@ -370,6 +397,7 @@
         "orbitalPeriod": 15.95,
         "rotationPeriod": 15.95,
         "retrograde": false,
+        "textureUrl": "Moon_JPG_Collection/enceladus.jpg",
         "atmosphere": { "exists": true, "color": "#ffa500", "density": 0.3 }
       },
       {
@@ -398,7 +426,7 @@
       "surfaceTempMinC": -139,
       "surfaceTempMaxC": -139,
       "rotationPeriodDays": 0.444,
-      "orbitalPeriodDays": 10759.22,
+      "orbitalPeriod": 10759.22,
       "orbitalEccentricity": 0.0541506,
       "orbitalInclinationDeg": 2.49,
       "meanOrbitalSpeedKms": 9.68,
@@ -451,7 +479,8 @@
         "orbitRadiusKm": 266000,
         "orbitalPeriod": 4.144,
         "rotationPeriod": 4.144,
-        "retrograde": false
+        "retrograde": false,
+        "textureUrl": "Moon_JPG_Collection/ariel.jpg"
       },
       {
         "name": "Titania",
@@ -459,7 +488,8 @@
         "orbitRadiusKm": 436300,
         "orbitalPeriod": 8.706,
         "rotationPeriod": 8.706,
-        "retrograde": false
+        "retrograde": false,
+        "textureUrl": "Moon_JPG_Collection/miranda.jpg"
       },
       {
         "name": "Oberon",
@@ -487,7 +517,7 @@
       "surfaceTempMinC": -197,
       "surfaceTempMaxC": -197,
       "rotationPeriodDays": 0.718,
-      "orbitalPeriodDays": 30685,
+      "orbitalPeriod": 30685,
       "orbitalEccentricity": 0.04716771,
       "orbitalInclinationDeg": 0.77,
       "meanOrbitalSpeedKms": 6.8,
@@ -522,7 +552,8 @@
         "orbitRadiusKm": 354759,
         "orbitalPeriod": 5.877,
         "rotationPeriod": 5.877,
-        "retrograde": true
+        "retrograde": true,
+        "textureUrl": "Moon_JPG_Collection/oberon.jpg"
       }
     ],
     "kepler": {
@@ -541,7 +572,7 @@
       "surfaceTempMinC": -201,
       "surfaceTempMaxC": -201,
       "rotationPeriodDays": 0.671,
-      "orbitalPeriodDays": 60190,
+      "orbitalPeriod": 60190,
       "orbitalEccentricity": 0.00858587,
       "orbitalInclinationDeg": 1.77,
       "meanOrbitalSpeedKms": 5.43,

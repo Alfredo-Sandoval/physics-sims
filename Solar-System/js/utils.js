@@ -1,11 +1,15 @@
+// File: Solar-System/js/utils.js
 // --- Utility Functions -------------------------------------------------
 import * as THREE from "three";
 import * as CONSTANTS from "./constants.js";
 import { eccentricAnomaly, trueAnomaly, radius } from "./kepler.js"; // Import Kepler helpers
 
+/* Texture cache for performance ---------------------------------------- */
+const textureCache = new Map();
+
 /* Centralised texture loader ------------------------------------------ */
 /**
- * Loads a texture with correct colour‑space and basic error logging.
+ * Loads a texture with correct colour‑space, caching, and error handling.
  * Assumes textureLoader.setPath('./textures/') has already been called.
  *
  * @param {string} filename  The filename within the textures folder.
@@ -16,6 +20,11 @@ export function loadTexture(filename, loader) {
   if (!filename || !loader) {
     console.error("loadTexture: missing filename or loader");
     return new THREE.Texture(); // placeholder
+  }
+
+  // Check cache first
+  if (textureCache.has(filename)) {
+    return textureCache.get(filename);
   }
 
   const tex = loader.load(
@@ -39,7 +48,61 @@ export function loadTexture(filename, loader) {
       tex.needsUpdate = true;
     }
   );
+  
+  // Cache the texture
+  textureCache.set(filename, tex);
   return tex;
+}
+
+/**
+ * Clear texture cache (useful for cleanup)
+ */
+export function clearTextureCache() {
+  textureCache.clear();
+}
+
+/* Standardized userData factories ------------------------------------ */
+export function createPlanetUserData(config, orbitRadius, dispRadius) {
+  return {
+    isSelectable: true,
+    name: config.name,
+    type: "planet",
+    config: config,
+    orbitRadius: orbitRadius,
+    orbitSpeed: config.calculatedOrbitSpeed,
+    rotationSpeed: config.calculatedRotationSpeed,
+    rotationDirection: config.rotationDirection,
+    initialAngle: config.initialAngleRad || config.initialAngle || 0,
+    currentAngle: config.initialAngleRad || config.initialAngle || 0,
+    axialTilt: (config.axialTilt || 0) * THREE.MathUtils.DEG2RAD,
+    displayRadius: dispRadius
+  };
+}
+
+export function createMoonUserData(moonConfig, planetConfig, orbitRadius, moonRadius) {
+  return {
+    isSelectable: true,
+    name: moonConfig.name,
+    type: "moon",
+    parentPlanetName: planetConfig.name,
+    config: moonConfig,
+    orbitRadius: orbitRadius,
+    orbitSpeed: moonConfig.calculatedOrbitSpeed,
+    orbitDirection: moonConfig.orbitDirection,
+    rotationSpeed: moonConfig.calculatedRotationSpeed,
+    rotationDirection: moonConfig.rotationDirection,
+    initialAngle: Math.random() * Math.PI * 2,
+    currentAngle: Math.random() * Math.PI * 2,
+    displayRadius: moonRadius,
+    displayInfo: {
+      Size: `${(moonConfig.actualRadiusEarthRadii * CONSTANTS.EARTH_RADIUS_KM).toFixed(0)} km radius`,
+      Orbit: `${moonConfig.orbitRadiusKm.toLocaleString()} km from ${planetConfig.name}`,
+      OrbitalPeriod: `${Math.abs(moonConfig.orbitalPeriod || moonConfig.orbitalPeriodDays || 0).toFixed(2)} days${(moonConfig.orbitalPeriod || moonConfig.orbitalPeriodDays || 0) < 0 ? " (retrograde)" : ""}`,
+      RotationPeriod: `${Math.abs(moonConfig.rotationPeriod || moonConfig.rotationPeriodDays || 0).toFixed(2)} days${moonConfig.rotationPeriod === moonConfig.orbitalPeriod ? " (tidally locked)" : ""}`,
+      ParentPlanet: planetConfig.name,
+      ...(moonConfig.info || {})
+    }
+  };
 }
 
 /* Look‑up helper ------------------------------------------------------- */
@@ -74,8 +137,8 @@ export function createPlanetMaterial(filename, loader) {
   return new THREE.MeshStandardMaterial({
     map: texture ?? undefined,
     color: texture ? 0xffffff : 0x888888, // grey placeholder if missing
-    roughness: CONSTANTS.PLANET_ROUGHNESS,
-    metalness: CONSTANTS.PLANET_METALNESS,
+    roughness: 0.9,
+    metalness: 0.05,
   });
 }
 

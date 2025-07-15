@@ -1,9 +1,10 @@
+// File: Solar-System/js/animation.js
 // --- Animation Module --------------------------------------------------
 import * as THREE from "three";
 import * as CONSTANTS from "./constants.js";
 import { getOrbitalState } from "./kepler.js";
 
-import { updateDayCounter, updateOutlines } from "./ui.js";
+import { updateDayCounter, updateOutlines, updatePlanetLabels } from "./ui.js";
 import { updateAsteroidBelt } from "./asteroidbelt.js"; // Added import for asteroid belt updates
 
 // Flags and state
@@ -18,9 +19,9 @@ export function updatePositions(planets, delta, simulationSpeed) {
 
   /* Update each planet group using Kepler's laws --------------------- */
   planets.forEach((group, index) => {
-    const ud = group?.userData;
-    const cfg = ud?.config;
-    if (!ud || !cfg) return;
+    if (!group?.userData?.config) return;
+    const ud = group.userData;
+    const cfg = ud.config;
 
     // Get orbital elements, reading from nested kepler object
     const elements = {
@@ -38,16 +39,6 @@ export function updatePositions(planets, delta, simulationSpeed) {
     const sceneX = x * CONSTANTS.ORBIT_SCALE_FACTOR;
     const sceneZ = y * CONSTANTS.ORBIT_SCALE_FACTOR;
 
-    // Debug logging for first few planets
-    if (index < 3 && simulatedDays < 15) {
-      console.log(
-        `Planet ${cfg.name}: AU(${x.toFixed(3)}, ${y.toFixed(
-          3
-        )}) -> Scene(${sceneX.toFixed(1)}, ${sceneZ.toFixed(1)}), visible: ${
-          group.visible
-        }, children: ${group.children.length}`
-      );
-    }
 
     group.position.set(
       x * CONSTANTS.ORBIT_SCALE_FACTOR,
@@ -81,10 +72,9 @@ export function updateRotations(planets, delta, simulationSpeed) {
   const tf = dt * simulationSpeed;
 
   planets.forEach((group) => {
-    const ud = group?.userData;
-    if (!ud) return;
+    if (!group?.userData?.planetMesh?.isMesh) return;
+    const ud = group.userData;
     const mesh = ud.planetMesh;
-    if (!mesh?.isMesh) return;
 
     mesh.rotation.y += ud.rotationSpeed * ud.rotationDirection * tf;
 
@@ -175,8 +165,14 @@ export function updateScene(simSpeed) {
   try {
     updatePositions(planets, delta, speed);
     updateRotations(planets, delta, speed);
-    updateAsteroidBelt(belt, delta, speed); // ← NEW
+    updateAsteroidBelt(belt, delta, speed);
     updateOutlines(); // Update outline positions to follow moving objects
+    
+    // Update planet labels
+    const celestialBodies = [...planets, ...(window.asteroidBelt ? [] : [])];
+    if (window.sunMesh) celestialBodies.push(window.sunMesh);
+    updatePlanetLabels(window.camera, celestialBodies);
+    
     window.simulatedDays = updateSimulation(delta, speed, currentDays);
   } catch (err) {
     console.error("updateScene error:", err);

@@ -1,4 +1,4 @@
-// --- Main Module — Solar System Simulation ----------------------------
+// File: Solar-System/js/main.js// --- Main Module — Solar System Simulation ----------------------------
 import * as THREE from "three";
 import * as CONSTANTS from "./constants.js";
 
@@ -6,12 +6,14 @@ import * as SceneSetup from "./sceneSetup.js";
 import * as UI from "./ui.js";
 import * as Controls from "./controls.js";
 import * as Animation from "./animation.js";
+import { ShadowManager } from "./shadowManager.js";
 
 import { createStarfield } from "./starfield.js";
 import { createSun, createPlanetsAndOrbits } from "./celestialBodies.js";
 import { createAsteroidBelt } from "./asteroidbelt.js";
 import { findCelestialBodyByName } from "./utils.js";
 import { updateScene } from "./animation.js";
+import { MarsLaunchWindow } from "./marsLaunchWindow.js";
 
 /* ---------------------------------------------------------------------- */
 /*                        Global state (exported)                         */
@@ -24,8 +26,12 @@ let planetConfigs = []; // JSON data
 let clock;
 let textureLoader;
 let sunMesh;
+let shadowManager;
 
 let isInitialized = false;
+let cameraFollowTarget = null;
+let cameraFollowDistance = 50;
+let marsLaunchWindow;
 
 export const appState = {
   get scene() {
@@ -65,6 +71,13 @@ export async function init() {
   }
   isInitialized = true;
 
+  // Emergency timeout to show error if stuck
+  const emergencyTimeout = setTimeout(() => {
+    console.error('[EMERGENCY] Init taking too long, forcing error display');
+    showLoadingScreen(false);
+    showErrorMessage('Initialization timed out. Check console for details.');
+  }, 10000); // 10 second timeout
+
   try {
     await loadPlanetData();
     console.log("[Init] planet JSON loaded");
@@ -98,9 +111,14 @@ export async function init() {
     window.scene = scene;
     window.camera = camera;
     window.controls = controls;
+    
+    // Add camera following functions to window
+    window.setCameraFollowTarget = setCameraFollowTarget;
+    window.getCameraFollowTarget = getCameraFollowTarget;
 
     /* Lighting & UI */
     SceneSetup.setupLighting(scene);
+    shadowManager = new ShadowManager(renderer);
     UI.initUI();
 
     /* Loading splash */
@@ -111,57 +129,160 @@ export async function init() {
     const sunData = createSun(scene, textureLoader);
     sunMesh = sunData.mesh;
     celestialBodies.push(sunMesh);
+    window.sunMesh = sunMesh; // Make available globally for labels
 
     /* Planets & moons */
+    console.log("[Init] Creating planets and orbits...");
     const planetData = await createPlanetsAndOrbits(
       scene,
       textureLoader,
       planetConfigs
     );
+    console.log("[Init] Planets created:", planetData.planets.length);
     planets = planetData.planets;
     celestialBodies.push(...planetData.celestialBodies);
     window.planets = planets;
 
     /* Optional asteroid belt */
     if (CONSTANTS.ASTEROID_BELT_ENABLED) {
+      console.log('[Main] Creating asteroid belt...');
       window.asteroidBelt = createAsteroidBelt(scene, textureLoader);
+      if (window.asteroidBelt) {
+        console.log('[Main] Asteroid belt created successfully with', window.asteroidBelt.children.length, 'asteroids');
+        console.log('[Main] Asteroid belt position:', window.asteroidBelt.position);
+        console.log('[Main] Asteroid belt visible:', window.asteroidBelt.visible);
+      } else {
+        console.log('[Main] Asteroid belt creation failed');
+      }
     }
 
     /* Dropdown builder */
     setupPlanetDropdown(planets, sunMesh);
 
+    clearTimeout(emergencyTimeout);
     showLoadingScreen(false);
 
+    /* Mars Launch Window */
+    console.log("[Init] Creating Mars launch window...");
+    marsLaunchWindow = new MarsLaunchWindow();
+    setupMarsLaunchWindowEvents();
+
     /* Event hooks */
-    // --- DEBUG: Log the selectable bodies array ---
-    console.log(
-      "[Init] Selectable bodies before setupPointerEvents:",
-      celestialBodies
-    );
     if (!celestialBodies || celestialBodies.length === 0) {
       console.error(
         "[Init] CRITICAL: celestialBodies array is empty or invalid!"
       );
     }
-    // --- END DEBUG ---
     Controls.setupPointerEvents(scene, camera, renderer, celestialBodies);
-    Controls.setupZoomDetection(renderer, controls);
     Controls.setupUIControls(planetConfigs, celestialBodies, scene);
 
-    /* Debug list */
-    console.log("Selectable bodies:");
-    celestialBodies.forEach((o, i) =>
-      console.log(`  ${i}: ${o.userData?.name} (${o.type})`)
-    );
 
     /* Kick off animation loop */
     startAnimationLoop();
     console.log("[Init] done");
   } catch (err) {
+    clearTimeout(emergencyTimeout);
     console.error("Init failed:", err);
+    showLoadingScreen(false);
     showErrorMessage(err.message || "Unknown error during init");
     isInitialized = false;
   }
+}
+
+/* ---------------------------------------------------------------------- */
+/*                      Mars Launch Window Events                         */
+/* ---------------------------------------------------------------------- */
+function setupMarsLaunchWindowEvents() {
+  // Jump to launch window event
+  window.addEventListener('jumpToLaunchWindow', () => {
+    console.log("[Mars Launch] Jump to launch window requested");
+    
+    // Calculate the next launch window
+    const launchWindow = marsLaunchWindow.calculateLaunchWindow(window.simulatedDays || 0);
+    
+    // Speed up time to get to the launch window faster
+    if (launchWindow.daysUntil > 0) {
+      const speedIncrease = Math.min(launchWindow.daysUntil / 30, 10); // Max 10x speed
+      window.simulationSpeed = speedIncrease;
+      
+      // Show Mars and Earth
+      const earthMesh = findCelestialBodyByName(celestialBodies, "Earth");
+      const marsMesh = findCelestialBodyByName(celestialBodies, "Mars");
+      
+      if (earthMesh && marsMesh) {
+        // Focus on Earth-Mars system
+        const midpoint = new THREE.Vector3();
+        midpoint.addVectors(earthMesh.position, marsMesh.position).multiplyScalar(0.5);
+        
+        // Set camera to view both planets
+        camera.position.set(midpoint.x, midpoint.y + 100, midpoint.z + 100);
+        camera.lookAt(midpoint);
+        
+        // Update controls
+        if (controls && controls.target) {
+          controls.target.copy(midpoint);
+        }
+      }
+    }
+  });
+
+  // Show trajectory event
+  window.addEventListener('showMarsTrajectory', () => {
+    console.log("[Mars Launch] Show trajectory requested");
+    showHohmannTransferTrajectory();
+  });
+}
+
+function showHohmannTransferTrajectory() {
+  const earthMesh = findCelestialBodyByName(celestialBodies, "Earth");
+  const marsMesh = findCelestialBodyByName(celestialBodies, "Mars");
+  
+  if (!earthMesh || !marsMesh) return;
+  
+  // Remove existing trajectory
+  const existingTrajectory = scene.getObjectByName('marsTrajectory');
+  if (existingTrajectory) {
+    scene.remove(existingTrajectory);
+  }
+  
+  // Create Hohmann transfer trajectory
+  const trajectoryGroup = new THREE.Group();
+  trajectoryGroup.name = 'marsTrajectory';
+  
+  // Calculate semi-major axis for Hohmann transfer
+  const earthOrbitRadius = earthMesh.position.length();
+  const marsOrbitRadius = marsMesh.position.length();
+  const semiMajorAxis = (earthOrbitRadius + marsOrbitRadius) / 2;
+  
+  // Create trajectory curve
+  const trajectoryPoints = [];
+  const segments = 64;
+  
+  for (let i = 0; i <= segments; i++) {
+    const angle = (i / segments) * Math.PI; // Half orbit
+    const x = semiMajorAxis * Math.cos(angle);
+    const z = semiMajorAxis * Math.sin(angle);
+    trajectoryPoints.push(new THREE.Vector3(x, 0, z));
+  }
+  
+  const trajectoryGeometry = new THREE.BufferGeometry().setFromPoints(trajectoryPoints);
+  const trajectoryMaterial = new THREE.LineBasicMaterial({ 
+    color: 0xff6b6b, 
+    linewidth: 3,
+    transparent: true,
+    opacity: 0.8
+  });
+  
+  const trajectoryLine = new THREE.Line(trajectoryGeometry, trajectoryMaterial);
+  trajectoryGroup.add(trajectoryLine);
+  
+  // Add trajectory to scene
+  scene.add(trajectoryGroup);
+  
+  // Remove trajectory after 10 seconds
+  setTimeout(() => {
+    scene.remove(trajectoryGroup);
+  }, 10000);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -183,51 +304,109 @@ function startAnimationLoop() {
     const currentSpeed = window.simulationSpeed ?? 1.0;
     updateScene(currentSpeed); // move planets etc.
 
-    // --- Camera Target Following Logic ---
-    const currentTarget = Controls.getCameraTarget();
-    const isManualZoom = Controls.getIsManualZoom();
-
-    // Follow selected target: only when a target is set, and not during manual pan/zoom
-    if (currentTarget && controls && camera && !isManualZoom) {
-      // Target's current position
-      currentTarget.getWorldPosition(targetWorldPos);
-      // Determine follow distance based on object type
-      let desiredDist = CONSTANTS.DEFAULT_CAMERA_DISTANCE;
-      const ud = currentTarget.userData;
-      const geom = currentTarget.geometry || ud?.planetMesh?.geometry;
-      if (ud.type === "star") desiredDist = CONSTANTS.SUN_RADIUS * 4;
-      else if (ud.type === "planet" && geom?.parameters?.radius)
-        desiredDist =
-          geom.parameters.radius * CONSTANTS.PLANET_CAMERA_DISTANCE_MULTIPLIER;
-      else if (ud.type === "moon" && geom?.parameters?.radius)
-        desiredDist =
-          geom.parameters.radius * CONSTANTS.MOON_CAMERA_DISTANCE_MULTIPLIER;
-
-      // Compute ideal camera offset and position
-      cameraOffset.copy(camera.position).sub(controls.target);
-      if (cameraOffset.lengthSq() < 0.01) {
-        cameraOffset.set(0, 0.1, 1).normalize().multiplyScalar(desiredDist);
-      } else {
-        cameraOffset.normalize().multiplyScalar(desiredDist);
+    // Update Mars launch window
+    if (marsLaunchWindow && window.simulatedDays) {
+      const earthMesh = findCelestialBodyByName(celestialBodies, "Earth");
+      const marsMesh = findCelestialBodyByName(celestialBodies, "Mars");
+      
+      if (earthMesh && marsMesh) {
+        marsLaunchWindow.update(window.simulatedDays, earthMesh.position, marsMesh.position);
       }
-      idealCamPos.copy(targetWorldPos).add(cameraOffset);
-
-      // Smoothly interpolate camera and controls.target toward the ideal positions
-      const lerpFactor = Math.min(
-        CONSTANTS.CAMERA_FOLLOW_LERP_FACTOR * delta,
-        1.0
-      );
-      camera.position.lerp(idealCamPos, lerpFactor);
-      controls.target.lerp(targetWorldPos, lerpFactor);
     }
-    // --- End Camera Target Following ---
 
-    // OrbitControls damping/update
-    if (controls?.enableDamping) controls.update();
+    // Camera following logic
+    if (cameraFollowTarget && cameraFollowTarget.userData) {
+      const targetPos = new THREE.Vector3();
+      cameraFollowTarget.getWorldPosition(targetPos);
+      
+      // Calculate appropriate distance based on object type
+      let distance = cameraFollowDistance;
+      if (cameraFollowTarget.userData.type === "star") {
+        distance = 80;
+      } else if (cameraFollowTarget.userData.type === "planet") {
+        distance = cameraFollowTarget.userData.config?.scaledRadius * 6 || 30;
+      } else if (cameraFollowTarget.userData.type === "moon") {
+        distance = 10;
+      }
+      
+      // Smooth camera following
+      const currentCameraPos = camera.position.clone();
+      const targetCameraPos = targetPos.clone();
+      const direction = currentCameraPos.clone().sub(targetPos).normalize();
+      targetCameraPos.add(direction.multiplyScalar(distance));
+      
+      // Lerp camera position
+      camera.position.lerp(targetCameraPos, 0.02);
+      
+      // Update controls target
+      controls.target.lerp(targetPos, 0.02);
+    }
+
+    // OrbitControls update
+    if (controls) {
+      controls.update();
+    }
 
     // UI read‑outs
     UI.updateUIDisplay(currentSpeed);
+    
+    // Update info panel position if following a target
+    if (cameraFollowTarget && UI.getUIReferences().selectedObject === cameraFollowTarget) {
+      if (UI.getUIReferences().infoPanel && UI.getUIReferences().infoPanel.style.display !== "none") {
+        // Update panel position to follow the moving planet
+        const tempVector = new THREE.Vector3();
+        cameraFollowTarget.getWorldPosition(tempVector);
+        tempVector.project(camera);
+        
+        const x = (tempVector.x * 0.5 + 0.5) * window.innerWidth;
+        const y = (tempVector.y * -0.5 + 0.5) * window.innerHeight;
+        
+        const offsetX = 30;
+        const panelWidth = 480;
+        const panelHeight = Math.min(window.innerHeight * 0.7, 600);
+        
+        let finalX = x + offsetX;
+        let finalY = y - panelHeight / 2;
+        
+        // Keep panel within screen bounds
+        if (finalX + panelWidth > window.innerWidth) {
+          finalX = x - offsetX - panelWidth;
+        }
+        if (finalY < 20) {
+          finalY = 20;
+        }
+        if (finalY + panelHeight > window.innerHeight - 20) {
+          finalY = window.innerHeight - panelHeight - 20;
+        }
+        
+        // Smoothly move the panel
+        const currentX = parseFloat(UI.getUIReferences().infoPanel.style.left) || finalX;
+        const currentY = parseFloat(UI.getUIReferences().infoPanel.style.top) || finalY;
+        
+        const lerpedX = currentX + (finalX - currentX) * 0.1;
+        const lerpedY = currentY + (finalY - currentY) * 0.1;
+        
+        UI.getUIReferences().infoPanel.style.left = lerpedX + "px";
+        UI.getUIReferences().infoPanel.style.top = lerpedY + "px";
+      }
+    }
+    
+    // Update planet labels
+    const allCelestialBodies = [...planets];
+    if (sunMesh) allCelestialBodies.push(sunMesh);
+    // Add moons to the list
+    planets.forEach(planet => {
+      planet.traverse(child => {
+        if (child.userData?.type === "moon") {
+          allCelestialBodies.push(child);
+        }
+      });
+    });
+    UI.updatePlanetLabels(camera, allCelestialBodies);
 
+    // Update shadows with performance optimization
+    shadowManager.update(performance.now());
+    
     // render frame
     renderer?.render(scene, camera);
   }
@@ -243,41 +422,43 @@ function startAnimationLoop() {
 /*                       JSON data loader                                 */
 /* ---------------------------------------------------------------------- */
 async function loadPlanetData() {
+  console.log("[LoadData] Starting JSON fetch...");
   const res = await fetch("./solarsystem_data.json");
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  console.log("[LoadData] JSON fetched, parsing...");
   planetConfigs = await res.json();
+  console.log("[LoadData] JSON parsed, got", planetConfigs.length, "planets");
 
-  planetConfigs.forEach((cfg) => {
+  planetConfigs.forEach((cfg, index) => {
+    try {
+      console.log(`[LoadData] Processing planet ${index}: ${cfg.name}`);
     /* orbit speed pre‑compute (circular model) ------------------------- */
     cfg.calculatedOrbitSpeed = cfg.baseOrbitSpeedFactor
       ? (2 * Math.PI * cfg.baseOrbitSpeedFactor) /
         CONSTANTS.BASE_ORBIT_SPEED_UNIT_TIME
       : 0; /* rotation speed --------------------------------------------------- */
-    const P = Math.abs(cfg.rotationPeriodDays || 0);
+    const P = Math.abs(cfg.rotationPeriod || 0);
     cfg.calculatedRotationSpeed = P
       ? (2 * Math.PI) / (P * CONSTANTS.DAYS_PER_SIM_SECOND_AT_1X)
       : 0;
-    cfg.rotationDirection =
-      cfg.rotationPeriodDays >= 0
-        ? 1
-        : -1; /* atmosphere colour parsing --------------------------------------- */
+    cfg.rotationDirection = cfg.rotationPeriod >= 0 ? 1 : -1; /* atmosphere colour parsing --------------------------------------- */
     if (cfg.atmosphere?.exists) {
       const col = cfg.atmosphere.colorHex;
       if (typeof col === "string" && col.startsWith("#"))
         cfg.atmosphere.colorHex = parseInt(col.replace("#", "0x"), 16);
     } /* moons pre‑compute ------------------------------------------------ */
     cfg.moons?.forEach((m) => {
-      const Pm = Math.abs(m.orbitalPeriodDays || 0);
+      const Pm = Math.abs(m.orbitalPeriod || 0);
       m.calculatedOrbitSpeed = Pm
         ? (2 * Math.PI) / (Pm * CONSTANTS.DAYS_PER_SIM_SECOND_AT_1X)
         : 0;
-      m.orbitDirection = m.orbitalPeriodDays >= 0 ? 1 : -1;
+      m.orbitDirection = m.orbitalPeriod >= 0 ? 1 : -1;
 
-      const Rm = Math.abs(m.rotationPeriodDays || 0);
+      const Rm = Math.abs(m.rotationPeriod || 0);
       m.calculatedRotationSpeed = Rm
         ? (2 * Math.PI) / (Rm * CONSTANTS.DAYS_PER_SIM_SECOND_AT_1X)
         : 0;
-      m.rotationDirection = m.rotationPeriodDays >= 0 ? 1 : -1;
+      m.rotationDirection = m.rotationPeriod >= 0 ? 1 : -1;
 
       if (m.atmosphere?.exists) {
         const col = m.atmosphere.colorHex;
@@ -285,6 +466,11 @@ async function loadPlanetData() {
           m.atmosphere.colorHex = parseInt(col.replace("#", "0x"), 16);
       }
     });
+    console.log(`[LoadData] Completed planet ${index}: ${cfg.name}`);
+    } catch (err) {
+      console.error(`[LoadData] Error processing planet ${index} (${cfg.name}):`, err);
+      throw err;
+    }
   });
 }
 
@@ -409,3 +595,120 @@ window.addEventListener("resize", () => {
   if (window.camera && window.renderer)
     SceneSetup.handleWindowResize(window.camera, window.renderer);
 });
+
+/* ---------------------------------------------------------------------- */
+/*                        Cleanup and Disposal                            */
+/* ---------------------------------------------------------------------- */
+
+/**
+ * Clean up all resources to prevent memory leaks
+ */
+export function cleanup() {
+  console.log("Starting cleanup...");
+
+  // Stop animation loop if running
+  if (window.animationFrameId) {
+    cancelAnimationFrame(window.animationFrameId);
+  }
+
+  // Clean up UI resources
+  UI.cleanupUI();
+
+  // Dispose scene objects
+  if (scene) {
+    scene.traverse((object) => {
+      if (object.geometry) {
+        object.geometry.dispose();
+      }
+      if (object.material) {
+        if (Array.isArray(object.material)) {
+          object.material.forEach(material => {
+            if (material.map) material.map.dispose();
+            material.dispose();
+          });
+        } else {
+          if (object.material.map) object.material.map.dispose();
+          object.material.dispose();
+        }
+      }
+    });
+    scene.clear();
+  }
+
+  // Clean up renderer
+  if (renderer) {
+    renderer.dispose();
+  }
+
+  // Clear arrays
+  celestialBodies.length = 0;
+  planets.length = 0;
+  planetConfigs.length = 0;
+
+  // Reset state
+  isInitialized = false;
+  
+  console.log("Cleanup completed");
+}
+
+// Add window beforeunload event to cleanup
+window.addEventListener('beforeunload', cleanup);
+
+/* ---------------------------------------------------------------------- */
+/*                      Performance Monitoring                            */
+/* ---------------------------------------------------------------------- */
+
+let lastMemoryCheck = 0;
+const MEMORY_CHECK_INTERVAL = 5000; // Check every 5 seconds
+
+/**
+ * Monitor memory usage (if available)
+ */
+function checkMemoryUsage() {
+  const now = performance.now();
+  if (now - lastMemoryCheck < MEMORY_CHECK_INTERVAL) return;
+  lastMemoryCheck = now;
+
+  if (performance.memory) {
+    const used = Math.round(performance.memory.usedJSHeapSize / 1048576);
+    const total = Math.round(performance.memory.totalJSHeapSize / 1048576);
+    const limit = Math.round(performance.memory.jsHeapSizeLimit / 1048576);
+    
+    console.log(`Memory: ${used}MB / ${total}MB (limit: ${limit}MB)`);
+    
+    // Warn if memory usage is high
+    if (used > limit * 0.8) {
+      console.warn("High memory usage detected! Consider reducing quality settings.");
+    }
+  }
+}
+
+// Call this function regularly, e.g., in the animation loop
+setInterval(checkMemoryUsage, 1000);
+
+/* ---------------------------------------------------------------------- */
+/*                    Camera Following Functions                          */
+/* ---------------------------------------------------------------------- */
+
+/**
+ * Set the camera to follow a specific target object
+ */
+function setCameraFollowTarget(target) {
+  cameraFollowTarget = target;
+  console.log(`[Camera] Now following: ${target?.userData?.name || 'none'}`);
+}
+
+/**
+ * Get the current camera follow target
+ */
+function getCameraFollowTarget() {
+  return cameraFollowTarget;
+}
+
+/**
+ * Stop camera following (when user manually navigates)
+ */
+function stopCameraFollowing() {
+  cameraFollowTarget = null;
+  console.log('[Camera] Stopped following');
+}
