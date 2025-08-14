@@ -239,14 +239,31 @@ export function setupUIControls(planetConfigs, selectable, scene) {
 export function setupZoomDetection(renderer, controls) {
   if (!renderer || !controls) return;
   // Mark interacting on OrbitControls gesture start/end
-  controls.addEventListener('start', () => { isUserInteracting = true; });
+  controls.addEventListener('start', () => {
+    isUserInteracting = true;
+    // When user starts interacting, stop auto-follow so navigation is free
+    if (typeof window.setCameraFollowTarget === 'function') {
+      window.setCameraFollowTarget(null);
+    }
+  });
   controls.addEventListener('end', () => { setTimeout(() => { isUserInteracting = false; }, 150); });
   // Wheel scrolls
   renderer.domElement.addEventListener('wheel', () => {
     isUserInteracting = true;
     if (wheelTimer) clearTimeout(wheelTimer);
+    // Wheel implies user wants to control camera; stop follow immediately
+    if (typeof window.setCameraFollowTarget === 'function') {
+      window.setCameraFollowTarget(null);
+    }
     wheelTimer = setTimeout(() => { isUserInteracting = false; }, 300);
   }, { passive: true });
+
+  // Allow ESC to cancel follow mode quickly
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && typeof window.setCameraFollowTarget === 'function') {
+      window.setCameraFollowTarget(null);
+    }
+  });
 }
 
 /* Simple getters / setters -------------------------------------------- */
