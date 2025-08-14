@@ -115,7 +115,11 @@ export const TONE_MAPPING_EXPOSURE_MAX = 1.6;
 
 /* Visual flair --------------------------------------------------------- */
 export const SUN_GLOW_SPRITE_SCALE = 200; // size of additive sprite corona
-export const SHOW_LABELS = true; // toggle planet name labels
+export const SHOW_LABELS = true; // UI/HTML labels (managed by ui.js)
+export const SHOW_SPRITE_LABELS = false; // 3D sprite labels (disable to avoid doubles)
+
+// Atmosphere rendering
+export const ATMOSPHERE_USE_FRESNEL = false; // disable rim/fresnel glow if it looks too strong
 
 /* Material defaults ---------------------------------------------------- */
 

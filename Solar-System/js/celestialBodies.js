@@ -118,8 +118,8 @@ export async function createPlanetsAndOrbits(scene, loader, configs) {
     group.add(mesh);
     mesh.name = cfg.name + "_mesh";
 
-    // Optional name label
-    if (CONSTANTS.SHOW_LABELS) {
+    // Optional sprite name label (disabled by default to avoid duplicates with UI labels)
+    if (CONSTANTS.SHOW_SPRITE_LABELS) {
       const label = createTextSprite(cfg.name, { font: '14px Arial' });
       label.position.set(0, dispR * 1.6, 0);
       label.renderOrder = 999;
