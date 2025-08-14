@@ -180,3 +180,4 @@ export function updateAsteroidBelt(belt, deltaTime) {
     const t = performance.now() * 0.001;
     belt.userData.dustPoints.material.opacity = 0.4 + 0.2 * Math.sin(t * 0.5);
   }
+}
