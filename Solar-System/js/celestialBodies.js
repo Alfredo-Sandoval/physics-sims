@@ -118,8 +118,6 @@ export async function createPlanetsAndOrbits(scene, loader, configs) {
     group.add(mesh);
     mesh.name = cfg.name + "_mesh";
 
-<<<<<<< HEAD
-=======
     // Optional name label
     if (CONSTANTS.SHOW_LABELS) {
       const label = createTextSprite(cfg.name, { font: '14px Arial' });
@@ -133,7 +131,6 @@ export async function createPlanetsAndOrbits(scene, loader, configs) {
     console.log(
       `Created planet ${cfg.name}: radius=${dispR}, material=${mat.type}, geometry=${geom.type}, position will be set by animation`
     );
->>>>>>> 758d87c (Solar System: 3D orbit inclinations, labels, sun glow, tone mapping; UI toggles; innerHTML hardening)
     if (!mat.map && cfg.textureUrl) {
       console.warn("Texture missing for " + cfg.name + ": " + cfg.textureUrl);
     }
