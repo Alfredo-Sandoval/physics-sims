@@ -16,36 +16,6 @@ export function createAsteroidBelt(scene, loader) {
   belt.name = "AsteroidBelt";
   scene.add(belt);
   
-  const innerR =
-    CONSTANTS.ASTEROID_BELT_INNER_RADIUS_AU * CONSTANTS.ORBIT_SCALE_FACTOR;
-  const outerR =
-    CONSTANTS.ASTEROID_BELT_OUTER_RADIUS_AU * CONSTANTS.ORBIT_SCALE_FACTOR;
-  const thick =
-    CONSTANTS.ASTEROID_BELT_THICKNESS_AU * CONSTANTS.ORBIT_SCALE_FACTOR;
-
-  // Device-based scaling
-  const DPR = Math.min((window.devicePixelRatio || 1), 2);
-  const CORES = (navigator && navigator.hardwareConcurrency) || 4;
-  const deviceScale = (CORES >= 8 ? 1.0 : 0.6) * (DPR > 1.5 ? 0.85 : 1.0);
-  const TARGET_COUNT = Math.max(
-    400,
-    Math.floor(CONSTANTS.ASTEROID_COUNT * deviceScale)
-  );
-
-  // Materials (shadow-free)
-  const materials = [
-    new THREE.MeshStandardMaterial({ color: 0x8b7355, roughness: 0.95, metalness: 0.02, flatShading: true }),
-    new THREE.MeshStandardMaterial({ color: 0x696969, roughness: 0.9, metalness: 0.05, flatShading: true }),
-    new THREE.MeshStandardMaterial({ color: 0x654321, roughness: 0.98, metalness: 0.01, flatShading: true }),
-  ];
-  materials.forEach((m) => {
-    m.userData.castShadow = false;
-    m.userData.receiveShadow = false;
-  });
-
-  // Counts
-  const mainAsteroidCount = Math.floor(TARGET_COUNT * 0.35);
-  const perMaterial = Math.max(1, Math.floor(mainAsteroidCount / materials.length));
   // Scene-unit ranges
   const innerR =
     CONSTANTS.ASTEROID_BELT_INNER_RADIUS_AU * CONSTANTS.ORBIT_SCALE_FACTOR;
@@ -209,21 +179,4 @@ export function updateAsteroidBelt(belt, deltaTime) {
   if (belt.userData.dustPoints) {
     const t = performance.now() * 0.001;
     belt.userData.dustPoints.material.opacity = 0.4 + 0.2 * Math.sin(t * 0.5);
->>>>>>> 758d87c (Solar System: 3D orbit inclinations, labels, sun glow, tone mapping; UI toggles; innerHTML hardening)
   }
-
-  // Animation meta
-  belt.userData.rotationSpeed = 0.00005;
-  belt.userData.materials = materials;
-  belt.userData.dustPoints = dustPoints;
-  return belt;
-}
-
-export function updateAsteroidBelt(belt, deltaTime) {
-  if (!belt || !belt.userData) return;
-  belt.rotation.y += belt.userData.rotationSpeed * deltaTime;
-  if (belt.userData.dustPoints) {
-    const t = performance.now() * 0.001;
-    belt.userData.dustPoints.material.opacity = 0.4 + 0.2 * Math.sin(t * 0.5);
-  }
-}
