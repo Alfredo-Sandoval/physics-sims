@@ -13,7 +13,9 @@ import { findCelestialBodyByName } from "./utils.js";
 let simulationSpeed = 1.0; // shadow copy of global window.simulationSpeed
 let orbitLinesVisible = true;
 
-// Camera targeting variables removed - using standard orbit controls
+// Interaction tracking
+let isUserInteracting = false;
+let wheelTimer = null;
 
 /* Pointer / ray‑casting helpers --------------------------------------- */
 const pointer = new THREE.Vector2();
@@ -235,17 +237,25 @@ export function setupUIControls(planetConfigs, selectable, scene) {
  * Mark manual zoom when user scrolls wheel or starts orbit‑control drag.
  */
 export function setupZoomDetection(renderer, controls) {
-  // Zoom detection disabled - no auto-targeting anymore
-  console.log("[Controls] Zoom detection disabled - using standard OrbitControls");
+  if (!renderer || !controls) return;
+  // Mark interacting on OrbitControls gesture start/end
+  controls.addEventListener('start', () => { isUserInteracting = true; });
+  controls.addEventListener('end', () => { setTimeout(() => { isUserInteracting = false; }, 150); });
+  // Wheel scrolls
+  renderer.domElement.addEventListener('wheel', () => {
+    isUserInteracting = true;
+    if (wheelTimer) clearTimeout(wheelTimer);
+    wheelTimer = setTimeout(() => { isUserInteracting = false; }, 300);
+  }, { passive: true });
 }
 
 /* Simple getters / setters -------------------------------------------- */
 export function getCameraTarget() {
-  return null; // Always return null - no targeting
+  return null; // Targeting handled by main via cameraFollowTarget
 }
 
 export function getIsManualZoom() {
-  return false; // Always return false - no manual zoom tracking
+  return isUserInteracting;
 }
 
 // Camera targeting functions removed - using standard orbit controls
