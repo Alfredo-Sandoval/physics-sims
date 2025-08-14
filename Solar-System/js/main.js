@@ -314,8 +314,9 @@ function startAnimationLoop() {
       }
     }
 
-    // Camera following logic
-    if (cameraFollowTarget && cameraFollowTarget.userData) {
+    // Camera following logic (pause while user manually interacts)
+    const userInteracting = (typeof Controls.getIsManualZoom === 'function') ? Controls.getIsManualZoom() : false;
+    if (cameraFollowTarget && cameraFollowTarget.userData && !userInteracting) {
       const targetPos = new THREE.Vector3();
       cameraFollowTarget.getWorldPosition(targetPos);
       

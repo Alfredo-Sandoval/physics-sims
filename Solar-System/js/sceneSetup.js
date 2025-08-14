@@ -59,54 +59,19 @@ export function setupRenderer() {
 
 /* OrbitControls -------------------------------------------------------- */
 export function setupControls(camera, renderer) {
-  // Completely fresh OrbitControls instance
   const controls = new OrbitControls(camera, renderer.domElement);
-  
-  // Reset everything to absolute defaults
-  controls.reset();
-  
-  // DISABLE OrbitControls zoom completely
-  controls.enableZoom = false;
-  controls.enableRotate = true;
-  controls.enablePan = true;
-  controls.target.set(0, 0, 0);
   controls.enableDamping = true;
-  controls.dampingFactor = 0.1;
-  
-  // Force update
+  controls.dampingFactor = 0.05;
+  controls.enableZoom = true;     // restore native zoom
+  controls.zoomSpeed = 0.8;
+  controls.enablePan = true;
+  controls.panSpeed = 0.8;
+  controls.rotateSpeed = 0.8;
+  controls.screenSpacePanning = false;
+  controls.minDistance = 10;
+  controls.maxDistance = CONSTANTS.STARFIELD_RADIUS * 0.8;
+  controls.target.set(0, 0, 0);
   controls.update();
-  
-  console.log("[SceneSetup] OrbitControls created with zoom DISABLED");
-  
-  // Manual zoom implementation
-  const minDistance = 50;
-  const maxDistance = 800;
-  const zoomSpeed = 0.05; // Much smaller increments
-  
-  renderer.domElement.addEventListener('wheel', (e) => {
-    e.preventDefault();
-    
-    // Stop camera following when user manually zooms
-    if (window.setCameraFollowTarget) {
-      window.setCameraFollowTarget(null);
-    }
-    
-    const currentDistance = camera.position.distanceTo(controls.target);
-    const zoomDelta = e.deltaY * zoomSpeed;
-    
-    console.log(`[MANUAL ZOOM] Delta: ${e.deltaY}, Current: ${currentDistance.toFixed(1)}, Zoom delta: ${zoomDelta.toFixed(2)}`);
-    
-    // Calculate new distance
-    const newDistance = Math.max(minDistance, Math.min(maxDistance, currentDistance + zoomDelta));
-    
-    // Move camera towards/away from target
-    const direction = camera.position.clone().sub(controls.target).normalize();
-    camera.position.copy(controls.target).add(direction.multiplyScalar(newDistance));
-    
-    console.log(`[MANUAL ZOOM] New distance: ${newDistance.toFixed(1)}`);
-    
-  }, { passive: false });
-  
   return controls;
 }
 
