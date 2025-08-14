@@ -181,6 +181,31 @@ export function setupUIControls(planetConfigs, selectable, scene) {
     });
   }
 
+  /* Labels toggle ------------------------------------------------------ */
+  const labelsCheckbox = document.getElementById("labelsCheckbox");
+  if (labelsCheckbox && scene) {
+    labelsCheckbox.checked = !!CONSTANTS.SHOW_LABELS;
+    const setLabels = (vis) => {
+      scene.traverse((o) => {
+        if (o.userData?.isLabel) o.visible = vis;
+      });
+    };
+    setLabels(labelsCheckbox.checked);
+    labelsCheckbox.addEventListener("change", () => setLabels(labelsCheckbox.checked));
+  }
+
+  /* Orbital planes toggle --------------------------------------------- */
+  const planesCheckbox = document.getElementById("planesCheckbox");
+  if (planesCheckbox && scene) {
+    const setPlanes = (vis) => {
+      scene.traverse((o) => {
+        if (o.userData?.isOrbitalPlane) o.visible = vis;
+      });
+    };
+    setPlanes(false);
+    planesCheckbox.addEventListener("change", () => setPlanes(planesCheckbox.checked));
+  }
+
   /* Playback buttons --------------------------------------------------- */
   const setSpeed = (s) => {
     simulationSpeed = s;

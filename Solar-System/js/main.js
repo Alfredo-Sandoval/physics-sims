@@ -406,7 +406,24 @@ function startAnimationLoop() {
 
     // Update shadows with performance optimization
     shadowManager.update(performance.now());
-    
+
+    // Auto‑exposure based on camera distance to Sun (origin)
+    if (renderer && camera) {
+      const dist = camera.position.length();
+      const exp = THREE.MathUtils.clamp(
+        THREE.MathUtils.mapLinear(
+          dist,
+          100,
+          CONSTANTS.STARFIELD_RADIUS,
+          CONSTANTS.TONE_MAPPING_EXPOSURE_MIN,
+          CONSTANTS.TONE_MAPPING_EXPOSURE_MAX
+        ),
+        CONSTANTS.TONE_MAPPING_EXPOSURE_MIN,
+        CONSTANTS.TONE_MAPPING_EXPOSURE_MAX
+      );
+      renderer.toneMappingExposure = exp;
+    }
+
     // render frame
     renderer?.render(scene, camera);
   }
@@ -547,7 +564,16 @@ function showErrorMessage(msg) {
     });
     document.body.appendChild(div);
   }
-  div.innerHTML = `<strong>Initialization Error:</strong> ${msg}<br>Check console (F12) for details.`;
+  // Safely construct message content without innerHTML
+  div.textContent = "";
+  const strong = document.createElement("strong");
+  strong.textContent = "Initialization Error:";
+  div.appendChild(strong);
+  div.appendChild(document.createTextNode(` ${String(msg || "")}`));
+  div.appendChild(document.createElement("br"));
+  div.appendChild(
+    document.createTextNode("Check console (F12) for details.")
+  );
   div.style.display = "block";
 }
 
@@ -561,7 +587,8 @@ function setupPlanetDropdown(planets, sunMesh) {
     return;
   }
 
-  sel.innerHTML = ""; // wipe template
+  // Wipe existing options safely
+  sel.textContent = "";
   const defOpt = document.createElement("option");
   defOpt.value = "";
   defOpt.textContent = "Select Body..."; // Changed text

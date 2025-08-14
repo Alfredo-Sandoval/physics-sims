@@ -659,7 +659,8 @@ export function createDebugOverlay() {
 
 export function updateDebugInfo(msg) {
   if (debugDiv) {
-    debugDiv.innerHTML = msg;
+    // Avoid injecting HTML to prevent XSS; show as plain text
+    debugDiv.textContent = String(msg ?? "");
     debugDiv.style.display = "block";
   }
 }

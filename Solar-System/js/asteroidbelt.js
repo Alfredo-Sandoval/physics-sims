@@ -4,8 +4,10 @@ import * as THREE from "three";
 import * as CONSTANTS from "./constants.js";
 
 /**
- * Create a realistic asteroid belt using instanced rendering for performance
- * Based on research of successful three.js solar system implementations
+ * Create a realistic, performant asteroid belt.
+ * - Orbital-like distribution (mild eccentricity, inclination)
+ * - Density bias toward mid-belt with Kirkwood gaps
+ * - Device-based count scaling and shadow-free materials
  */
 export function createAsteroidBelt(scene, loader) {
   if (!CONSTANTS.ASTEROID_BELT_ENABLED) return null;
@@ -14,171 +16,214 @@ export function createAsteroidBelt(scene, loader) {
   belt.name = "AsteroidBelt";
   scene.add(belt);
   
-  console.log('[AsteroidBelt] Creating realistic asteroid belt with instanced rendering...');
+  const innerR =
+    CONSTANTS.ASTEROID_BELT_INNER_RADIUS_AU * CONSTANTS.ORBIT_SCALE_FACTOR;
+  const outerR =
+    CONSTANTS.ASTEROID_BELT_OUTER_RADIUS_AU * CONSTANTS.ORBIT_SCALE_FACTOR;
+  const thick =
+    CONSTANTS.ASTEROID_BELT_THICKNESS_AU * CONSTANTS.ORBIT_SCALE_FACTOR;
 
-  const innerR = CONSTANTS.ASTEROID_BELT_INNER_RADIUS_AU * CONSTANTS.ORBIT_SCALE_FACTOR;
-  const outerR = CONSTANTS.ASTEROID_BELT_OUTER_RADIUS_AU * CONSTANTS.ORBIT_SCALE_FACTOR;
-  const thick = CONSTANTS.ASTEROID_BELT_THICKNESS_AU * CONSTANTS.ORBIT_SCALE_FACTOR;
-  
-  console.log(`[AsteroidBelt] Dimensions: innerR=${innerR}, outerR=${outerR}, thick=${thick}`);
+  // Device-based scaling
+  const DPR = Math.min((window.devicePixelRatio || 1), 2);
+  const CORES = (navigator && navigator.hardwareConcurrency) || 4;
+  const deviceScale = (CORES >= 8 ? 1.0 : 0.6) * (DPR > 1.5 ? 0.85 : 1.0);
+  const TARGET_COUNT = Math.max(
+    400,
+    Math.floor(CONSTANTS.ASTEROID_COUNT * deviceScale)
+  );
 
-  // Create base geometry with higher detail for close viewing
-  const baseGeometry = new THREE.SphereGeometry(1, 8, 6);
-  
-  // Create realistic asteroid material with proper lighting
-  const material = new THREE.MeshStandardMaterial({
-    color: CONSTANTS.ASTEROID_COLOR_BROWN,
-    roughness: 0.95,
-    metalness: 0.02,
-    // Add subtle variations in roughness for realism
-    roughnessMap: null // Can be added later with procedural noise
+  // Materials (shadow-free)
+  const materials = [
+    new THREE.MeshStandardMaterial({ color: 0x8b7355, roughness: 0.95, metalness: 0.02, flatShading: true }),
+    new THREE.MeshStandardMaterial({ color: 0x696969, roughness: 0.9, metalness: 0.05, flatShading: true }),
+    new THREE.MeshStandardMaterial({ color: 0x654321, roughness: 0.98, metalness: 0.01, flatShading: true }),
+  ];
+  materials.forEach((m) => {
+    m.userData.castShadow = false;
+    m.userData.receiveShadow = false;
   });
-  
-  // Use instanced rendering for better performance
-  const asteroidCount = CONSTANTS.ASTEROID_COUNT;
-  const instancedMesh = new THREE.InstancedMesh(baseGeometry, material, asteroidCount);
-  instancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-  instancedMesh.castShadow = true;
-  instancedMesh.receiveShadow = true;
-  
-  // Generate asteroid data for realistic distribution
-  const asteroidData = [];
+
+  // Counts
+  const mainAsteroidCount = Math.floor(TARGET_COUNT * 0.35);
+  const perMaterial = Math.max(1, Math.floor(mainAsteroidCount / materials.length));
+  // Scene-unit ranges
+  const innerR =
+    CONSTANTS.ASTEROID_BELT_INNER_RADIUS_AU * CONSTANTS.ORBIT_SCALE_FACTOR;
+  const outerR =
+    CONSTANTS.ASTEROID_BELT_OUTER_RADIUS_AU * CONSTANTS.ORBIT_SCALE_FACTOR;
+  const thick =
+    CONSTANTS.ASTEROID_BELT_THICKNESS_AU * CONSTANTS.ORBIT_SCALE_FACTOR;
+
+  // Device-based scaling
+  const DPR = Math.min((window.devicePixelRatio || 1), 2);
+  const CORES = (navigator && navigator.hardwareConcurrency) || 4;
+  const deviceScale = (CORES >= 8 ? 1.0 : 0.6) * (DPR > 1.5 ? 0.85 : 1.0);
+  const TARGET_COUNT = Math.max(
+    400,
+    Math.floor(CONSTANTS.ASTEROID_COUNT * deviceScale)
+  );
+
+  // Materials (shadow-free)
+  const materials = [
+    new THREE.MeshStandardMaterial({ color: 0x8b7355, roughness: 0.95, metalness: 0.02, flatShading: true }),
+    new THREE.MeshStandardMaterial({ color: 0x696969, roughness: 0.9, metalness: 0.05, flatShading: true }),
+    new THREE.MeshStandardMaterial({ color: 0x654321, roughness: 0.98, metalness: 0.01, flatShading: true }),
+  ];
+  materials.forEach((m) => {
+    m.userData.castShadow = false;
+    m.userData.receiveShadow = false;
+  });
+
+  // Counts
+  const mainAsteroidCount = Math.floor(TARGET_COUNT * 0.35);
+  const perMaterial = Math.max(1, Math.floor(mainAsteroidCount / materials.length));
+
+  // Geometries for subtle variety
+  const geoms = [
+    new THREE.IcosahedronGeometry(1, 1),
+    new THREE.DodecahedronGeometry(0.9, 0),
+    new THREE.IcosahedronGeometry(1.2, 0),
+  ];
+
+  // Helpers
   const matrix = new THREE.Matrix4();
-  const position = new THREE.Vector3();
   const rotation = new THREE.Euler();
   const scale = new THREE.Vector3();
-  
-  console.log(`[AsteroidBelt] Generating ${asteroidCount} asteroids with realistic distribution...`);
-  
-  for (let i = 0; i < asteroidCount; i++) {
-    // Realistic orbital parameters
-    // Most asteroids cluster around 2.7 AU (main belt peak)
-    const u = Math.random();
-    const radius = innerR + (outerR - innerR) * (u < 0.6 ? Math.pow(u / 0.6, 0.3) : 1 - Math.pow((1 - u) / 0.4, 1.5));
-    const angle = Math.random() * Math.PI * 2;
-    
-    // Realistic vertical distribution - most asteroids stay close to ecliptic plane
-    const heightFactor = Math.random() - 0.5;
-    const height = heightFactor * thick * Math.exp(-Math.abs(heightFactor) * 4);
-    
-    // Calculate orbital speed based on Kepler's third law
-    const orbitSpeed = Math.sqrt(1 / (radius / CONSTANTS.ORBIT_SCALE_FACTOR)) * 0.0005;
-    
-    // Set initial position
-    position.set(
-      Math.cos(angle) * radius,
-      height,
-      Math.sin(angle) * radius
-    );
-    
-    // Realistic size distribution - power law with most asteroids small
-    const sizeRandom = Math.random();
-    const sizeScale = CONSTANTS.ASTEROID_MIN_SIZE + 
-      (CONSTANTS.ASTEROID_MAX_SIZE - CONSTANTS.ASTEROID_MIN_SIZE) * 
-      Math.pow(sizeRandom, 2.5); // Power law distribution
-    
-    // Add some variation in shape (slightly elliptical)
-    const scaleVariation = 0.8 + Math.random() * 0.4;
-    scale.set(
-      sizeScale * scaleVariation,
-      sizeScale * (0.8 + Math.random() * 0.4),
-      sizeScale * (0.8 + Math.random() * 0.4)
-    );
-    
-    // Random rotation
-    rotation.set(
-      Math.random() * Math.PI * 2,
-      Math.random() * Math.PI * 2,
-      Math.random() * Math.PI * 2
-    );
-    
-    // Apply transformation to instance
-    matrix.compose(position, new THREE.Quaternion().setFromEuler(rotation), scale);
-    instancedMesh.setMatrixAt(i, matrix);
-    
-    // Store asteroid data for animation
-    asteroidData.push({
-      radius: radius,
-      angle: angle,
-      height: height,
-      orbitSpeed: orbitSpeed,
-      rotationSpeed: (Math.random() - 0.5) * 0.01,
-      rotationAxis: new THREE.Vector3(
-        Math.random() - 0.5,
-        Math.random() - 0.5,
-        Math.random() - 0.5
-      ).normalize()
-    });
+
+  // Kirkwood gaps (AU)
+  const gapsAU = [2.06, 2.5, 2.82, 2.95];
+  const gapWidthAU = 0.05; // width of dip
+  const gapDepth = 0.6; // probability to skip near center
+
+  // Sample a radius (scene units) with mid-belt bias and gaps
+  function sampleRadius() {
+    const r0 = innerR;
+    const r1 = outerR;
+    // Mid-belt bias
+    let r = r0 + (r1 - r0) * Math.pow(Math.random(), 0.6);
+    // Convert to AU to test gaps
+    const rAU = r / CONSTANTS.ORBIT_SCALE_FACTOR;
+    for (const g of gapsAU) {
+      const dist = Math.abs(rAU - g);
+      if (dist < gapWidthAU) {
+        const p = 1 - (dist / gapWidthAU); // 1 at center → 0 at edge
+        if (Math.random() < p * gapDepth) {
+          // resample
+          return sampleRadius();
+        }
+      }
+    }
+    return r;
   }
-  
-  instancedMesh.instanceMatrix.needsUpdate = true;
-  belt.add(instancedMesh);
-  
-  console.log(`[AsteroidBelt] Created instanced mesh with ${asteroidCount} asteroids`);
-  console.log(`[AsteroidBelt] Sample positions:`);
-  for (let i = 0; i < Math.min(3, asteroidData.length); i++) {
-    const data = asteroidData[i];
-    const x = Math.cos(data.angle) * data.radius;
-    const z = Math.sin(data.angle) * data.radius;
-    console.log(`  Asteroid ${i}: (${x.toFixed(1)}, ${data.height.toFixed(1)}, ${z.toFixed(1)})`);
+
+  // Orbital-like position with small e and inclination
+  function randomAsteroidPosition() {
+    const a = sampleRadius(); // scene units
+    const e = THREE.MathUtils.randFloat(0, 0.12);
+    const omega = Math.random() * Math.PI * 2; // in-plane orientation
+    const M = Math.random() * Math.PI * 2; // mean anomaly
+    const nu = M + 2 * e * Math.sin(M); // approx true anomaly
+    const r = (a * (1 - e * e)) / (1 + e * Math.cos(nu));
+    // position in orbital (XZ) plane
+    const x0 = r * Math.cos(nu);
+    const z0 = r * Math.sin(nu);
+    const cosO = Math.cos(omega);
+    const sinO = Math.sin(omega);
+    const x = x0 * cosO - z0 * sinO;
+    const z = x0 * sinO + z0 * cosO;
+    // keep belt in XZ plane with subtle vertical scatter only
+    const y = THREE.MathUtils.randFloatSpread(thick * 0.25);
+    return new THREE.Vector3(x, y, z);
   }
-  
-  // Store references for animation
-  belt.userData.instancedMesh = instancedMesh;
-  belt.userData.asteroidData = asteroidData;
-  belt.userData.isSelectable = false;
-  belt.userData.name = "Asteroid Belt";
-  belt.userData.type = "asteroid_belt";
-  
+
+  // Create main field across materials/geometries
+  for (let mi = 0; mi < materials.length; mi++) {
+    const material = materials[mi];
+    const geom = geoms[mi % geoms.length];
+    const count = perMaterial;
+    const inst = new THREE.InstancedMesh(geom, material, count);
+    inst.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    inst.castShadow = false;
+    inst.receiveShadow = false;
+
+    for (let i = 0; i < count; i++) {
+      const pos = randomAsteroidPosition();
+      rotation.set(
+        Math.random() * Math.PI * 2,
+        Math.random() * Math.PI * 2,
+        Math.random() * Math.PI * 2
+      );
+      const baseSize = THREE.MathUtils.randFloat(
+        CONSTANTS.ASTEROID_MIN_SIZE * 1.6,
+        CONSTANTS.ASTEROID_MAX_SIZE * 1.4
+      );
+      const elong = THREE.MathUtils.randFloat(0.6, 1.4);
+      scale.set(baseSize, baseSize * elong, baseSize * THREE.MathUtils.randFloat(0.8, 1.2));
+      const quat = new THREE.Quaternion().setFromEuler(rotation);
+      matrix.compose(pos, quat, scale);
+      inst.setMatrixAt(i, matrix);
+    }
+    inst.instanceMatrix.needsUpdate = true;
+    belt.add(inst);
+  }
+
+  // Dust layer (points)
+  const dustCount = Math.max(0, TARGET_COUNT - mainAsteroidCount);
+  const dustPositions = new Float32Array(dustCount * 3);
+  const dustColors = new Float32Array(dustCount * 3);
+  for (let i = 0; i < dustCount; i++) {
+    const pos = randomAsteroidPosition();
+    const i3 = i * 3;
+    dustPositions[i3] = pos.x;
+    dustPositions[i3 + 1] = pos.y * 0.7; // slightly thinner dust
+    dustPositions[i3 + 2] = pos.z;
+    const b = THREE.MathUtils.randFloat(0.35, 0.75);
+    dustColors[i3] = b * 0.8;
+    dustColors[i3 + 1] = b * 0.6;
+    dustColors[i3 + 2] = b * 0.45;
+  }
+  const dustGeometry = new THREE.BufferGeometry();
+  dustGeometry.setAttribute("position", new THREE.BufferAttribute(dustPositions, 3));
+  dustGeometry.setAttribute("color", new THREE.BufferAttribute(dustColors, 3));
+  const dustMaterial = new THREE.PointsMaterial({
+    size: DPR > 1.5 ? 2 : 3,
+    sizeAttenuation: true,
+    vertexColors: true,
+    transparent: true,
+    opacity: 0.6,
+    depthWrite: false,
+  });
+  const dustPoints = new THREE.Points(dustGeometry, dustMaterial);
+  belt.add(dustPoints);
+
+  // Animation meta
+  belt.userData.rotationSpeed = 0.00005;
+  belt.userData.materials = materials;
+  belt.userData.dustPoints = dustPoints;
   return belt;
 }
 
-/**
- * Update asteroid belt animation with proper orbital mechanics using instanced rendering
- */
-export function updateAsteroidBelt(belt, deltaTime, simulationSpeed = 1.0) {
-  if (!belt || !belt.userData.instancedMesh || !belt.userData.asteroidData) return;
-  
-  const instancedMesh = belt.userData.instancedMesh;
-  const asteroidData = belt.userData.asteroidData;
-  const speedFactor = simulationSpeed * deltaTime * 0.001;
-  
-  const matrix = new THREE.Matrix4();
-  const position = new THREE.Vector3();
-  const quaternion = new THREE.Quaternion();
-  const scale = new THREE.Vector3();
-  
-  // Update each asteroid instance
-  for (let i = 0; i < asteroidData.length; i++) {
-    const data = asteroidData[i];
-    
-    // Update orbital angle
-    data.angle += data.orbitSpeed * speedFactor;
-    
-    // Update position based on orbital mechanics
-    position.set(
-      Math.cos(data.angle) * data.radius,
-      data.height,
-      Math.sin(data.angle) * data.radius
-    );
-    
-    // Update rotation
-    const rotationAmount = data.rotationSpeed * speedFactor;
-    quaternion.setFromAxisAngle(data.rotationAxis, rotationAmount);
-    
-    // Get current matrix to preserve scale
-    instancedMesh.getMatrixAt(i, matrix);
-    matrix.decompose(position, quaternion, scale);
-    
-    // Apply rotation increment
-    const currentQuaternion = new THREE.Quaternion();
-    matrix.decompose(position, currentQuaternion, scale);
-    currentQuaternion.multiply(quaternion);
-    
-    // Set new position and rotation
-    matrix.compose(position, currentQuaternion, scale);
-    instancedMesh.setMatrixAt(i, matrix);
+export function updateAsteroidBelt(belt, deltaTime) {
+  if (!belt || !belt.userData) return;
+  belt.rotation.y += belt.userData.rotationSpeed * deltaTime;
+  if (belt.userData.dustPoints) {
+    const t = performance.now() * 0.001;
+    belt.userData.dustPoints.material.opacity = 0.4 + 0.2 * Math.sin(t * 0.5);
+>>>>>>> 758d87c (Solar System: 3D orbit inclinations, labels, sun glow, tone mapping; UI toggles; innerHTML hardening)
   }
-  
-  instancedMesh.instanceMatrix.needsUpdate = true;
+
+  // Animation meta
+  belt.userData.rotationSpeed = 0.00005;
+  belt.userData.materials = materials;
+  belt.userData.dustPoints = dustPoints;
+  return belt;
+}
+
+export function updateAsteroidBelt(belt, deltaTime) {
+  if (!belt || !belt.userData) return;
+  belt.rotation.y += belt.userData.rotationSpeed * deltaTime;
+  if (belt.userData.dustPoints) {
+    const t = performance.now() * 0.001;
+    belt.userData.dustPoints.material.opacity = 0.4 + 0.2 * Math.sin(t * 0.5);
+  }
 }

@@ -48,8 +48,11 @@ export function setupRenderer() {
   renderer.shadowMap.autoUpdate = false; // Manual shadow updates for better performance
   renderer.physicallyCorrectLights = true;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
+  // Tone mapping for improved visuals
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.0;
   // Memory optimizations
-  renderer.debug.checkShaderErrors = false;
+  if (renderer.debug) renderer.debug.checkShaderErrors = false;
   document.body.appendChild(renderer.domElement);
   return renderer;
 }
@@ -131,15 +134,7 @@ export function setupLighting(scene) {
   sunLight.shadow.blurSamples = 8; // Reduced blur samples
   scene.add(sunLight);
 
-  // Sun glow light (subtle bloom)
-  const glow = new THREE.PointLight(
-    CONSTANTS.SUN_EMISSIVE_COLOR,
-    CONSTANTS.SUN_GLOW_LIGHT_INTENSITY,
-    CONSTANTS.SUN_GLOW_LIGHT_DISTANCE,
-    CONSTANTS.SUN_GLOW_LIGHT_DECAY
-  );
-  glow.position.set(0, 0, 0);
-  scene.add(glow);
+  // Removed separate glow light to keep the sun less glaring
 }
 
 /* Resize handler ------------------------------------------------------- */

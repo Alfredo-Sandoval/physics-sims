@@ -109,6 +109,14 @@ export const DIR_LIGHT_INTENSITY = 0.5;
 export const HEMI_LIGHT_INTENSITY = 0.4;
 export const SUN_EMISSIVE_INTENSITY = 1.5;
 
+/* Tone mapping --------------------------------------------------------- */
+export const TONE_MAPPING_EXPOSURE_MIN = 0.7;
+export const TONE_MAPPING_EXPOSURE_MAX = 1.6;
+
+/* Visual flair --------------------------------------------------------- */
+export const SUN_GLOW_SPRITE_SCALE = 200; // size of additive sprite corona
+export const SHOW_LABELS = true; // toggle planet name labels
+
 /* Material defaults ---------------------------------------------------- */
 
 /* Utility to create highlight / outline materials --------------------- */

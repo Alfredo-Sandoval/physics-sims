@@ -131,6 +131,39 @@ export function createStarTexture() {
   return new THREE.CanvasTexture(canvas);
 }
 
+/* Text label sprite --------------------------------------------------- */
+export function createTextSprite(text, options = {}) {
+  const {
+    font = '12px sans-serif',
+    padding = 4,
+    bg = 'rgba(0,0,0,0.4)',
+    fg = '#fff',
+  } = options;
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  ctx.font = font;
+  const metrics = ctx.measureText(text);
+  const w = Math.ceil(metrics.width) + padding * 2;
+  const h = 20 + padding * 2;
+  canvas.width = w;
+  canvas.height = h;
+  // redraw with correct size
+  const ctx2 = canvas.getContext('2d');
+  ctx2.font = font;
+  ctx2.fillStyle = bg;
+  ctx2.fillRect(0, 0, w, h);
+  ctx2.fillStyle = fg;
+  ctx2.textBaseline = 'middle';
+  ctx2.fillText(text, padding, h / 2);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const mat = new THREE.SpriteMaterial({ map: tex, depthTest: false, transparent: true });
+  const sprite = new THREE.Sprite(mat);
+  const scale = 12; // world units
+  sprite.scale.set(scale, (scale * h) / w, 1);
+  return sprite;
+}
+
 /* Planet material factory --------------------------------------------- */
 export function createPlanetMaterial(filename, loader) {
   const texture = filename ? loadTexture(filename, loader) : null;
@@ -139,6 +172,17 @@ export function createPlanetMaterial(filename, loader) {
     color: texture ? 0xffffff : 0x888888, // grey placeholder if missing
     roughness: 0.9,
     metalness: 0.05,
+  });
+}
+
+/* Atmosphere material (no Fresnel/rim) ------------------------------- */
+export function createAtmosphereMaterial(color = 0xffffff, baseOpacity = 0.2) {
+  return new THREE.MeshBasicMaterial({
+    color,
+    transparent: true,
+    opacity: baseOpacity,
+    depthWrite: false,
+    side: THREE.FrontSide,
   });
 }
 
@@ -159,6 +203,8 @@ export function createOrbitLine(cfg, scaleFactor, colour, segments, parent) {
     a: cfg.orbitRadiusAU, // Semi-major axis
     e: cfg.info?.orbitalEccentricity ?? 0, // Eccentricity
     ω: (cfg.kepler?.argPeriapsisDeg ?? 0) * THREE.MathUtils.DEG2RAD, // Arg of Periapsis
+    i: (cfg.kepler?.inclinationDeg ?? cfg.info?.orbitalInclinationDeg ?? 0) * THREE.MathUtils.DEG2RAD,
+    Ω: (cfg.kepler?.longAscNodeDeg ?? 0) * THREE.MathUtils.DEG2RAD,
   };
 
   if (elements.a <= 0) {
@@ -168,24 +214,27 @@ export function createOrbitLine(cfg, scaleFactor, colour, segments, parent) {
     return null;
   }
 
-  for (let i = 0; i <= segments; i++) {
-    const M = (i / segments) * 2 * Math.PI; // Mean anomaly for this segment
+  for (let k = 0; k <= segments; k++) {
+    const M = (k / segments) * 2 * Math.PI; // Mean anomaly for this segment
     const E = eccentricAnomaly(M, elements.e); // Solve Kepler's equation
     const ν = trueAnomaly(E, elements.e); // True anomaly
     const r = radius(elements.a, elements.e, ν); // Radius at this point
 
-    // Position in orbital plane (periapsis along +X)
-    let x0 = r * Math.cos(ν);
-    let y0 = r * Math.sin(ν);
+    // Position in orbital plane (periapsis along +X), rotate by ω inside plane
+    const cosω = Math.cos(elements.ω), sinω = Math.sin(elements.ω);
+    const xω = r * Math.cos(ν) * cosω - r * Math.sin(ν) * sinω;
+    const zω = r * Math.cos(ν) * sinω + r * Math.sin(ν) * cosω; // use as Z prior to tilt
 
-    // Rotate by argument of periapsis ω
-    const cosω = Math.cos(elements.ω);
-    const sinω = Math.sin(elements.ω);
-    const x = x0 * cosω - y0 * sinω;
-    const y = x0 * sinω + y0 * cosω;
+    // Apply Ry(Ω) then Rx(i) in a Y-up world (XZ is base plane)
+    const cosO = Math.cos(elements.Ω), sinO = Math.sin(elements.Ω);
+    const x1 = xω * cosO + zω * sinO;
+    const z1 = -xω * sinO + zω * cosO;
+    const cosi = Math.cos(elements.i), sini = Math.sin(elements.i);
+    const X = x1;
+    const Y = -z1 * sini;
+    const Z = z1 * cosi;
 
-    // Scale and add point (y maps to scene Z)
-    points.push(new THREE.Vector3(x * scaleFactor, 0, y * scaleFactor));
+    points.push(new THREE.Vector3(X * scaleFactor, Y * scaleFactor, Z * scaleFactor));
   }
 
   const geom = new THREE.BufferGeometry().setFromPoints(points);

@@ -35,16 +35,28 @@ export function updatePositions(planets, delta, simulationSpeed) {
     // Planet state in AU
     const { x, y } = getOrbitalState(simulatedDays, elements);
 
+    // Map orbital-plane coords (x, y) → scene (x, z), then apply Ry(Ω) and Rx(i)
+    const z0 = y; // use returned y as scene z before orientation
+    const x0 = x;
+    const iRad = (cfg.kepler?.inclinationDeg ?? cfg.info?.orbitalInclinationDeg ?? 0) * THREE.MathUtils.DEG2RAD;
+    const ORad = (cfg.kepler?.longAscNodeDeg ?? 0) * THREE.MathUtils.DEG2RAD;
+    const cosO = Math.cos(ORad), sinO = Math.sin(ORad);
+    // First rotate around Y by Ω (line of nodes in XZ plane)
+    const x1 = x0 * cosO + z0 * sinO;
+    const z1 = -x0 * sinO + z0 * cosO;
+    // Then tilt by inclination around X
+    const cosi = Math.cos(iRad), sini = Math.sin(iRad);
+    const X = x1;
+    const Y = -z1 * sini;
+    const Z = z1 * cosi;
+
     // Map AU → scene units
-    const sceneX = x * CONSTANTS.ORBIT_SCALE_FACTOR;
-    const sceneZ = y * CONSTANTS.ORBIT_SCALE_FACTOR;
+    const sceneX = X * CONSTANTS.ORBIT_SCALE_FACTOR;
+    const sceneY = Y * CONSTANTS.ORBIT_SCALE_FACTOR;
+    const sceneZ = Z * CONSTANTS.ORBIT_SCALE_FACTOR;
 
 
-    group.position.set(
-      x * CONSTANTS.ORBIT_SCALE_FACTOR,
-      0,
-      y * CONSTANTS.ORBIT_SCALE_FACTOR
-    );
+    group.position.set(sceneX, sceneY, sceneZ);
 
     /* Moons (keep circular orbits) ---------------------------------- */
     const dt = THREE.MathUtils.clamp(delta, 0.001, 0.1);

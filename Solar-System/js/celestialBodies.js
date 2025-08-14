@@ -1,7 +1,7 @@
 // --- Celestial Bodies Module ------------------------------------------
 import * as THREE from "three";
 import * as CONSTANTS from "./constants.js";
-import { createPlanetMaterial, createOrbitLine, loadTexture } from "./utils.js";
+import { createPlanetMaterial, createOrbitLine, loadTexture, createTextSprite, createAtmosphereMaterial, createStarTexture } from "./utils.js";
 
 /* ---------------------------------------------------------------------- */
 /*                               Sun                                      */
@@ -16,6 +16,18 @@ export function createSun(scene, loader) {
     emissiveMap: tex,
   });
   const sun = new THREE.Mesh(geom, mat);
+  // Add a subtle additive sprite glow for aesthetic corona
+  const glowTex = createStarTexture();
+  const glowMat = new THREE.SpriteMaterial({
+    map: glowTex,
+    color: CONSTANTS.SUN_EMISSIVE_COLOR,
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+  });
+  const glow = new THREE.Sprite(glowMat);
+  glow.scale.setScalar(CONSTANTS.SUN_GLOW_SPRITE_SCALE);
+  sun.add(glow);
   sun.userData = {
     isSelectable: true,
     name: "Sun",
@@ -53,9 +65,22 @@ export async function createPlanetsAndOrbits(scene, loader, configs) {
 
   for (const cfg of configs) {
     const orbitR = cfg.orbitRadiusAU * CONSTANTS.ORBIT_SCALE_FACTOR;
-    // Use pre-scaled radius from JSON for balanced visual sizing
-    const dispR = cfg.scaledRadius || 
-      Math.max(CONSTANTS.MIN_PLANET_RADIUS, cfg.actualRadius * CONSTANTS.PLANET_DISPLAY_SCALE_FACTOR);
+    // Derive a display radius robustly across data variants
+    const explicitScaled =
+      (Number.isFinite(cfg.scaledRadiusDisplayUnits)
+        ? cfg.scaledRadiusDisplayUnits
+        : undefined) ??
+      (Number.isFinite(cfg.scaledRadius) ? cfg.scaledRadius : undefined);
+    const actualER = (Number.isFinite(cfg.actualRadiusEarthRadii)
+      ? cfg.actualRadiusEarthRadii
+      : Number.isFinite(cfg.actualRadius)
+      ? cfg.actualRadius
+      : undefined);
+    const computedFromActual = Number.isFinite(actualER)
+      ? actualER * CONSTANTS.EARTH_RADIUS_KM * CONSTANTS.PLANET_DISPLAY_SCALE_FACTOR
+      : undefined;
+    const dispRRaw = explicitScaled ?? computedFromActual ?? CONSTANTS.MIN_PLANET_RADIUS;
+    const dispR = Math.max(CONSTANTS.MIN_PLANET_RADIUS, dispRRaw);
 
     /* Planet group (holds mesh, atmosphere, moons) --------------------- */
     const group = new THREE.Group();
@@ -93,6 +118,22 @@ export async function createPlanetsAndOrbits(scene, loader, configs) {
     group.add(mesh);
     mesh.name = cfg.name + "_mesh";
 
+<<<<<<< HEAD
+=======
+    // Optional name label
+    if (CONSTANTS.SHOW_LABELS) {
+      const label = createTextSprite(cfg.name, { font: '14px Arial' });
+      label.position.set(0, dispR * 1.6, 0);
+      label.renderOrder = 999;
+      label.userData = { ...(label.userData || {}), isLabel: true };
+      group.add(label);
+    }
+
+    // Debug logging
+    console.log(
+      `Created planet ${cfg.name}: radius=${dispR}, material=${mat.type}, geometry=${geom.type}, position will be set by animation`
+    );
+>>>>>>> 758d87c (Solar System: 3D orbit inclinations, labels, sun glow, tone mapping; UI toggles; innerHTML hardening)
     if (!mat.map && cfg.textureUrl) {
       console.warn("Texture missing for " + cfg.name + ": " + cfg.textureUrl);
     }
@@ -104,16 +145,8 @@ export async function createPlanetsAndOrbits(scene, loader, configs) {
         CONSTANTS.PLANET_SEGMENTS,
         CONSTANTS.PLANET_SEGMENTS / 2
       );
-      const atmoMat = new THREE.MeshBasicMaterial({
-        color: cfg.atmosphere.color ?? 0xffffff,
-        transparent: true,
-        // Significantly reduce opacity to make the outline less visible
-        opacity:
-          (cfg.atmosphere.density ?? 0.3) *
-          CONSTANTS.ATMOSPHERE_OPACITY_MULTIPLIER *
-          0.1, // Reduced multiplier
-        side: THREE.FrontSide, // Changed from BackSide
-      });
+      const baseOpacity = (cfg.atmosphere.density ?? 0.3) * CONSTANTS.ATMOSPHERE_OPACITY_MULTIPLIER;
+      const atmoMat = createAtmosphereMaterial(cfg.atmosphere.color ?? 0xffffff, baseOpacity);
       const atmo = new THREE.Mesh(atmoGeom, atmoMat);
       atmo.raycast = () => {};
       group.add(atmo);
@@ -164,6 +197,26 @@ export async function createPlanetsAndOrbits(scene, loader, configs) {
       CONSTANTS.ORBIT_SEGMENTS,
       scene
     );
+
+    /* Orbital plane (educational) ------------------------------------- */
+    const planeOuter = orbitR; // already in scene units
+    const planeInner = planeOuter * 0.96; // thin band around the orbit
+    const planeGeom = new THREE.RingGeometry(planeInner, planeOuter * 1.04, 96, 1);
+    const planeMat = new THREE.MeshBasicMaterial({
+      color: 0x4aa3ff,
+      transparent: true,
+      opacity: 0.045,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      depthTest: true,
+    });
+    const plane = new THREE.Mesh(planeGeom, planeMat);
+    // Orient using inclination i and ascending node Ω in a Y-up world: Ry(Ω) then Rx(i)
+    const iRad = (cfg.kepler?.inclinationDeg ?? cfg.info?.orbitalInclinationDeg ?? 0) * THREE.MathUtils.DEG2RAD;
+    const ORad = (cfg.kepler?.longAscNodeDeg ?? 0) * THREE.MathUtils.DEG2RAD;
+    plane.setRotationFromEuler(new THREE.Euler(iRad, ORad, 0, 'YXZ'));
+    plane.userData = { isOrbitalPlane: true, bodyName: cfg.name };
+    scene.add(plane);
 
     /* Moons ------------------------------------------------------------ */
     if (cfg.moons?.length) {
@@ -276,14 +329,8 @@ function createMoonSystem(planetCfg, planetGroup, planetRadius, loader) {
         CONSTANTS.MOON_SEGMENTS,
         CONSTANTS.MOON_SEGMENTS / 2
       );
-      const matA = new THREE.MeshBasicMaterial({
-        color: m.atmosphere.colorHex ?? 0xffffff,
-        transparent: true,
-        opacity:
-          (m.atmosphere.densityRelative ?? 0.2) *
-          CONSTANTS.MOON_ATMOSPHERE_OPACITY_MULTIPLIER, // Removed the extra 1.5 multiplier
-        side: THREE.BackSide,
-      });
+      const baseOpacityM = (m.atmosphere.densityRelative ?? 0.2) * CONSTANTS.MOON_ATMOSPHERE_OPACITY_MULTIPLIER;
+      const matA = createAtmosphereMaterial(m.atmosphere.colorHex ?? 0xffffff, baseOpacityM);
       const a = new THREE.Mesh(g, matA);
       a.raycast = () => {};
       moon.add(a);
