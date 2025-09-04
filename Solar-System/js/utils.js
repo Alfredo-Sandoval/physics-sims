@@ -36,15 +36,14 @@ export function loadTexture(filename, loader) {
     undefined,
     (err) => {
       console.error(`Texture load failed: ${filename}`, err);
-      // Create a simple colored texture as fallback
+      // Create a simple colored texture as fallback directly on this Texture
       const canvas = document.createElement("canvas");
       canvas.width = canvas.height = 64;
       const ctx = canvas.getContext("2d");
       ctx.fillStyle = "#666666";
       ctx.fillRect(0, 0, 64, 64);
-      const fallbackTex = new THREE.CanvasTexture(canvas);
-      fallbackTex.colorSpace = THREE.SRGBColorSpace;
       tex.image = canvas;
+      tex.colorSpace = THREE.SRGBColorSpace;
       tex.needsUpdate = true;
     }
   );
@@ -189,9 +188,16 @@ export function createOrbitLine(cfg, scaleFactor, colour, segments, parent) {
   }
 
   const geom = new THREE.BufferGeometry().setFromPoints(points);
-  const mat = new THREE.LineBasicMaterial({ color: colour, linewidth: 1 });
+  const mat = new THREE.LineBasicMaterial({
+    color: colour,
+    linewidth: 1,
+    transparent: true,
+    opacity: 0.5,
+    depthWrite: false, // don't occlude translucent geometry like rings
+  });
   const line = new THREE.LineLoop(geom, mat);
   line.userData = { isOrbitLine: true };
+  line.renderOrder = 0; // draw before translucent surfaces
   if (parent) parent.add(line);
   return line;
 }

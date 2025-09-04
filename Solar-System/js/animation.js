@@ -4,7 +4,7 @@ import * as THREE from "three";
 import * as CONSTANTS from "./constants.js";
 import { getOrbitalState } from "./kepler.js";
 
-import { updateDayCounter, updateOutlines, updatePlanetLabels } from "./ui.js";
+import { updateDayCounter, updateOutlines } from "./ui.js";
 import { updateAsteroidBelt } from "./asteroidbelt.js"; // Added import for asteroid belt updates
 
 // Flags and state
@@ -167,12 +167,7 @@ export function updateScene(simSpeed) {
     updateRotations(planets, delta, speed);
     updateAsteroidBelt(belt, delta, speed);
     updateOutlines(); // Update outline positions to follow moving objects
-    
-    // Update planet labels
-    const celestialBodies = [...planets, ...(window.asteroidBelt ? [] : [])];
-    if (window.sunMesh) celestialBodies.push(window.sunMesh);
-    updatePlanetLabels(window.camera, celestialBodies);
-    
+
     window.simulatedDays = updateSimulation(delta, speed, currentDays);
   } catch (err) {
     console.error("updateScene error:", err);

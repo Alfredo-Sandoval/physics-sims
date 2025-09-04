@@ -339,6 +339,10 @@
     "ringTilt": 26.7,
     "textureUrl": "saturn.jpg",
     "ringTextureUrl": "saturn_ring.png",
+    "rings": {
+      "textureUrl": "saturn_ring.png",
+      "tiltDeg": 26.7
+    },
     "atmosphere": {
       "exists": true,
       "color": "#f0e6d2",

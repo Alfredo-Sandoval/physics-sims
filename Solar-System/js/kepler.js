@@ -117,7 +117,8 @@ export function getOrbitalState(tDays, elems) {
   }
 
   // Velocity magnitude (vis‑viva) & direction -------------------------
-  const μAU = 0.01720209895 ** 2; // AU^3 day⁻²  const vMag = Math.sqrt(μAU * (2 / r - 1 / a)); // AU/day
+  const μAU = 0.01720209895 ** 2; // AU^3 day⁻²
+  // const vMag = Math.sqrt(μAU * (2 / r - 1 / a)); // AU/day (not used currently)
   const h = Math.sqrt(μAU * a * (1 - e * e)); // specific angular momentum
   const vx = -(μAU / h) * Math.sin(ν);
   const vy = (μAU / h) * (e + Math.cos(ν));

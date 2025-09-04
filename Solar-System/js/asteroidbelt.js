@@ -144,9 +144,11 @@ export function updateAsteroidBelt(belt, deltaTime, simulationSpeed = 1.0) {
   const speedFactor = simulationSpeed * deltaTime * 0.001;
   
   const matrix = new THREE.Matrix4();
-  const position = new THREE.Vector3();
-  const quaternion = new THREE.Quaternion();
-  const scale = new THREE.Vector3();
+  const newPosition = new THREE.Vector3();
+  const incrementQuat = new THREE.Quaternion();
+  const currentPos = new THREE.Vector3();
+  const currentQuat = new THREE.Quaternion();
+  const currentScale = new THREE.Vector3();
   
   // Update each asteroid instance
   for (let i = 0; i < asteroidData.length; i++) {
@@ -155,28 +157,26 @@ export function updateAsteroidBelt(belt, deltaTime, simulationSpeed = 1.0) {
     // Update orbital angle
     data.angle += data.orbitSpeed * speedFactor;
     
-    // Update position based on orbital mechanics
-    position.set(
+    // Compute new orbital position
+    newPosition.set(
       Math.cos(data.angle) * data.radius,
       data.height,
       Math.sin(data.angle) * data.radius
     );
-    
-    // Update rotation
+
+    // Compute incremental rotation
     const rotationAmount = data.rotationSpeed * speedFactor;
-    quaternion.setFromAxisAngle(data.rotationAxis, rotationAmount);
-    
-    // Get current matrix to preserve scale
+    incrementQuat.setFromAxisAngle(data.rotationAxis, rotationAmount);
+
+    // Read current transform to preserve scale and accumulate rotation
     instancedMesh.getMatrixAt(i, matrix);
-    matrix.decompose(position, quaternion, scale);
-    
-    // Apply rotation increment
-    const currentQuaternion = new THREE.Quaternion();
-    matrix.decompose(position, currentQuaternion, scale);
-    currentQuaternion.multiply(quaternion);
-    
-    // Set new position and rotation
-    matrix.compose(position, currentQuaternion, scale);
+    matrix.decompose(currentPos, currentQuat, currentScale);
+
+    // Accumulate rotation
+    currentQuat.multiply(incrementQuat);
+
+    // Write new transform with updated position and rotation
+    matrix.compose(newPosition, currentQuat, currentScale);
     instancedMesh.setMatrixAt(i, matrix);
   }
   

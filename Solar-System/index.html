@@ -324,7 +324,7 @@
         width: 480px;
         max-height: 70vh;
         overflow-y: auto;
-        z-index: 998;
+        z-index: 1500; /* Above labels and leader lines */
         background: linear-gradient(135deg, rgba(20, 20, 30, 0.98) 0%, rgba(10, 10, 20, 0.98) 100%);
         color: var(--text-color);
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -338,6 +338,8 @@
         border: 3px solid rgba(255, 255, 255, 0.15);
         backdrop-filter: blur(25px);
         pointer-events: auto;
+        /* Make sure pseudo-elements and content stack predictably */
+        isolation: isolate;
       }
       
       #info.show {
@@ -354,9 +356,11 @@
         bottom: -2px;
         background: linear-gradient(45deg, rgba(64, 224, 208, 0.3), rgba(72, 61, 139, 0.3), rgba(255, 20, 147, 0.3));
         border-radius: 18px;
+        /* Keep the glow behind content but within the same stacking context */
         z-index: -1;
         opacity: 0;
         transition: opacity 0.3s ease;
+        pointer-events: none; /* Never block hover in scrollable content */
       }
       
       #info:hover::before {
@@ -541,7 +545,9 @@
 
       /* ---- Planet Labels ---- */
       .planet-label {
-        position: absolute;
+        position: fixed; /* avoid layout scroll offsets; stick to viewport */
+        top: 0; /* anchor for translate3d positioning */
+        left: 0; /* anchor for translate3d positioning */
         color: #ffffff;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         font-size: 14px;
@@ -561,14 +567,25 @@
         backdrop-filter: blur(5px);
         border-radius: 8px;
         padding: 4px 8px;
+        /* Use CSS vars so JS can set position without fighting :hover */
+        --tx: 0px;
+        --ty: 0px;
+        --scale: 1;
+        transform: translate3d(var(--tx), var(--ty), 0) scale(var(--scale));
+        will-change: transform; /* reduce jitter on continuous updates */
       }
 
       .planet-label-line {
-        display: none; /* Hide all label lines */
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        z-index: 999;
       }
 
       .planet-label:hover {
-        transform: scale(1.1) translateY(-2px);
+        /* preserve translation set by JS, only tweak scale/offset */
+        --scale: 1.1;
+        --ty: calc(var(--ty) - 2px);
         background: rgba(0, 0, 0, 0.9);
         text-shadow: 
           0 0 15px rgba(255, 255, 255, 0.8),

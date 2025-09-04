@@ -9,7 +9,8 @@
       "Bash(node:*)",
       "Bash(grep:*)",
       "Bash(powershell:*)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Read(/home/alif/Pictures/Screenshots/**)"
     ],
     "deny": []
   }

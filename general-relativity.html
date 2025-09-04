@@ -68,6 +68,9 @@
         renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(window.devicePixelRatio);
+        // Ensure consistent color/lighting behavior
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        renderer.physicallyCorrectLights = true;
         document.body.appendChild(renderer.domElement);
 
         // --- Controls ---
@@ -103,10 +106,12 @@
           32,
           32
         );
-        const centralSphereMaterial = new THREE.MeshBasicMaterial({
-          color: 0xffff00, // Yellow
-          emissive: 0xffff00, // Make it glow yellow
-          emissiveIntensity: 1.0,
+        const centralSphereMaterial = new THREE.MeshStandardMaterial({
+          color: 0xffff00, // Yellow base color
+          emissive: 0xffff00, // Self-illumination
+          emissiveIntensity: 0.6,
+          metalness: 0.0,
+          roughness: 0.4,
         });
         centralSphere = new THREE.Mesh(
           centralSphereGeometry,
@@ -121,8 +126,10 @@
           16,
           16
         );
-        const orbitingSphereMaterial = new THREE.MeshBasicMaterial({
+        const orbitingSphereMaterial = new THREE.MeshStandardMaterial({
           color: 0x0000ff, // Blue
+          metalness: 0.0,
+          roughness: 0.6,
         });
         orbitingSphere = new THREE.Mesh(
           orbitingSphereGeometry,

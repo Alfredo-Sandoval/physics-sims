@@ -141,7 +141,21 @@ export async function createPlanetsAndOrbits(scene, loader, configs) {
     }
 
     /* Rings ----------------------------------------------------------- */
+    // Backward‑compat: honor legacy top‑level fields if present
+    if (!cfg.rings && (cfg.ringTextureUrl || cfg.ringTilt !== undefined)) {
+      cfg.rings = {
+        textureUrl: cfg.ringTextureUrl,
+        tiltDeg: cfg.ringTilt ?? 0,
+      };
+      console.log(`[Rings] Built rings object for ${cfg.name} from legacy fields.`);
+    }
+
     if (cfg.rings && cfg.rings.textureUrl) {
+      await createRings(cfg, dispR, group, loader);
+    } else if (cfg.name === "Saturn") {
+      // Absolute fallback for Saturn if config is somehow missing
+      console.warn("[Rings] Saturn has no rings config; creating default.");
+      cfg.rings = { textureUrl: "saturn_ring.png", tiltDeg: cfg.axialTilt ?? 26.7 };
       await createRings(cfg, dispR, group, loader);
     }
 
@@ -189,6 +203,15 @@ async function createRings(cfg, planetR, group, loader) {
   }
 
   const tex = loadTexture(ringConfig.textureUrl, loader);
+  // Improve sampling to avoid visible banding and edge bleed
+  if (tex) {
+    tex.wrapS = THREE.ClampToEdgeWrapping;
+    tex.wrapT = THREE.ClampToEdgeWrapping;
+    tex.anisotropy = Math.max(4, (window?.renderer?.capabilities?.getMaxAnisotropy?.() ?? 8));
+    tex.minFilter = THREE.LinearMipMapLinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    tex.needsUpdate = true;
+  }
 
   // Create a single high-quality ring with better appearance
   const innerRadius = planetR * CONSTANTS.SATURN_RING_INNER_RADIUS_FACTOR;
@@ -196,28 +219,55 @@ async function createRings(cfg, planetR, group, loader) {
 
   console.log("Ring radii: inner=" + innerRadius + ", outer=" + outerRadius);
 
-  // Reduced geometry detail to prevent OOM issues (was 128, 32)
-  const geom = new THREE.RingGeometry(innerRadius, outerRadius, 64, 16);
+  // Geometry: many slices around, multiple radial strips for better texture mapping
+  // Significantly increased segments for smoother appearance
+  const geom = new THREE.RingGeometry(innerRadius, outerRadius, 512, 8);
+  if (geom.attributes?.uv) {
+    const uvs = geom.attributes.uv;
+    for (let i = 0; i < uvs.count; i++) {
+      // Keep original U (radial coordinate 0..1) for proper ring texture mapping
+      // Use V coordinate to sample different parts of the texture for variety
+      const currentU = uvs.getX(i);
+      // Map V coordinate to sample from middle portion of texture (0.3 to 0.7)
+      uvs.setY(i, 0.3 + currentU * 0.4);
+    }
+    uvs.needsUpdate = true;
+  }
 
-  // Revert to MeshStandardMaterial and add alphaTest
-  const mat = new THREE.MeshStandardMaterial({
+  // Improved material setup for better visual quality (use lit material)
+  const ringMat = new THREE.MeshStandardMaterial({
     map: tex,
-    side: THREE.DoubleSide,
+    color: 0xffffff,
     transparent: true,
-    opacity: CONSTANTS.SATURN_RING_OPACITY,
-    depthWrite: false,
-    alphaTest: 0.5, // Add alphaTest to discard transparent pixels
+    opacity: CONSTANTS.SATURN_RING_OPACITY * 0.85,
+    depthWrite: false,          // proper blending with transparency
+    depthTest: true,
+    alphaTest: 0.1,             // cleaner edges from alpha texture
+    blending: THREE.NormalBlending,
+    side: THREE.DoubleSide,     // visible from above and below
+    polygonOffset: true,
+    polygonOffsetFactor: 1,
+    polygonOffsetUnits: 1,
+    metalness: 0.0,
+    roughness: 0.9,
+    emissive: 0x111111,         // slight self-illumination now takes effect
+    emissiveIntensity: 0.02,
   });
 
-  const ring = new THREE.Mesh(geom, mat);
-  ring.rotation.x = Math.PI / 2;
-  ring.raycast = () => {}; // Disable raycasting for rings
+  // Create single high-quality ring mesh
+  const ringMesh = new THREE.Mesh(geom, ringMat);
+  ringMesh.rotation.x = Math.PI / 2; // Orient ring in XZ plane
+  ringMesh.raycast = () => {}; // Disable raycasting to prevent click interference
 
   // Apply ring tilt from the new structure
-  ring.rotation.z = (ringConfig.tiltDeg ?? 0) * THREE.MathUtils.DEG2RAD;
+  const tiltRad = (ringConfig.tiltDeg ?? 0) * THREE.MathUtils.DEG2RAD;
+  ringMesh.rotation.z = tiltRad;
 
-  group.add(ring);
-  console.log("Ring added to " + cfg.name + " group, material:", mat);
+  // Set appropriate render order to render after orbit lines but before UI
+  ringMesh.renderOrder = 95;
+
+  group.add(ringMesh);
+  console.log("High-quality rings added to " + cfg.name + " with " + geom.parameters.thetaSegments + " segments");
 }
 
 /* ---------------------------------------------------------------------- */
@@ -228,7 +278,13 @@ function createMoonSystem(planetCfg, planetGroup, planetRadius, loader) {
   moonGroup.userData.parentPlanetName = planetCfg.name;
   const moonBodies = [];
 
-  planetCfg.moons.forEach((m) => {
+  // Compute per-planet orbit spread so moons don’t share the same track
+  const moons = planetCfg.moons || [];
+  const minKm = Math.min(...moons.map(mm => mm.orbitRadiusKm));
+  const maxKm = Math.max(...moons.map(mm => mm.orbitRadiusKm));
+  const rangeKm = Math.max(1, maxKm - minKm);
+
+  planetCfg.moons.forEach((m, idx) => {
     // Size moons proportionally to their actual size and parent planet
     const moonActualRadius = m.actualRadius || m.actualRadiusEarthRadii || 0.1;
     const baseMoonSize = moonActualRadius * CONSTANTS.MOON_DISPLAY_SCALE_FACTOR;
@@ -239,10 +295,18 @@ function createMoonSystem(planetCfg, planetGroup, planetRadius, loader) {
       Math.min(baseMoonSize * planetScale, CONSTANTS.MAX_MOON_RADIUS)
     );
 
-    // Calculate orbit radius relative to planet center
-    const orbitR =
-      planetRadius * 1.5 + // Base distance from planet surface
-      (m.orbitRadiusKm / 1e5) * CONSTANTS.MOON_ORBIT_SCALE_FACTOR; // Scaled orbital distance
+    // Calculate orbit radius relative to planet center using relative spacing
+    // so moons around small planets (e.g., Mars) don’t collapse onto one ring.
+    const rel = (m.orbitRadiusKm - minKm) / rangeKm; // 0..1 per planet
+    const base = planetRadius * 1.7;       // start just outside the planet
+    const spread = planetRadius * 2.2;     // total spread for the system
+    let orbitR = base + rel * spread;
+    // Ensure a minimum clearance and slight per-index nudge to avoid overlaps
+    const minClearance = planetRadius * 0.4 + moonR * 2.2;
+    if (orbitR < planetRadius + minClearance) {
+      orbitR = planetRadius + minClearance + rel * planetRadius * 0.2;
+    }
+    orbitR += idx * (planetRadius * 0.05); // tiny stagger
 
     const geom = new THREE.SphereGeometry(
       moonR,
@@ -289,12 +353,18 @@ function createMoonSystem(planetCfg, planetGroup, planetRadius, loader) {
       moon.add(a);
     }
 
-    /* Self‑lights for tiny moons (optimized) ------------------------- */
-    // Only add self-lighting for very small moons that need it
-    if (moonR < CONSTANTS.MIN_MOON_RADIUS * 2) {
-      const light1 = new THREE.PointLight(0xffffff, 0.5, moonR * 10);
-      light1.castShadow = false; // Disable shadow casting for performance
-      moon.add(light1);
+    /* Optional visibility PointLight (disabled by default) ----------- */
+    if (
+      CONSTANTS.MOON_POINT_LIGHT_FOR_VISIBILITY &&
+      moonR < CONSTANTS.MIN_MOON_RADIUS * 2
+    ) {
+      const light = new THREE.PointLight(
+        0xffffff,
+        CONSTANTS.MOON_POINT_LIGHT_INTENSITY,
+        moonR * CONSTANTS.MOON_POINT_LIGHT_RANGE_MULTIPLIER
+      );
+      light.castShadow = false;
+      moon.add(light);
     }
     
     // Moons don't cast shadows but can receive them
@@ -354,13 +424,15 @@ function createMoonSystem(planetCfg, planetGroup, planetRadius, loader) {
     );
     // Use the same color and transparency as planet orbits
     const moonOrbitMat = new THREE.LineBasicMaterial({
-      color: CONSTANTS.ORBIT_LINE_COLOR, // Use the constant directly
+      color: CONSTANTS.ORBIT_LINE_COLOR,
       transparent: true,
-      opacity: 0.5, // Match planet orbit opacity
+      opacity: 0.5,
+      depthWrite: false, // never occlude rings/transparent surfaces
     });
     const moonOrbitLine = new THREE.LineLoop(moonOrbitGeom, moonOrbitMat);
     moonOrbitLine.rotation.x = Math.PI / 2; // Rotate to XZ plane
     moonOrbitLine.userData = { isOrbitLine: true, isMoonOrbit: true };
+    moonOrbitLine.renderOrder = 0;
     moonGroup.add(moonOrbitLine);
 
     moonGroup.add(moon);
