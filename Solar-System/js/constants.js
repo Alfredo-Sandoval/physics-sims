@@ -19,7 +19,7 @@ export const SELECTED_HIGHLIGHT_COLOR = 0x00ffff;
 export const SUN_EMISSIVE_COLOR = 0xffddaa;
 
 /* Selection/Outline ---------------------------------------------------- */
-export const OUTLINE_SCALE = 1.05; // Scale factor for selection outline
+export const OUTLINE_SCALE = 1.035; // Slightly thinner for cleaner rim
 
 /* Scale factors -------------------------------------------------------- */
 export const ORBIT_SCALE_FACTOR = 100; // AU → scene units (balanced for visibility)
@@ -82,8 +82,9 @@ export const ASTEROID_MAX_SIZE = 0.4; // Much larger maximum for visibility
 export const ASTEROID_COLOR = 0x998877; // More brownish rock color
 
 /* Geometry detail ------------------------------------------------------ */
-export const PLANET_SEGMENTS = 24; // Reduced from 32 to prevent OOM
-export const MOON_SEGMENTS = 12; // Reduced from 16 to prevent OOM
+// Increase segments to smooth the selection rim without large perf cost
+export const PLANET_SEGMENTS = 48; // Smoother spheres for outline silhouette
+export const MOON_SEGMENTS = 16;
 export const ORBIT_SEGMENTS = 64; // Reduced from 128 to prevent OOM
 export const MOON_ORBIT_SEGMENTS = 32; // Reduced from 64 to prevent OOM
 
@@ -108,6 +109,13 @@ export const SUN_GLOW_LIGHT_DECAY = 1.0;
 export const DIR_LIGHT_INTENSITY = 0.5;
 export const HEMI_LIGHT_INTENSITY = 0.4;
 export const SUN_EMISSIVE_INTENSITY = 1.5;
+
+/* Moons visibility aids ----------------------------------------------- */
+// Historically we added small PointLights to tiny moons to make them visible,
+// but that incorrectly lights nearby planets. Keep it off by default.
+export const MOON_POINT_LIGHT_FOR_VISIBILITY = false; // if true, tiny moons add a small PointLight
+export const MOON_POINT_LIGHT_INTENSITY = 0.25; // dim if enabled
+export const MOON_POINT_LIGHT_RANGE_MULTIPLIER = 6; // light distance = radius * this
 
 /* Material defaults ---------------------------------------------------- */
 

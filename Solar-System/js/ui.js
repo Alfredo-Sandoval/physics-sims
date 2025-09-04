@@ -20,9 +20,10 @@ let menuContainer, menuToggleBtn;
 
 /* Planet labels */
 const planetLabels = new Map(); // Object3D → HTML label element
-const planetLabelLines = new Map(); // Object3D → SVG line element
+const planetLabelLines = new Map(); // Object3D → { container, svg, path }
 let labelsEnabled = true;
 let moonLabelsEnabled = false;
+let labelLinesEnabled = false;
 
 /* ---------------------------------------------------------------------- */
 /*                         Initialisation                                 */
@@ -65,11 +66,18 @@ function initLabels() {
   moonToggleBtn.className = "controlBtn";
   moonToggleBtn.id = "toggleMoonLabelsBtn";
   
+  // Create toggle button for label leader lines
+  const lineToggleBtn = document.createElement("button");
+  lineToggleBtn.textContent = "Show Label Lines";
+  lineToggleBtn.className = "controlBtn";
+  lineToggleBtn.id = "toggleLabelLinesBtn";
+  
   // Add to additional controls
   const additionalControls = document.getElementById("additionalControls");
   if (additionalControls) {
     additionalControls.appendChild(toggleBtn);
     additionalControls.appendChild(moonToggleBtn);
+    additionalControls.appendChild(lineToggleBtn);
   }
   
   toggleBtn.addEventListener("click", () => {
@@ -83,6 +91,25 @@ function initLabels() {
     moonToggleBtn.textContent = moonLabelsEnabled ? "Hide Moon Labels" : "Show Moon Labels";
     updateLabelsVisibility();
   });
+
+  lineToggleBtn.addEventListener("click", () => {
+    labelLinesEnabled = !labelLinesEnabled;
+    lineToggleBtn.textContent = labelLinesEnabled ? "Hide Label Lines" : "Show Label Lines";
+    updateLabelsVisibility();
+  });
+
+  // Ensure label lines resize with window/canvas bounds, not full viewport
+  window.addEventListener("resize", () => {
+    const rect = (window.renderer?.domElement?.getBoundingClientRect?.() || {left:0, top:0, width: window.innerWidth, height: window.innerHeight});
+    planetLabelLines.forEach((lineData) => {
+      if (!lineData?.svg) return;
+      lineData.svg.setAttribute("width", String(rect.width));
+      lineData.svg.setAttribute("height", String(rect.height));
+      lineData.svg.setAttribute("viewBox", `0 0 ${rect.width} ${rect.height}`);
+      lineData.svg.style.top = `${rect.top}px`;
+      lineData.svg.style.left = `${rect.left}px`;
+    });
+  });
 }
 
 export function createPlanetLabel(celestialBody) {
@@ -91,6 +118,10 @@ export function createPlanetLabel(celestialBody) {
   const label = document.createElement("div");
   label.className = "planet-label";
   label.textContent = celestialBody.userData.name;
+  // Set data-planet for CSS theming (only for planets)
+  if (celestialBody.userData.type === "planet") {
+    label.setAttribute("data-planet", celestialBody.userData.name);
+  }
   
   // Add appropriate class based on object type
   if (celestialBody.userData.type === "star") {
@@ -129,11 +160,15 @@ export function createPlanetLabel(celestialBody) {
   const lineContainer = document.createElement("div");
   lineContainer.className = "planet-label-line";
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  svg.setAttribute("width", "100");
-  svg.setAttribute("height", "100");
-  svg.style.position = "absolute";
-  svg.style.top = "0";
-  svg.style.left = "0";
+  const rect = (window.renderer?.domElement?.getBoundingClientRect?.() || {left:0, top:0, width: window.innerWidth, height: window.innerHeight});
+  svg.setAttribute("width", String(rect.width));
+  svg.setAttribute("height", String(rect.height));
+  svg.setAttribute("viewBox", `0 0 ${rect.width} ${rect.height}`);
+  svg.style.position = "fixed";
+  svg.style.top = `${rect.top}px`;
+  svg.style.left = `${rect.left}px`;
+  svg.style.pointerEvents = "none";
+  svg.style.zIndex = "999";
   
   const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
   svg.appendChild(path);
@@ -156,7 +191,8 @@ export function updateLabelsVisibility() {
     
     const lineData = planetLabelLines.get(body);
     if (lineData) {
-      lineData.container.style.display = shouldShow ? "block" : "none";
+      const showLine = shouldShow && labelLinesEnabled;
+      lineData.container.style.display = showLine ? "block" : "none";
     }
   });
 }
@@ -165,9 +201,11 @@ export function updatePlanetLabels(camera, celestialBodies) {
   if (!camera || !celestialBodies) return;
   
   const tempVector = new THREE.Vector3();
+  // Measure canvas bounds once per frame to decouple from terminal/devtools size
+  const canvasRect = (window.renderer?.domElement?.getBoundingClientRect?.() || {left:0, top:0, width: window.innerWidth, height: window.innerHeight});
   
-  // Simple, fast label updates - only show major objects
-  const cameraDistance = camera.position.length();
+  // Precompute: camera world position for per‑body distance checks
+  const camWorld = camera.getWorldPosition(new THREE.Vector3());
   
   celestialBodies.forEach(body => {
     if (!body?.userData?.name) return;
@@ -180,45 +218,84 @@ export function updatePlanetLabels(camera, celestialBodies) {
     if (!label) return;
     
     const isMoon = body.userData?.type === "moon";
+    // Respect global toggle states first to avoid flicker and overrides each frame
+    if (!labelsEnabled || (isMoon && !moonLabelsEnabled)) {
+      label.style.display = "none";
+      const lineDataEarly = planetLabelLines.get(body);
+      if (lineDataEarly) {
+        lineDataEarly.container.style.display = "none";
+      }
+      return;
+    }
     const isSun = body.userData?.name === "Sun";
     const isOuterPlanet = ["Jupiter", "Saturn", "Uranus", "Neptune"].includes(body.userData?.name);
     const isInnerPlanet = ["Mercury", "Venus", "Earth", "Mars"].includes(body.userData?.name);
-    
-    // Improved visibility rules for better label visibility
+
+    // Distance‑based visibility using camera→body distance (more stable)
+    body.getWorldPosition(tempVector);
+    const distToCam = tempVector.distanceTo(camWorld);
+
     let showLabel = false;
-    if (isSun) showLabel = true;
-    else if (cameraDistance < 800 && isOuterPlanet) showLabel = true;
-    else if (cameraDistance < 600 && isInnerPlanet) showLabel = true;
-    else if (cameraDistance < 400 && !isMoon) showLabel = true;
+    // When moon labels are enabled, show them broadly and let clip-space culling handle visibility
+    if (isMoon) showLabel = true;
+    else if (isSun) showLabel = true;
+    else if (isOuterPlanet && distToCam < 900) showLabel = true;
+    else if (isInnerPlanet && distToCam < 650) showLabel = true;
+    else if (distToCam < 450) showLabel = true;
     
     if (!showLabel) {
       label.style.display = "none";
       return;
     }
     
-    // Get world position
+    // Project to NDC for screen mapping
     body.getWorldPosition(tempVector);
     tempVector.project(camera);
-    
-    // Check if behind camera
-    if (tempVector.z > 1) {
+
+    // Outside clip space or behind camera → hide
+    if (Math.abs(tempVector.z) > 1 || Math.abs(tempVector.x) > 1 || Math.abs(tempVector.y) > 1) {
       label.style.display = "none";
       return;
     }
     
-    // Convert to screen coordinates
-    const x = (tempVector.x * 0.5 + 0.5) * window.innerWidth;
-    const y = (tempVector.y * -0.5 + 0.5) * window.innerHeight;
+    // Convert to canvas-space coordinates
+    const xCanvas = (tempVector.x * 0.5 + 0.5) * canvasRect.width;
+    const yCanvas = (tempVector.y * -0.5 + 0.5) * canvasRect.height;
     
     // Simple offset
     const offset = isSun ? 30 : 20;
     
-    // Apply styling
-    label.style.left = (x + offset) + "px";
-    label.style.top = (y - offset) + "px";
+    // Apply styling using CSS variables (translate3d) plus canvas offset
+    label.style.setProperty('--tx', `${Math.round(canvasRect.left + xCanvas + offset)}px`);
+    label.style.setProperty('--ty', `${Math.round(canvasRect.top + yCanvas - offset)}px`);
     label.style.display = "block";
     label.style.opacity = 1;
-    label.style.transform = "scale(1)";
+    // Do not overwrite transform; CSS uses translate3d(var(--tx), var(--ty)) scale(var(--scale))
+
+    // Update leader line
+    const lineData = planetLabelLines.get(body);
+    if (lineData) {
+      const showLine = labelsEnabled && (moonLabelsEnabled || !isMoon) && labelLinesEnabled;
+      lineData.container.style.display = showLine ? "block" : "none";
+      if (showLine) {
+        // Anchor from planet (x, y) to label center
+        const labelRect = label.getBoundingClientRect();
+        const x2 = (labelRect.left - canvasRect.left) + labelRect.width / 2;
+        const y2 = (labelRect.top - canvasRect.top) + labelRect.height / 2;
+        // Keep SVG matched to canvas
+        if (lineData.svg.getAttribute("width") !== String(canvasRect.width)) {
+          lineData.svg.setAttribute("width", String(canvasRect.width));
+          lineData.svg.setAttribute("height", String(canvasRect.height));
+          lineData.svg.setAttribute("viewBox", `0 0 ${canvasRect.width} ${canvasRect.height}`);
+          lineData.svg.style.top = `${canvasRect.top}px`;
+          lineData.svg.style.left = `${canvasRect.left}px`;
+        }
+        lineData.path.setAttribute("stroke", "rgba(255,255,255,0.35)");
+        lineData.path.setAttribute("stroke-width", "1");
+        lineData.path.setAttribute("fill", "none");
+        lineData.path.setAttribute("d", `M ${xCanvas.toFixed(1)} ${yCanvas.toFixed(1)} L ${x2.toFixed(1)} ${y2.toFixed(1)}`);
+      }
+    }
   });
 }
 
@@ -339,7 +416,7 @@ export function displayObjectInfo(obj) {
 
   ensureCloseButton();
 
-  // Position panel next to the selected planet
+  // Dock panel to the side (opposite of planet)
   positionInfoPanel(obj);
 
   // Animate in with modern styling
@@ -357,7 +434,8 @@ export function displayObjectInfo(obj) {
 /**
  * Position the info panel next to the selected planet
  */
-function positionInfoPanel(obj) {
+// Exported so animation loop can keep it docked while following
+export function positionInfoPanel(obj) {
   if (!window.camera || !obj) return;
   
   const tempVector = new THREE.Vector3();
@@ -366,32 +444,26 @@ function positionInfoPanel(obj) {
   obj.getWorldPosition(tempVector);
   tempVector.project(window.camera);
   
-  // Convert to screen coordinates
-  const x = (tempVector.x * 0.5 + 0.5) * window.innerWidth;
-  const y = (tempVector.y * -0.5 + 0.5) * window.innerHeight;
-  
-  // Position panel to the right of the planet
-  const offsetX = 60; // Distance from planet
-  const panelWidth = 300; // Panel width from CSS
-  const panelHeight = 400; // Estimated panel height
-  
-  let finalX = x + offsetX;
-  let finalY = y - panelHeight / 2;
-  
-  // Keep panel within screen bounds
-  if (finalX + panelWidth > window.innerWidth) {
-    finalX = x - offsetX - panelWidth; // Position to the left instead
-  }
-  if (finalY < 20) {
-    finalY = 20;
-  }
-  if (finalY + panelHeight > window.innerHeight - 20) {
-    finalY = window.innerHeight - panelHeight - 20;
-  }
-  
-  // Apply position
-  infoPanel.style.left = finalX + "px";
-  infoPanel.style.top = finalY + "px";
+  // Convert to screen X to choose docking side
+  const screenX = (tempVector.x * 0.5 + 0.5) * window.innerWidth;
+
+  // Panel size (fallbacks if not yet measured)
+  const rect = infoPanel.getBoundingClientRect();
+  const panelWidth = rect.width || 480;
+  const panelHeight = rect.height || Math.min(window.innerHeight * 0.7, 600);
+
+  // Dock to opposite side of the planet to keep it visible
+  const dockRight = screenX < window.innerWidth / 2; // planet on left → dock right
+  const margin = 20;
+  const left = dockRight
+    ? Math.max(margin, window.innerWidth - panelWidth - margin)
+    : margin;
+
+  // Vertically align around upper third of the screen and keep in bounds
+  let top = Math.max(margin, Math.min(window.innerHeight - panelHeight - margin, window.innerHeight * 0.12));
+
+  infoPanel.style.left = `${left}px`;
+  infoPanel.style.top = `${top}px`;
 }
 
 function populateStarInfo(cfg) {
@@ -529,29 +601,36 @@ export function selectObject(obj, follow = true) {
   if (mesh && mesh.isMesh) {
     const outlineGeom = mesh.geometry.clone();
 
-    // Create a unique material instance for this outline
+    // Silhouette-style outline (no grid): backface-only, slightly larger
     const outlineMat = new THREE.MeshBasicMaterial({
       color: CONSTANTS.SELECTED_HIGHLIGHT_COLOR,
-      wireframe: true,
+      side: THREE.BackSide,
       transparent: true,
-      opacity: 0.6,
+      opacity: 0.9,
+      depthTest: true,
       depthWrite: false,
+      polygonOffset: true,
+      // Nudge slightly toward the camera to avoid z-fighting with clouds/atmospheres
+      polygonOffsetFactor: -2,
+      polygonOffsetUnits: -2,
     });
 
     const outline = new THREE.Mesh(outlineGeom, outlineMat);
-    outline.scale.multiplyScalar(CONSTANTS.OUTLINE_SCALE);
     outline.position.copy(mesh.position);
     outline.rotation.copy(mesh.rotation);
+    outline.scale.copy(mesh.scale).multiplyScalar(CONSTANTS.OUTLINE_SCALE);
 
     // Add outline to the same parent as the mesh
     const parent = mesh.parent || obj;
     parent.add(outline);
+    // Ensure it renders after the planet/atmosphere for a clean edge
+    outline.renderOrder = 999;
     outlineMeshes.set(obj, outline);
 
     // Single flash effect
     let flashTime = 0;
     const flashDuration = 0.5; // 0.5 seconds
-    const originalOpacity = 0.6;
+    const originalOpacity = outline.material.opacity;
 
     const flash = () => {
       if (
@@ -737,9 +816,10 @@ export function updateOutlines() {
       return;
     }
 
-    // Update outline position to match the mesh
+    // Update outline transform to match the mesh
     outline.position.copy(mesh.position);
     outline.rotation.copy(mesh.rotation);
+    outline.scale.copy(mesh.scale).multiplyScalar(CONSTANTS.OUTLINE_SCALE);
   });
 }
 
@@ -803,9 +883,9 @@ export function cleanupUI() {
   planetLabels.clear();
 
   // Clear planet label lines
-  planetLabelLines.forEach((line) => {
-    if (line.parentElement) {
-      line.parentElement.removeChild(line);
+  planetLabelLines.forEach((lineData) => {
+    if (lineData?.container?.parentElement) {
+      lineData.container.parentElement.removeChild(lineData.container);
     }
   });
   planetLabelLines.clear();

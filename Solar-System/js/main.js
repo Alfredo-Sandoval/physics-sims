@@ -1,6 +1,10 @@
 // File: Solar-System/js/main.js// --- Main Module — Solar System Simulation ----------------------------
 import * as THREE from "three";
 import * as CONSTANTS from "./constants.js";
+import { Line2 } from "three/addons/lines/Line2.js";
+import { LineMaterial } from "three/addons/lines/LineMaterial.js";
+import { LineGeometry } from "three/addons/lines/LineGeometry.js";
+import { getOrbitalState } from "./kepler.js";
 
 import * as SceneSetup from "./sceneSetup.js";
 import * as UI from "./ui.js";
@@ -111,6 +115,16 @@ export async function init() {
     window.scene = scene;
     window.camera = camera;
     window.controls = controls;
+    window.renderer = renderer; // expose for UI overlay sizing
+    
+    // Anchor simulation time to the real calendar now (days since J2000)
+    try {
+      const j2000 = new Date(2000, 0, 1, 12, 0, 0);
+      const now = new Date();
+      window.simulatedDays = (now - j2000) / (1000 * 60 * 60 * 24);
+    } catch (e) {
+      console.warn("[Init] Failed to anchor sim clock; will start at 0.");
+    }
     
     // Add camera following functions to window
     window.setCameraFollowTarget = setCameraFollowTarget;
@@ -206,8 +220,8 @@ function setupMarsLaunchWindowEvents() {
       window.simulationSpeed = speedIncrease;
       
       // Show Mars and Earth
-      const earthMesh = findCelestialBodyByName(celestialBodies, "Earth");
-      const marsMesh = findCelestialBodyByName(celestialBodies, "Mars");
+      const earthMesh = findCelestialBodyByName("Earth", celestialBodies);
+      const marsMesh = findCelestialBodyByName("Mars", celestialBodies);
       
       if (earthMesh && marsMesh) {
         // Focus on Earth-Mars system
@@ -234,55 +248,101 @@ function setupMarsLaunchWindowEvents() {
 }
 
 function showHohmannTransferTrajectory() {
-  const earthMesh = findCelestialBodyByName(celestialBodies, "Earth");
-  const marsMesh = findCelestialBodyByName(celestialBodies, "Mars");
-  
+  const earthMesh = findCelestialBodyByName("Earth", celestialBodies);
+  const marsMesh = findCelestialBodyByName("Mars", celestialBodies);
   if (!earthMesh || !marsMesh) return;
-  
+
   // Remove existing trajectory
-  const existingTrajectory = scene.getObjectByName('marsTrajectory');
-  if (existingTrajectory) {
-    scene.remove(existingTrajectory);
+  const existing = scene.getObjectByName('marsTrajectory');
+  if (existing) scene.remove(existing);
+
+  const group = new THREE.Group();
+  group.name = 'marsTrajectory';
+
+  // Predict launch day from the module
+  let launchSimDay = window.simulatedDays || 0;
+  try {
+    const lw = marsLaunchWindow?.calculateLaunchWindow(launchSimDay);
+    if (lw?.simulationDay) launchSimDay = lw.simulationDay;
+  } catch (e) {
+    console.warn("[Mars Trajectory] Using current day for launch due to error:", e);
   }
-  
-  // Create Hohmann transfer trajectory
-  const trajectoryGroup = new THREE.Group();
-  trajectoryGroup.name = 'marsTrajectory';
-  
-  // Calculate semi-major axis for Hohmann transfer
-  const earthOrbitRadius = earthMesh.position.length();
-  const marsOrbitRadius = marsMesh.position.length();
-  const semiMajorAxis = (earthOrbitRadius + marsOrbitRadius) / 2;
-  
-  // Create trajectory curve
-  const trajectoryPoints = [];
-  const segments = 64;
-  
-  for (let i = 0; i <= segments; i++) {
-    const angle = (i / segments) * Math.PI; // Half orbit
-    const x = semiMajorAxis * Math.cos(angle);
-    const z = semiMajorAxis * Math.sin(angle);
-    trajectoryPoints.push(new THREE.Vector3(x, 0, z));
+
+  // Get Earth/Mars heliocentric states at launch (AU, orbital plane)
+  const pk = window.planetKepler || {};
+  const deg2rad = Math.PI / 180;
+  const E = pk["Earth"] || { a: 1.00000011, e: 0.01671022, ω: 114.20783 * deg2rad, M0: 357.529109 * deg2rad };
+  const M = pk["Mars"]  || { a: 1.523679,   e: 0.0933941,  ω: 286.537   * deg2rad, M0: 19.373     * deg2rad };
+
+  const eState = getOrbitalState(launchSimDay, E);
+  const mState = getOrbitalState(launchSimDay, M);
+
+  const earthAngle = Math.atan2(eState.y, eState.x); // rad
+  const r1 = Math.hypot(eState.x, eState.y);         // AU
+  const r2 = Math.hypot(mState.x, mState.y);         // AU
+
+  // Hohmann parameters (focus at Sun)
+  const aT = (r1 + r2) / 2; // AU
+  const eT = Math.abs((r2 - r1) / (r2 + r1));
+
+  // Build ellipse points in orbital plane with periapsis along +X, then rotate by earthAngle
+  const pts = [];
+  const segs = 160;
+  for (let i = 0; i <= segs; i++) {
+    const nu = (i / segs) * Math.PI; // 0..π
+    const r = (aT * (1 - eT * eT)) / (1 + eT * Math.cos(nu));
+    // Position relative to Sun at focus
+    let x = r * Math.cos(nu);
+    let y = r * Math.sin(nu);
+    // Rotate so periapsis points from Sun to Earth's direction at launch
+    const cos = Math.cos(earthAngle), sin = Math.sin(earthAngle);
+    const xr = x * cos - y * sin;
+    const yr = x * sin + y * cos;
+    // Map orbital plane (x,y) -> scene (x, z)
+    pts.push(new THREE.Vector3(xr * CONSTANTS.ORBIT_SCALE_FACTOR, 0, yr * CONSTANTS.ORBIT_SCALE_FACTOR));
   }
-  
-  const trajectoryGeometry = new THREE.BufferGeometry().setFromPoints(trajectoryPoints);
-  const trajectoryMaterial = new THREE.LineBasicMaterial({ 
-    color: 0xff6b6b, 
-    linewidth: 3,
+
+  const geom = new LineGeometry();
+  const flat = [];
+  pts.forEach(p => { flat.push(p.x, p.y, p.z); });
+  geom.setPositions(flat);
+
+  const size = new THREE.Vector2();
+  if (renderer) renderer.getSize(size);
+  const mat = new LineMaterial({
+    color: 0xff6b6b,
+    linewidth: 4, // world units not used; Line2 expects screen-space width via resolution
     transparent: true,
-    opacity: 0.8
+    opacity: 0.95,
+    depthWrite: false,
+    depthTest: false,
   });
-  
-  const trajectoryLine = new THREE.Line(trajectoryGeometry, trajectoryMaterial);
-  trajectoryGroup.add(trajectoryLine);
-  
-  // Add trajectory to scene
-  scene.add(trajectoryGroup);
-  
-  // Remove trajectory after 10 seconds
-  setTimeout(() => {
-    scene.remove(trajectoryGroup);
-  }, 10000);
+  if (size.x && size.y) mat.resolution.set(size.x, size.y);
+
+  const line = new Line2(geom, mat);
+  line.computeLineDistances();
+  line.renderOrder = 1;
+  group.add(line);
+
+  scene.add(group);
+
+  // Frame the trajectory so it’s clearly visible
+  try {
+    const c = aT * eT * CONSTANTS.ORBIT_SCALE_FACTOR; // focus offset
+    const cx = -c * Math.cos(earthAngle);
+    const cz = -c * Math.sin(earthAngle);
+    const center = new THREE.Vector3(cx, 0, cz);
+    const rMax = aT * (1 + eT) * CONSTANTS.ORBIT_SCALE_FACTOR;
+    const dist = rMax * 2.4;
+    const camPos = center.clone().add(new THREE.Vector3(dist * 0.6, dist * 0.8, dist * 0.6));
+    camera.position.lerp(camPos, 0.25);
+    if (controls && controls.target) controls.target.lerp(center, 0.25);
+  } catch (e) {
+    console.warn('[Mars Trajectory] Camera framing failed:', e);
+  }
+
+  // Keep on screen longer
+  setTimeout(() => scene.remove(group), 20000);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -297,6 +357,8 @@ function startAnimationLoop() {
 
   function animate() {
     animationFrameId = requestAnimationFrame(animate);
+    // Make frame id available for cleanup()
+    window.animationFrameId = animationFrameId;
 
     // Get delta time for lerping
     const delta = window.clock.getDelta();
@@ -306,8 +368,8 @@ function startAnimationLoop() {
 
     // Update Mars launch window
     if (marsLaunchWindow && window.simulatedDays) {
-      const earthMesh = findCelestialBodyByName(celestialBodies, "Earth");
-      const marsMesh = findCelestialBodyByName(celestialBodies, "Mars");
+      const earthMesh = findCelestialBodyByName("Earth", celestialBodies);
+      const marsMesh = findCelestialBodyByName("Mars", celestialBodies);
       
       if (earthMesh && marsMesh) {
         marsLaunchWindow.update(window.simulatedDays, earthMesh.position, marsMesh.position);
@@ -350,47 +412,16 @@ function startAnimationLoop() {
     // UI read‑outs
     UI.updateUIDisplay(currentSpeed);
     
-    // Update info panel position if following a target
-    if (cameraFollowTarget && UI.getUIReferences().selectedObject === cameraFollowTarget) {
-      if (UI.getUIReferences().infoPanel && UI.getUIReferences().infoPanel.style.display !== "none") {
-        // Update panel position to follow the moving planet
-        const tempVector = new THREE.Vector3();
-        cameraFollowTarget.getWorldPosition(tempVector);
-        tempVector.project(camera);
-        
-        const x = (tempVector.x * 0.5 + 0.5) * window.innerWidth;
-        const y = (tempVector.y * -0.5 + 0.5) * window.innerHeight;
-        
-        const offsetX = 30;
-        const panelWidth = 480;
-        const panelHeight = Math.min(window.innerHeight * 0.7, 600);
-        
-        let finalX = x + offsetX;
-        let finalY = y - panelHeight / 2;
-        
-        // Keep panel within screen bounds
-        if (finalX + panelWidth > window.innerWidth) {
-          finalX = x - offsetX - panelWidth;
-        }
-        if (finalY < 20) {
-          finalY = 20;
-        }
-        if (finalY + panelHeight > window.innerHeight - 20) {
-          finalY = window.innerHeight - panelHeight - 20;
-        }
-        
-        // Smoothly move the panel
-        const currentX = parseFloat(UI.getUIReferences().infoPanel.style.left) || finalX;
-        const currentY = parseFloat(UI.getUIReferences().infoPanel.style.top) || finalY;
-        
-        const lerpedX = currentX + (finalX - currentX) * 0.1;
-        const lerpedY = currentY + (finalY - currentY) * 0.1;
-        
-        UI.getUIReferences().infoPanel.style.left = lerpedX + "px";
-        UI.getUIReferences().infoPanel.style.top = lerpedY + "px";
-      }
+    // Keep info panel docked to side (opposite of the target)
+    if (cameraFollowTarget && UI.getUIReferences().infoPanel && UI.getUIReferences().infoPanel.style.display !== "none") {
+      UI.positionInfoPanel(cameraFollowTarget);
     }
     
+    // Ensure world matrices are current before projecting to screen
+    // This prevents labels from lagging a frame behind moving bodies/camera
+    if (scene) scene.updateMatrixWorld(true);
+    if (camera) camera.updateMatrixWorld(true);
+
     // Update planet labels
     const allCelestialBodies = [...planets];
     if (sunMesh) allCelestialBodies.push(sunMesh);
@@ -403,6 +434,9 @@ function startAnimationLoop() {
       });
     });
     UI.updatePlanetLabels(camera, allCelestialBodies);
+
+    // Update controls (needed for damping)
+    controls?.update();
 
     // Update shadows with performance optimization
     shadowManager.update(performance.now());
@@ -472,6 +506,23 @@ async function loadPlanetData() {
       throw err;
     }
   });
+
+  // Expose Kepler elements needed for predictive calculations (Earth/Mars)
+  try {
+    const DEG2RAD = Math.PI / 180;
+    const keplerMap = {};
+    planetConfigs.forEach(cfg => {
+      keplerMap[cfg.name] = {
+        a: cfg.orbitRadiusAU,
+        e: cfg.info?.orbitalEccentricity ?? 0,
+        ω: (cfg.kepler?.argPeriapsisDeg ?? 0) * DEG2RAD,
+        M0: (cfg.kepler?.meanAnomalyDeg ?? 0) * DEG2RAD,
+      };
+    });
+    window.planetKepler = keplerMap;
+  } catch (e) {
+    console.warn('[LoadData] Failed to expose planetKepler mapping:', e);
+  }
 }
 
 /* ---------------------------------------------------------------------- */
