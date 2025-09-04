@@ -1,6 +1,6 @@
 # physics-sims
 
-A collection of interactive physics simulations built using HTML, CSS, and JavaScript, primarily leveraging the Three.js library for 3D visualization.
+A collection of interactive physics simulations built using HTML, CSS, JavaScript, and Python. Web visualizations primarily leverage the Three.js library for 3D rendering.
 
 ## Simulations Included
 
@@ -39,6 +39,18 @@ A collection of interactive physics simulations built using HTML, CSS, and JavaS
   * Responsive design that works across different screen sizes.
   * Scaling system that balances visual appeal with astronomical accuracy.
 * **To Run:** Open `Solar-System/index.html` in your web browser.
+
+### 3. Black Hole Simulation (Python) (`Black-hole-simulation-using-python/`)
+
+* **Description:** A non‑spinning (Schwarzschild) black hole lensing simulator that distorts an equirectangular sky image by tracing photon geodesics. Includes an optional GUI for generating animations and saving precomputed matrices.
+* **Upstream:** https://github.com/Python-simulation/Black-hole-simulation-using-python (mirrored with attribution in `SOURCE.txt`).
+* **Dependencies:** `numpy`, `scipy`, `matplotlib`, `pillow` (see `requirements.txt`).
+* **To Run:**
+  - Create a virtual environment (recommended)
+    - macOS/Linux: `python3 -m venv .venv && source .venv/bin/activate`
+    - Windows (PowerShell): `py -m venv .venv; .\.venv\Scripts\Activate.ps1`
+  - Install deps: `pip install -r requirements.txt`
+  - Start: `python black_hole.py`
 
 ## License
 
