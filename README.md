@@ -7,6 +7,17 @@ modular apps.
 
 ## Projects
 
+### Launcher
+
+Run the repo from a static server and open the root URL to choose a demo:
+
+```bash
+cd physics-sims
+python3 -m http.server 8888
+```
+
+Open `http://localhost:8888/`
+
 ### 1. General Relativity Demo (`general-relativity/`)
 
 A standalone Three.js scene that visualizes spacetime curvature as a deforming
