@@ -27,22 +27,32 @@ An interactive 3D solar system simulation with accurate orbital mechanics, reali
 - **"Go to" dropdown**: Select a planet or moon to focus on
 - **Toggle buttons**: Control visibility of orbit lines
 - **Reset Camera**: Return to initial view
+- **Top-Down (Ecliptic)**: Standardized north-up view (prograde = CCW)
 
 ## Technical Details
 
 - Built with Three.js for 3D rendering
 - Accurate solar system data stored in JSON format
 - Dynamic scaling system to represent relative sizes of celestial bodies
+- Physical parameters sourced from JPL Planetary Physical Parameters
+- Orbital elements sourced from JPL Horizons (ecliptic plane, epoch auto-updated by script)
+- Coordinate frame: J2000 ecliptic with +Y as north; prograde orbits appear counterclockwise when viewed from +Y
 
 ## Development
 
 This project is part of a broader collection of physics simulations. Contributions and feedback are welcome!
 
+### Data refresh
+
+- Auto-update runs before `npm run dev` and `npm run build`.
+- Manual refresh: `npm run update:solar-data`
+- Skip update if offline: `SKIP_SOLAR_DATA_UPDATE=1 npm run dev`
+- Fail on update errors: `SOLAR_DATA_STRICT=1 npm run update:solar-data`
+
 ### Future Improvements
 
 - Realistic scale toggle to show actual planetary sizes and distances
 - Additional moons for outer planets
-- Asteroid belt visualization
 - Comet and spacecraft trajectories
 - Educational guided tours of interesting features
 

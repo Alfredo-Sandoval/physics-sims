@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Spacetime Curvature</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+
+  <body>
+    <div id="viewport"></div>
+
+    <aside id="hud" class="hud" aria-hidden="true">
+      <div class="hud__inner">
+        <div class="hud__row">
+          <div class="hud__group">
+            <div class="ctrl">
+              <label for="centralMass">Mass</label>
+              <input id="centralMass" type="range" min="70" max="260" step="1" value="165" />
+              <output id="centralMassValue" class="value">165 u</output>
+            </div>
+            <div class="ctrl">
+              <label for="orbitingMass">Orb</label>
+              <input id="orbitingMass" type="range" min="6" max="48" step="1" value="18" />
+              <output id="orbitingMassValue" class="value">18 u</output>
+            </div>
+            <div class="ctrl">
+              <label for="falloff">Fall</label>
+              <input id="falloff" type="range" min="0.85" max="2.35" step="0.01" value="1.42" />
+              <output id="falloffValue" class="value">1.42</output>
+            </div>
+          </div>
+
+          <div class="hud__sep"></div>
+
+          <div class="hud__group">
+            <div class="ctrl">
+              <label for="orbitRadius">Rad</label>
+              <input id="orbitRadius" type="range" min="18" max="54" step="0.5" value="31" />
+              <output id="orbitRadiusValue" class="value">31.0 u</output>
+            </div>
+            <div class="ctrl">
+              <label for="orbitSpeed">Spd</label>
+              <input id="orbitSpeed" type="range" min="0.08" max="1.1" step="0.01" value="0.32" />
+              <output id="orbitSpeedValue" class="value">0.32</output>
+            </div>
+            <div class="ctrl">
+              <label for="timeScale">Time</label>
+              <input id="timeScale" type="range" min="0.2" max="2.5" step="0.05" value="1" />
+              <output id="timeScaleValue" class="value">1.00x</output>
+            </div>
+          </div>
+
+          <div class="hud__sep"></div>
+
+          <div class="hud__group">
+            <button id="playPauseButton" type="button" data-active="true">Pause</button>
+            <button id="surfaceToggle" type="button" data-on="true">Surf</button>
+            <button id="wireframeToggle" type="button" data-on="true">Grid</button>
+            <button id="resetViewButton" class="secondary" type="button">Reset</button>
+            <button id="hudClose" class="secondary" type="button" aria-label="Hide controls">&#x2715;</button>
+          </div>
+        </div>
+
+        <div class="hud__row">
+          <div class="hud__group telemetry">
+            <span class="readout"><strong id="orbitAngleReadout">0</strong>deg</span>
+            <span class="readout"><strong id="orbitHeightReadout">0.0</strong>h</span>
+            <span class="readout"><strong id="wellDepthReadout">0.0</strong>depth</span>
+            <span class="readout"><strong id="fpsReadout">60</strong>fps</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="toolbar">
+      <button id="hudToggleBtn" class="hud-toggle" type="button" aria-controls="hud" aria-expanded="false">&#x2699;</button>
+    </div>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+    <script type="module" src="./main.mjs"></script>
+  </body>
+</html>

@@ -1,62 +1,104 @@
 # physics-sims
 
-A collection of interactive physics simulations built using HTML, CSS, JavaScript, and Python. Web visualizations primarily leverage the Three.js library for 3D rendering.
+A small collection of interactive physics and astronomy visualizations. The
+repo is currently browser-focused and centered on Three.js-based demos with
+different levels of complexity, from a single-file experiment to larger
+modular apps.
 
-## Simulations Included
+## Projects
 
-### 1. General Relativity - Spacetime Deformation (`general-relativity.html`)
+### 1. General Relativity Demo (`general-relativity/`)
 
-* **Description:** Simulates the warping of spacetime (represented by a grid) due to the presence of massive objects (a central "star" and an orbiting "planet").
-* **Features:**
-  * Deformable wireframe grid representing spacetime.
-  * Central and orbiting masses influencing the grid deformation.
-  * Adjustable parameters for gravity strength and falloff (within the code).
-  * Interactive camera controls.
-* **To Run:** Open `general-relativity.html` in your web browser.
+A standalone Three.js scene that visualizes spacetime curvature as a deforming
+grid under a central mass and an orbiting body, now packaged as a more polished
+mini demo with live controls and explanatory overlays.
+
+Highlights:
+
+- Deformable wireframe plus shaded curvature surface
+- Real-time central and orbiting mass contributions
+- Live controls for gravity strength, falloff, orbit radius, and orbit speed
+- Interactive camera controls, keyboard shortcuts, and a telemetry panel
+- Clear educational framing for what the visualization represents — and what it simplifies
+
+Run it:
+
+```bash
+cd /Users/alif/Documents/GitHub/physics-sims
+python3 -m http.server 8888
+```
+
+Open `http://localhost:8888/general-relativity/`
 
 ### 2. Solar System Simulation (`Solar-System/`)
 
-* **Description:** An interactive model of the Solar System, including the Sun, planets, major moons, and a realistic asteroid belt, with accurate textures and orbital data.
-* **Features:**
-  * Scaled models of planets and the Sun with realistic textures.
-  * Accurate orbital mechanics with adjustable simulation speed.
-  * Detailed visualization of planetary features:
-    * Planet atmospheres with appropriate colors and densities.
-    * Earth clouds with rotation.
-    * Saturn's ring system.
-  * Major moons for Jupiter, Saturn, and Neptune with proper orbits and rotations.
-  * **Asteroid belt generated from real NASA/JPL asteroid orbital data** (see `mpcorb_extended.json`). #TODO
-  * Interactive selection system - click on any celestial body to view detailed information.
-  * Information panel showing physical properties, composition, and other planetary data.
-  * Navigation dropdown to quickly focus the camera on specific planets, moons, or asteroids.
-  * Dynamic camera controls with automatic focusing and smooth transitions.
-  * Day counter tracking simulated time.
-  * Beautiful starfield background with thousands of stars.
-  * Enhanced lighting effects for realistic visualization.
-* **Technical Details:**
-  * Data-driven design with planetary and asteroid information loaded from JSON.
-  * Optimized rendering with Three.js for smooth performance.
-  * Responsive design that works across different screen sizes.
-  * Scaling system that balances visual appeal with astronomical accuracy.
-* **To Run:** Open `Solar-System/index.html` in your web browser.
+A larger browser simulation of the Solar System with planets, moons, belts,
+labels, UI controls, and worker-backed updates.
 
-### 3. Black Hole Simulation (Python) (`Black-hole-simulation-using-python/`)
+Highlights:
 
-* **Description:** A non‑spinning (Schwarzschild) black hole lensing simulator that distorts an equirectangular sky image by tracing photon geodesics. Includes an optional GUI for generating animations and saving precomputed matrices.
-* **Upstream:** https://github.com/Python-simulation/Black-hole-simulation-using-python (mirrored with attribution in `SOURCE.txt`).
-* **Dependencies:** `numpy`, `scipy`, `matplotlib`, `pillow` (see `requirements.txt`).
-* **To Run:**
-  - Create a virtual environment (recommended)
-    - macOS/Linux: `python3 -m venv .venv && source .venv/bin/activate`
-    - Windows (PowerShell): `py -m venv .venv; .\.venv\Scripts\Activate.ps1`
-  - Install deps: `pip install -r requirements.txt`
-  - Start: `python black_hole.py`
+- Three.js scene with modular runtime code
+- Rich camera and playback controls
+- Data-driven planet and moon metadata
+- Asteroid and Kuiper belt rendering
+- Informational side panel plus focus/navigation tools
+
+Run it:
+
+```bash
+cd /Users/alif/Documents/GitHub/physics-sims
+python3 -m http.server 8888
+```
+
+Open `http://localhost:8888/Solar-System/`
+
+See also: `Solar-System/README.md`
+
+### 3. Gargantua Black Hole Renderer (`gargantua/`)
+
+A stylized realtime black hole renderer inspired by _Interstellar_. This is
+the active black-hole project in the repo; the older Python prototype has been
+retired from the current project surface.
+
+Highlights:
+
+- Realtime fullscreen shader with cinematic accretion-disk styling
+- Procedural starfield generation in-browser
+- HUD controls for camera distance, elevation, orbit, disk radii, and spin
+- Built as a small npm-managed web app with Vite and Three.js
+
+Run it:
+
+```bash
+cd /Users/alif/Documents/GitHub/physics-sims/gargantua
+npm install
+npm run dev
+```
+
+Open `http://localhost:5173/`
+
+For a production build:
+
+```bash
+npm run build
+```
+
+See also: `gargantua/README.md`
+
+## Repo Notes
+
+- There is no single top-level package or unified dev command yet; each demo
+  has its own entrypoint and workflow.
+- `general-relativity/` and `Solar-System/` are easiest to run from a
+  simple static server at the repo root.
+- `gargantua/` now uses npm instead of a vendored Three.js runtime.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for
+the full text.
 
 ## Acknowledgments
 
-* Planet textures sourced from NASA public domain imagery
-* Three.js library and examples that provided inspiration for rendering techniques
+- Planet textures sourced from NASA public domain imagery
+- Three.js and its examples ecosystem for the rendering foundation
