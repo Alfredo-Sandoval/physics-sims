@@ -1,4 +1,4 @@
-// File: Solar-System/js/main.js
+// File: Solar-System/main.js
 // --- Main Module — Solar System Simulation ----------------------------
 import * as THREE from "./vendor/three/build/three.module.js";
 import * as CONSTANTS from "./constants.js";

@@ -24,7 +24,7 @@ Highlights:
 Run it:
 
 ```bash
-cd /Users/alif/Documents/GitHub/physics-sims
+cd physics-sims
 python3 -m http.server 8888
 ```
 
@@ -46,7 +46,7 @@ Highlights:
 Run it:
 
 ```bash
-cd /Users/alif/Documents/GitHub/physics-sims
+cd physics-sims
 python3 -m http.server 8888
 ```
 
@@ -70,7 +70,7 @@ Highlights:
 Run it:
 
 ```bash
-cd /Users/alif/Documents/GitHub/physics-sims/gargantua
+cd physics-sims/gargantua
 npm install
 npm run dev
 ```
@@ -100,5 +100,5 @@ the full text.
 
 ## Acknowledgments
 
-- Planet textures sourced from NASA public domain imagery
+- Texture assets are included in the repo; some entries reuse documented placeholder maps
 - Three.js and its examples ecosystem for the rendering foundation

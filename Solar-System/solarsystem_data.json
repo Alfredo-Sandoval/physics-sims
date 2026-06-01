@@ -13302,7 +13302,8 @@
     "retrograde": false,
     "axialTilt": 23.44,
     "textureUrl": "earth.jpg",
-    "cloudTextureUrl": "earth_clouds.png",
+    "cloudTextureUrl": null,
+    "cloudTextureNote": "Cloud layer disabled until an earth_clouds.png asset is added.",
     "atmosphere": {
       "exists": true,
       "color": "#6b8cff",
@@ -13321,7 +13322,8 @@
         "longAscNodeDeg": 125.08,
         "argPeriapsisDeg": 318.15,
         "orbitReference": "ecliptic",
-        "textureUrl": "Moon_JPG_Collection/moon.jpg"
+        "textureUrl": "Moon_JPG_Collection/callisto.jpg",
+        "textureNote": "Placeholder texture reused from Callisto until a Moon texture is added."
       }
     ],
     "kepler": {
@@ -33385,7 +33387,8 @@
         "orbitalEccentricity": 0.0001,
         "orbitalInclinationDeg": 1.091,
         "orbitReference": "equatorial",
-        "textureUrl": "Moon_JPG_Collection/tethys.jpg"
+        "textureUrl": "Moon_JPG_Collection/mimas.jpg",
+        "textureNote": "Placeholder texture reused from Mimas until a Tethys texture is added."
       },
       {
         "name": "Dione",
@@ -33421,7 +33424,8 @@
         "orbitalEccentricity": 0.0288,
         "orbitalInclinationDeg": 0.34854,
         "orbitReference": "equatorial",
-        "textureUrl": "Moon_JPG_Collection/titan.jpg",
+        "textureUrl": "Moon_JPG_Collection/enceladus.jpg",
+        "textureNote": "Placeholder texture reused from Enceladus until a Titan texture is added.",
         "atmosphere": {
           "exists": true,
           "color": "#ffa500",
@@ -40116,7 +40120,8 @@
         "orbitalEccentricity": 0.0039,
         "orbitalInclinationDeg": 0.13,
         "orbitReference": "equatorial",
-        "textureUrl": "Moon_JPG_Collection/umbriel.jpg"
+        "textureUrl": "Moon_JPG_Collection/ariel.jpg",
+        "textureNote": "Placeholder texture reused from Ariel until an Umbriel texture is added."
       },
       {
         "name": "Titania",
@@ -40128,7 +40133,8 @@
         "orbitalEccentricity": 0.0011,
         "orbitalInclinationDeg": 0.08,
         "orbitReference": "equatorial",
-        "textureUrl": "Moon_JPG_Collection/titania.jpg"
+        "textureUrl": "Moon_JPG_Collection/miranda.jpg",
+        "textureNote": "Placeholder texture reused from Miranda until a Titania texture is added."
       },
       {
         "name": "Oberon",
@@ -46801,7 +46807,8 @@
         "orbitalEccentricity": 0.000016,
         "orbitalInclinationDeg": 156.865,
         "orbitReference": "equatorial",
-        "textureUrl": "Moon_JPG_Collection/triton.jpg"
+        "textureUrl": "Moon_JPG_Collection/oberon.jpg",
+        "textureNote": "Placeholder texture reused from Oberon until a Triton texture is added."
       }
     ],
     "kepler": {

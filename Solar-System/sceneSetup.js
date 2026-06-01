@@ -1,4 +1,4 @@
-// File: Solar-System/js/sceneSetup.js
+// File: Solar-System/sceneSetup.js
 // --- Scene Setup -------------------------------------------------------
 import * as THREE from "./vendor/three/build/three.module.js";
 import { OrbitControls } from "./vendor/three/examples/jsm/controls/OrbitControls.js";

@@ -558,15 +558,22 @@ body.focus-mode #info {
   border-radius: 12px;
   border: 1px solid rgba(196, 215, 255, 0.16);
   padding: 4px 8px;
+  appearance: none;
 }
 
-.planet-label:hover {
+.planet-label:hover,
+.planet-label:focus-visible {
   transform: scale(1.1) translateY(-2px);
   background: rgba(0, 0, 0, 0.9);
   text-shadow:
     0 0 15px rgba(255, 255, 255, 0.8),
     2px 2px 4px rgba(0, 0, 0, 0.9),
     0 0 25px rgba(255, 255, 255, 0.5);
+}
+
+.planet-label:focus-visible {
+  outline: 2px solid rgba(91, 188, 255, 0.75);
+  outline-offset: 3px;
 }
 
 .planet-label.sun {
@@ -579,7 +586,8 @@ body.focus-mode #info {
   background: rgba(255, 215, 0, 0.2);
 }
 
-.planet-label.sun:hover {
+.planet-label.sun:hover,
+.planet-label.sun:focus-visible {
   background: rgba(255, 215, 0, 0.3);
 }
 
@@ -606,14 +614,17 @@ body.focus-mode #info {
   backdrop-filter: blur(10px);
   opacity: 0;
   pointer-events: none;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 1001;
   min-width: 180px;
   line-height: 1.5;
   transform: translateY(10px);
 }
 
-.planet-label:hover .planet-label-extended {
+.planet-label:hover .planet-label-extended,
+.planet-label:focus-visible .planet-label-extended {
   opacity: 1;
   transform: translateY(0);
 }

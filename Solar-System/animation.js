@@ -1,4 +1,4 @@
-// File: Solar-System/js/animation.js
+// File: Solar-System/animation.js
 // --- Animation Module --------------------------------------------------
 import * as THREE from "./vendor/three/build/three.module.js";
 import * as CONSTANTS from "./constants.js";

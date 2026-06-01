@@ -1,4 +1,4 @@
-// File: Solar-System/js/shadowManager.js
+// File: Solar-System/shadowManager.js
 // Shadow Manager - Optimized shadow updates for better performance
 export class ShadowManager {
   constructor(renderer) {

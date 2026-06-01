@@ -1,4 +1,4 @@
-// File: Solar-System/js/kuiperbelt.js
+// File: Solar-System/kuiperbelt.js
 // --- Kuiper Belt Module ---------------------------------------------
 import * as THREE from "./vendor/three/build/three.module.js";
 import * as CONSTANTS from "./constants.js";

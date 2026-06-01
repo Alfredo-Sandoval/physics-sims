@@ -1,4 +1,4 @@
-// File: Solar-System/js/kepler.js
+// File: Solar-System/kepler.js
 // --- Kepler helper -----------------------------------------------------
 //
 //   import { getOrbitalState } from './kepler.js'

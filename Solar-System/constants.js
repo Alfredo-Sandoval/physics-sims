@@ -1,4 +1,4 @@
-// File: Solar-System/js/constants.js
+// File: Solar-System/constants.js
 // --- Constants and Configuration ---
 import * as THREE from "./vendor/three/build/three.module.js";
 

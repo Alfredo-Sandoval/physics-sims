@@ -1,4 +1,4 @@
-// File: Solar-System/js/utils.js
+// File: Solar-System/utils.js
 // --- Utility Functions -------------------------------------------------
 import * as THREE from "./vendor/three/build/three.module.js";
 import * as CONSTANTS from "./constants.js";

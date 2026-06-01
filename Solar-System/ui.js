@@ -1,4 +1,4 @@
-// File: Solar-System/js/ui.js
+// File: Solar-System/ui.js
 // --- UI Module ---------------------------------------------------------
 import * as THREE from "./vendor/three/build/three.module.js";
 import * as CONSTANTS from "./constants.js";
@@ -191,9 +191,15 @@ function initLabels() {
 export function createPlanetLabel(celestialBody) {
   if (!celestialBody?.userData?.name) return;
 
-  const label = document.createElement("div");
+  const label = document.createElement("button");
+  label.type = "button";
   label.className = "planet-label";
-  label.textContent = celestialBody.userData.name;
+  label.dataset.planet = celestialBody.userData.name;
+  label.setAttribute("aria-label", `Focus ${celestialBody.userData.name}`);
+
+  const labelText = document.createElement("span");
+  labelText.textContent = celestialBody.userData.name;
+  label.appendChild(labelText);
 
   // Add appropriate class based on object type
   if (celestialBody.userData.type === "star") {
@@ -203,17 +209,19 @@ export function createPlanetLabel(celestialBody) {
   }
 
   // Create extended info panel
-  const extendedInfo = document.createElement("div");
+  const extendedInfo = document.createElement("span");
   extendedInfo.className = "planet-label-extended";
+  extendedInfo.setAttribute("aria-hidden", "true");
 
   // Add basic info to extended panel
   const config = celestialBody.userData.config;
   if (config?.info) {
+    let hasLine = false;
     const addLine = (label, value) => {
       if (value === undefined || value === null || value === "") return;
-      const p = document.createElement("p");
-      p.textContent = `${label}: ${value}`;
-      extendedInfo.appendChild(p);
+      if (hasLine) extendedInfo.appendChild(document.createElement("br"));
+      extendedInfo.appendChild(document.createTextNode(`${label}: ${value}`));
+      hasLine = true;
     };
     if (config.info.massEarths !== undefined) addLine("Mass", `${config.info.massEarths} Earths`);
     if (config.info.orbitalPeriod !== undefined)
@@ -596,12 +604,19 @@ function setupLabelToggles() {
   moonLabelBtn = document.getElementById("toggleMoonLabelsBtn");
   if (!planetLabelBtn || !moonLabelBtn) return;
 
+  const syncToggleButtonState = () => {
+    planetLabelBtn.textContent = planetLabelsVisible ? "Hide Planet Labels" : "Show Planet Labels";
+    planetLabelBtn.setAttribute("aria-pressed", String(planetLabelsVisible));
+    moonLabelBtn.textContent = moonLabelsVisible ? "Hide Moon Labels" : "Show Moon Labels";
+    moonLabelBtn.setAttribute("aria-pressed", String(moonLabelsVisible));
+  };
+
   if (planetLabelToggleHandler) {
     planetLabelBtn.removeEventListener("click", planetLabelToggleHandler);
   }
   planetLabelToggleHandler = () => {
     planetLabelsVisible = !planetLabelsVisible;
-    planetLabelBtn.textContent = planetLabelsVisible ? "Hide Planet Labels" : "Show Planet Labels";
+    syncToggleButtonState();
     updateLabelsVisibility();
   };
   planetLabelBtn.addEventListener("click", planetLabelToggleHandler);
@@ -611,13 +626,12 @@ function setupLabelToggles() {
   }
   moonLabelToggleHandler = () => {
     moonLabelsVisible = !moonLabelsVisible;
-    moonLabelBtn.textContent = moonLabelsVisible ? "Hide Moon Labels" : "Show Moon Labels";
+    syncToggleButtonState();
     updateLabelsVisibility();
   };
   moonLabelBtn.addEventListener("click", moonLabelToggleHandler);
 
-  planetLabelBtn.textContent = planetLabelsVisible ? "Hide Planet Labels" : "Show Planet Labels";
-  moonLabelBtn.textContent = moonLabelsVisible ? "Hide Moon Labels" : "Show Moon Labels";
+  syncToggleButtonState();
 }
 
 /* ---------------------------------------------------------------------- */
@@ -932,8 +946,11 @@ function populateDetailedData(dataObj, context = null) {
 function ensureCloseButton() {
   if (infoPanel.querySelector(".info-close-btn")) return;
   const btn = document.createElement("button");
+  btn.type = "button";
   btn.textContent = "×";
   btn.className = "info-close-btn";
+  btn.setAttribute("aria-label", "Close body details");
+  btn.title = "Close";
   Object.assign(btn.style, {
     position: "absolute",
     top: "5px",

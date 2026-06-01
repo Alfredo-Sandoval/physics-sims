@@ -1,4 +1,4 @@
-// File: Solar-System/js/asteroidbelt.js
+// File: Solar-System/asteroidbelt.js
 // --- Asteroid‑belt Module ---------------------------------------------
 import * as THREE from "./vendor/three/build/three.module.js";
 import * as CONSTANTS from "./constants.js";

@@ -1,4 +1,4 @@
-// File: Solar-System/js/controls.js
+// File: Solar-System/controls.js
 // --- Controls Module ---------------------------------------------------
 import * as THREE from "./vendor/three/build/three.module.js";
 import * as CONSTANTS from "./constants.js";

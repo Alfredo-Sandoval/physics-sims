@@ -96,14 +96,18 @@
       </div>
 
       <div id="additionalControls">
-        <button id="resetCameraBtn" class="controlBtn">Reset Camera</button>
-        <button id="topDownBtn" class="controlBtn">Top-Down (Ecliptic)</button>
-        <button id="toggleOrbitsBtn" class="controlBtn">Toggle Orbits</button>
-        <button id="toggleAsteroidBeltBtn" class="controlBtn">Hide Asteroid Belt</button>
-        <button id="highlightAsteroidBeltBtn" class="controlBtn">Highlight Asteroid Belt</button>
+        <button id="resetCameraBtn" class="controlBtn" type="button">Reset Camera</button>
+        <button id="topDownBtn" class="controlBtn" type="button">Top-Down (Ecliptic)</button>
+        <button id="toggleOrbitsBtn" class="controlBtn" type="button">Toggle Orbits</button>
+        <button id="toggleAsteroidBeltBtn" class="controlBtn" type="button">Hide Asteroid Belt</button>
+        <button id="highlightAsteroidBeltBtn" class="controlBtn" type="button">Highlight Asteroid Belt</button>
         <div class="btnRow">
-          <button id="togglePlanetLabelsBtn" class="controlBtn">Toggle Planet Labels</button>
-          <button id="toggleMoonLabelsBtn" class="controlBtn">Toggle Moon Labels</button>
+          <button id="togglePlanetLabelsBtn" class="controlBtn" type="button" aria-pressed="true">
+            Hide Planet Labels
+          </button>
+          <button id="toggleMoonLabelsBtn" class="controlBtn" type="button" aria-pressed="false">
+            Show Moon Labels
+          </button>
         </div>
         <div class="btnRow">
           <button
