@@ -94,6 +94,29 @@ let pendingPositionBuffer = null;
 let rotationInFlight = false;
 const workerMoonPosScratch = new THREE.Vector3();
 
+function createFrameTimer() {
+  let running = false;
+  let lastMs = 0;
+
+  return {
+    start() {
+      running = true;
+      lastMs = performance.now();
+    },
+    getDelta() {
+      const now = performance.now();
+      if (!running) {
+        running = true;
+        lastMs = now;
+        return 0;
+      }
+      const delta = Math.max(0, (now - lastMs) / 1000);
+      lastMs = now;
+      return delta;
+    },
+  };
+}
+
 // Preference: allow enabling/disabling the worker via URL or localStorage
 function shouldUseWorker() {
   // URL param takes precedence: ?worker=on|off|true|false|1|0
@@ -464,7 +487,7 @@ export async function init() {
     logInfo("Init", "planet JSON loaded");
 
     /* Clock & texture loader */
-    clock = new THREE.Clock();
+    clock = createFrameTimer();
     textureLoader = initTextureLoader(new URL("./textures/", import.meta.url).toString());
     setClock(clock);
 

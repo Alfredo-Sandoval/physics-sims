@@ -144,6 +144,21 @@ export const fragmentShader = `
         float beamCenter = orbitSwing * shadowRadius * 0.28;
         float beam = 0.5 + 0.5 * tanh(((diskX + beamCenter) / max(shadowRadius, 1e-3)) * (1.2 + spinNorm * 4.6));
         float radial = clamp(xAbs / max(outerReach, 1e-3), 0.0, 1.0);
+        float diskAngle = atan(diskY / max(frontThickness * 5.5, 0.012), diskX);
+        float orbitalRate = mix(0.38, 1.58, spinNorm);
+        float keplerShear = time * orbitalRate * mix(1.0, 4.6, pow(1.0 - radial, 1.7));
+        float flowAngle = diskAngle - keplerShear;
+        float flowX = diskX * (1.0 + radial * 0.38) - keplerShear * (0.038 + 0.12 * (1.0 - radial));
+        float flowY = diskY + sin(flowAngle * 2.0 + radial * 7.2) * frontThickness * 0.42 * (1.0 - radial);
+        float orbitTexture = fbm(vec2(flowAngle * 1.7 + radial * 4.8, radial * 8.0 - time * orbitalRate * 0.35));
+        float hotKnots = smoothstep(
+            0.68,
+            0.98,
+            0.5 + 0.5 * sin(flowAngle * 5.0 + radial * 14.0 + orbitTexture * 4.0)
+        );
+        float innerBias = 1.0 - smoothstep(0.32, 1.0, radial);
+        float flowStrands = 0.78 + 0.32 * ribbonNoise(flowAngle * 1.8 + radial * 3.2, 4.2);
+        float flowBoost = 0.84 + 0.46 * hotKnots * innerBias;
 
         float haloRadius = shadowRadius + mix(0.034, 0.062, 1.0 - distanceNorm);
         float haloWidth = frontThickness * mix(3.4, 4.9, presentationAngleNorm);
@@ -154,7 +169,7 @@ export const fragmentShader = `
         float haloCore = gaussianBand(r, haloRadius, haloWidth * 0.52);
         float haloOuter = gaussianBand(r, haloRadius + haloWidth * 0.48, haloWidth * 1.1);
         float haloInner = gaussianBand(r, haloRadius - haloWidth * 0.32, haloWidth * 0.55);
-        float haloSwirl = ribbonNoise(atan(diskY, diskX) * 1.3 + r * 5.4 - time * 0.012, 1.5);
+        float haloSwirl = ribbonNoise(flowAngle * 1.3 + r * 5.4 + orbitTexture * 0.45, 1.5);
 
         float upperHalo = (haloCore * 1.08 + haloOuter * 0.82 + haloInner * 0.28) * polarBias * upperSide * haloSwirl;
         float lowerHalo = (haloCore * 0.54 + haloOuter * 0.26) * polarBias * lowerSide * (0.9 + 0.1 * haloSwirl);
@@ -166,17 +181,17 @@ export const fragmentShader = `
         float topWidth = frontThickness * mix(1.9, 2.8, presentationAngleNorm);
         float topBand = gaussianBand(diskY, topLift, topWidth * 0.66);
         float topMist = gaussianBand(diskY, topLift + topWidth * 0.54, topWidth * 1.48) * 0.52;
-        float topDetail = ribbonNoise(diskX * 1.4 - time * 0.018, 0.7);
-        float topFibers = 0.88 + 0.12 * sin(diskX * 28.0 + fbm(vec2(diskX * 3.1 + 6.0, diskY * 10.0 + 2.0)) * 4.6);
-        float topCuts = 0.86 + 0.14 * smoothstep(0.18, 0.92, fbm(vec2(diskX * 6.2 + 17.0, diskY * 32.0 - time * 0.012)));
+        float topDetail = ribbonNoise(flowX * 1.4 + flowAngle * 0.72, 0.7);
+        float topFibers = 0.88 + 0.12 * sin(flowX * 28.0 + fbm(vec2(flowX * 3.1 + 6.0, flowY * 10.0 + 2.0)) * 4.6);
+        float topCuts = 0.86 + 0.14 * smoothstep(0.18, 0.92, fbm(vec2(flowX * 6.2 + 17.0, flowY * 32.0 + orbitTexture * 2.0)));
         float topAsymmetry = mix(0.9, 1.08, smoothstep(-0.18, 0.55, diskX));
-        float topLens = (topBand + topMist) * topDetail * topFibers * topCuts * topAsymmetry;
+        float topLens = (topBand + topMist) * topDetail * topFibers * topCuts * topAsymmetry * flowStrands * flowBoost;
 
         float bottomLift = shadowRadius * (0.42 + 0.30 * exp(-pow((diskX + orbitSwing * shadowRadius * 0.18) / (shadowRadius * 1.34), 2.0)));
         float bottomWidth = frontThickness * mix(2.2, 3.4, presentationAngleNorm);
         float bottomBand = gaussianBand(diskY, -bottomLift, bottomWidth * 0.9);
         float bottomMist = gaussianBand(diskY, -bottomLift - bottomWidth * 0.34, bottomWidth * 1.45) * 0.34;
-        float bottomLens = (bottomBand + bottomMist) * (0.88 + 0.12 * ribbonNoise(diskX * 1.05 + 2.6, 2.3));
+        float bottomLens = (bottomBand + bottomMist) * (0.84 + 0.22 * ribbonNoise(flowX * 1.05 + flowAngle * 0.42 + 2.6, 2.3));
 
         float lensGate = smoothstep(shadowRadius * mix(1.0, 1.07, innerTightness), shadowRadius * 1.14, r);
         float farEdgeFade = 1.0 - smoothstep(outerReach * 0.92, outerReach + 0.16, xAbs);
@@ -190,7 +205,7 @@ export const fragmentShader = `
 
         vec3 emberColor = mix(vec3(0.88, 0.50, 0.22), vec3(0.42, 0.16, 0.07), radial);
         float emberWing = gaussianBand(diskY, topLift - topWidth * 0.9, topWidth * 1.9);
-        emberWing *= (1.0 - beam) * 0.18 * farEdgeFade * lensGate;
+        emberWing *= (1.0 - beam) * 0.18 * farEdgeFade * lensGate * flowBoost;
 
         finalColor += haloColor * upperHalo * 0.48;
         finalColor += haloColor * lowerHalo * 0.22;
@@ -208,21 +223,21 @@ export const fragmentShader = `
         float ringEquatorCut = 1.0 - gaussianBand(diskY, 0.0, frontThickness * 1.9) * 0.92;
         finalColor += vec3(0.96, 0.96, 0.98) * photonRing * 0.10 * ringVerticalBias * ringEquatorCut;
 
-        float frontShimmer = 0.8 + 0.2 * ribbonNoise(diskX * 1.5 - time * 0.018, 1.7);
+        float frontShimmer = 0.74 + 0.28 * ribbonNoise(flowAngle * 2.2 + flowX * 1.5, 1.7);
         float frontGlow = gaussianBand(diskY, 0.0, frontThickness * 2.8);
         float frontBody = gaussianBand(diskY, 0.0, frontThickness * 1.28);
         float frontLane = gaussianBand(diskY, 0.0, frontThickness * 0.52);
         float frontRim = gaussianBand(diskY, -frontThickness * 0.16, frontThickness * 0.22);
-        float dustBands = 0.76 + 0.24 * sin(diskX * 34.0 + fbm(vec2(diskX * 2.8 - time * 0.018, diskY * 22.0 + 5.0)) * 4.2);
-        float dustSmear = 0.78 + 0.22 * fbm(vec2(diskX * 3.4 + 11.0, diskY * 40.0 + 2.0));
-        float dustRipples = 0.84 + 0.16 * sin(diskX * 61.0 + fbm(vec2(diskX * 4.8 + 2.0, diskY * 54.0 + 9.0)) * 5.6);
-        float laneTurbulence = 0.78 + 0.22 * fbm(vec2(diskX * 5.2 - time * 0.016, diskY * 68.0 + 14.0));
+        float dustBands = 0.72 + 0.30 * sin(flowX * 34.0 + flowAngle * 2.8 + fbm(vec2(flowX * 2.8, flowY * 22.0 + 5.0)) * 4.2);
+        float dustSmear = 0.76 + 0.24 * fbm(vec2(flowX * 3.4 + 11.0, flowY * 40.0 + orbitTexture * 3.0));
+        float dustRipples = 0.80 + 0.20 * sin(flowX * 61.0 + flowAngle * 5.5 + fbm(vec2(flowX * 4.8 + 2.0, flowY * 54.0 + 9.0)) * 5.6);
+        float laneTurbulence = 0.74 + 0.26 * fbm(vec2(flowX * 5.2 + flowAngle, flowY * 68.0 + 14.0));
         frontGlow *= 1.0 - smoothstep(outerReach * 0.94, outerReach + 0.18, xAbs);
         frontBody *= 1.0 - smoothstep(outerReach * 0.97, outerReach + 0.12, xAbs);
         frontLane *= 1.0 - smoothstep(outerReach, outerReach + 0.08, xAbs);
         frontRim *= 1.0 - smoothstep(outerReach * 0.98, outerReach + 0.06, xAbs);
-        frontGlow *= (0.2 + 0.34 * beam) * frontShimmer;
-        frontBody *= (0.34 + 0.46 * beam) * dustBands * dustSmear * dustRipples;
+        frontGlow *= (0.2 + 0.34 * beam) * frontShimmer * (0.86 + 0.14 * flowBoost);
+        frontBody *= (0.34 + 0.46 * beam) * dustBands * dustSmear * dustRipples * flowBoost;
         frontLane *= (0.42 + 0.18 * (1.0 - beam)) * laneTurbulence;
         frontRim *= 0.18 + 0.42 * pow(beam, 1.4);
 

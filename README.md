@@ -1,115 +1,138 @@
 # physics-sims
 
-A small collection of interactive physics and astronomy visualizations. The
-repo is currently browser-focused and centered on Three.js-based demos with
-different levels of complexity, from a single-file experiment to larger
-modular apps.
+A small collection of interactive, browser-based physics and astronomy
+visualizations built on [Three.js](https://threejs.org/). It ranges from a
+single-file curvature experiment to a larger modular Solar System app and a
+shader-driven black hole renderer.
+
+A launcher at the repo root ties the demos together so you can browse them from
+one page.
+
+## The simulations
+
+| #  | Simulation                                          | Focus              | How to run                         |
+| -- | --------------------------------------------------- | ------------------ | ---------------------------------- |
+| 01 | [Solar System](./Solar-System/)                     | Orbital mechanics  | Static server                      |
+| 02 | [Spacetime Curvature](./general-relativity/)        | Curvature field    | Static server                      |
+| 03 | [Gargantua Black Hole](./gargantua/)                | Realtime shader    | Static server, or Vite for dev     |
+
+All three pull Three.js from the [unpkg](https://unpkg.com/) CDN through an
+import map, so an **internet connection** is needed the first time each scene
+loads.
+
+## Quick start
+
+Serve the repo root with any static HTTP server, then open the launcher and pick
+a scene:
+
+```bash
+cd physics-sims
+python3 -m http.server 8888
+```
+
+Open <http://localhost:8888/>. Every scene is also reachable directly at its own
+path (for example `http://localhost:8888/Solar-System/`).
+
+> A static server is required rather than opening the files directly: the demos
+> use ES modules, `fetch` for JSON data, and import maps, which browsers block on
+> the `file://` origin.
 
 ## Projects
 
-### Launcher
+### 1. Solar System (`Solar-System/`)
 
-Run the repo from a static server and open the root URL to choose a demo:
+A modular 3D Solar System with planets, moons, asteroid and Kuiper belts,
+clickable bodies, a date picker, and worker-backed orbital updates.
 
-```bash
-cd physics-sims
-python3 -m http.server 8888
-```
+- Kepler-style orbital motion, data-driven from a JSON payload
+- Camera follow, top-down ecliptic view, and focus mode
+- Relative-size vs. enhanced-visibility scale modes
+- Toggleable orbit lines, planet labels, and moon labels
+- Information panel with facts about each body
 
-Open `http://localhost:8888/`
+See [Solar-System/README.md](./Solar-System/README.md) for controls and details.
 
-### 1. General Relativity Demo (`general-relativity/`)
+### 2. Spacetime Curvature (`general-relativity/`)
 
-A standalone Three.js scene that visualizes spacetime curvature as a deforming
-grid under a central mass and an orbiting body, now packaged as a more polished
-mini demo with live controls and explanatory overlays.
+A standalone Three.js scene that visualizes gravity as a deforming field
+surface, with a central mass and an orbiting body that each warp the grid.
 
-Highlights:
+- Deformable wireframe plus a shaded curvature surface
+- Live controls for mass, orbiting mass, falloff, orbit radius, and speed
+- Telemetry readout (orbit angle, height, well depth, FPS)
+- Keyboard shortcuts for play/pause, grid, and HUD
 
-- Deformable wireframe plus shaded curvature surface
-- Real-time central and orbiting mass contributions
-- Live controls for gravity strength, falloff, orbit radius, and orbit speed
-- Interactive camera controls, keyboard shortcuts, and a telemetry panel
-- Clear educational framing for what the visualization represents — and what it simplifies
+See [general-relativity/README.md](./general-relativity/README.md) for the full
+control reference and a note on what the model simplifies.
 
-Run it:
+### 3. Gargantua Black Hole (`gargantua/`)
 
-```bash
-cd physics-sims
-python3 -m http.server 8888
-```
+A stylized realtime black hole renderer inspired by _Interstellar_, built as a
+small npm + Vite app. It also runs straight from the static server above, since
+it resolves Three.js through the same CDN import map.
 
-Open `http://localhost:8888/general-relativity/`
+- Fullscreen ray-marched shader with cinematic accretion-disk styling
+- Procedural starfield generated in the browser (no external image assets)
+- HUD for camera distance, elevation, orbit, disk radii, and spin
 
-### 2. Solar System Simulation (`Solar-System/`)
-
-A larger browser simulation of the Solar System with planets, moons, belts,
-labels, UI controls, and worker-backed updates.
-
-Highlights:
-
-- Three.js scene with modular runtime code
-- Rich camera and playback controls
-- Data-driven planet and moon metadata
-- Asteroid and Kuiper belt rendering
-- Informational side panel plus focus/navigation tools
-
-Run it:
-
-```bash
-cd physics-sims
-python3 -m http.server 8888
-```
-
-Open `http://localhost:8888/Solar-System/`
-
-See also: `Solar-System/README.md`
-
-### 3. Gargantua Black Hole Renderer (`gargantua/`)
-
-A stylized realtime black hole renderer inspired by _Interstellar_. This is
-the active black-hole project in the repo; the older Python prototype has been
-retired from the current project surface.
-
-Highlights:
-
-- Realtime fullscreen shader with cinematic accretion-disk styling
-- Procedural starfield generation in-browser
-- HUD controls for camera distance, elevation, orbit, disk radii, and spin
-- Built as a small npm-managed web app with Vite and Three.js
-
-Run it:
+Run it with Vite for live reload and a production build:
 
 ```bash
 cd physics-sims/gargantua
 npm install
-npm run dev
+npm run dev      # http://localhost:5173/
+npm run build    # production bundle in dist/
+npm test         # smoke checks + build
 ```
 
-Open `http://localhost:5173/`
+See [gargantua/README.md](./gargantua/README.md) for the controls and project
+layout.
 
-For a production build:
+## Tests
+
+`tests/` holds an in-browser smoke test that boots the Solar System app inside an
+iframe and checks rendering, labels, dropdown navigation, and accessibility
+attributes. Run it through the same static server:
 
 ```bash
-npm run build
+cd physics-sims
+python3 -m http.server 8888
 ```
 
-See also: `gargantua/README.md`
+Open <http://localhost:8888/tests/index.test.html>. Results stream into the page,
+and `document.body.dataset.testStatus` is set to `passed` or `failed` for
+automation.
 
-## Repo Notes
+Gargantua has its own Node-based smoke check via `npm run check` (see above).
 
-- There is no single top-level package or unified dev command yet; each demo
-  has its own entrypoint and workflow.
-- `general-relativity/` and `Solar-System/` are easiest to run from a
-  simple static server at the repo root.
-- `gargantua/` now uses npm instead of a vendored Three.js runtime.
+## Repo layout
+
+```text
+physics-sims/
+├── index.html            # launcher page
+├── launcher.css / .js    # launcher styling and animated previews
+├── Solar-System/         # modular Solar System app (static)
+├── general-relativity/   # spacetime curvature demo (static)
+├── gargantua/            # black hole renderer (npm + Vite, or static)
+└── tests/                # in-browser smoke test for the Solar System
+```
+
+## Notes
+
+- There is no single top-level package or unified dev command. Each demo has its
+  own entrypoint; the launcher just links them together.
+- `Solar-System/` and `general-relativity/` are easiest to run from a static
+  server at the repo root.
+- `gargantua/` uses npm and Vite for development, and also works from the static
+  server thanks to its CDN import map.
 
 ## License
 
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for
-the full text.
+MIT. See [LICENSE](LICENSE) for the full text.
 
 ## Acknowledgments
 
-- Texture assets are included in the repo; some entries reuse documented placeholder maps
-- Three.js and its examples ecosystem for the rendering foundation
+- [Three.js](https://threejs.org/) and its examples ecosystem for the rendering
+  foundation
+- Texture assets are included in the repo; some Solar System entries reuse
+  documented placeholder maps until exact assets are added

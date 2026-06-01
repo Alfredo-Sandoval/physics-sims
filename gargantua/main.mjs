@@ -11,7 +11,7 @@ const DEFAULTS = {
     diskInner: 3.8,
     diskOuter: 10.5,
     spin: 0.55,
-    animationEnabled: false,
+    animationEnabled: !prefersReducedMotion.matches,
 };
 const LIMITS = {
     cameraDistanceMin: 8.0,

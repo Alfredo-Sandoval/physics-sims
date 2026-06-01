@@ -26,7 +26,7 @@ import {
 import { debug as logDebug, error as logError } from "./logger.js";
 
 // Flags and state
-let isFirstCall = true; // for THREE.Clock reset on first call
+let isFirstCall = true; // prime the shared frame timer on first call
 const moonPositionScratch = new THREE.Vector3();
 
 function getPlanetPositionFromKeplerAU(cfg, simulatedDays) {

@@ -1,63 +1,100 @@
-# Interstellar Black Hole
+# Gargantua Black Hole
 
-Standalone browser renderer for a stylized black hole inspired by
-_Interstellar_. This folder is now intentionally **web-only**: the older
-Python prototype has been retired so the browser demo is the single active
-implementation.
+A standalone browser renderer for a stylized black hole inspired by
+_Interstellar_. A fullscreen shader ray-marches the warped disk and lensed
+starfield in realtime, with a HUD for the camera and disk.
 
-## Quick Start
+This folder is intentionally **web-only**: an older Python prototype was retired
+so the browser demo is the single active implementation. Part of the
+[physics-sims](../README.md) collection.
 
-Install dependencies and start the local dev server from inside `gargantua/`.
+## Quick start
+
+With npm and Vite, for live reload and a production build:
 
 ```bash
-cd /Users/alif/Documents/GitHub/physics-sims/gargantua
+cd gargantua
 npm install
-npm run dev
-```
-
-Open:
-
-```text
-http://localhost:5173/
+npm run dev      # http://localhost:5173/
 ```
 
 For a production bundle:
 
 ```bash
-npm run build
+npm run build    # output in dist/
 ```
 
-For the local static smoke checks and production build:
+It also runs **without a build step**: the page resolves Three.js through a CDN
+import map, so serving the repo root statically works too:
 
 ```bash
-npm test
+cd ..            # repo root
+python3 -m http.server 8888
 ```
+
+Then open <http://localhost:8888/gargantua/>. An internet connection is needed
+either way, while Three.js loads.
+
+### npm scripts
+
+| Script            | What it does                              |
+| ----------------- | ----------------------------------------- |
+| `npm run dev`     | Vite dev server with live reload          |
+| `npm run build`   | Production bundle into `dist/`            |
+| `npm run preview` | Serve the built bundle locally            |
+| `npm run check`   | Node smoke checks (`scripts/smoke.mjs`)   |
+| `npm test`        | `check` followed by `build`               |
 
 ## Controls
 
-- Drag with a mouse or one finger to orbit
-- Scroll or pinch to zoom
-- `Space` toggles disk motion
-- `R` resets the view
-- `H` shows or hides the controls
+Open the gear button to reveal the HUD.
 
-## What’s Inside
+### Sliders
 
-- `index.html` - shell markup and module entrypoint
-- `styles.css` - HUD and loading-card styling
-- `main.mjs` - renderer bootstrap, app state, and interaction wiring
-- `shaders.mjs` - fullscreen black hole shader source
-- `starfield.mjs` - procedural background texture generation
-- `package.json` - npm dependencies and dev/build scripts
+| Control | What it changes                          |
+| ------- | ---------------------------------------- |
+| Dist    | Camera distance from the black hole      |
+| Elev    | Camera elevation angle                   |
+| Orbit   | Orbit angle around the black hole        |
+| Inner   | Inner radius of the accretion disk       |
+| Outer   | Outer radius of the accretion disk       |
+| Spin    | Black hole spin parameter                |
+
+The **L / C / R** preset buttons snap the orbit to left, center, and right
+views.
+
+### Mouse, touch, and keyboard
+
+- **Drag** (mouse or one finger) — orbit the camera
+- **Scroll or pinch** — zoom
+- **Space** — toggle disk motion
+- **R** — reset the view
+- **H** — show or hide the HUD
+- **Esc** — close the HUD when it is open
+
+The page starts in still mode so the renderer can idle between interactions, and
+disk motion pauses automatically when the tab is hidden.
+
+## What's inside
+
+```text
+gargantua/
+├── index.html      # shell markup, HUD, and Three.js import map
+├── main.mjs        # renderer bootstrap, app state, interaction wiring
+├── shaders.mjs     # fullscreen black hole shader source
+├── starfield.mjs   # procedural background texture generation
+├── styles.css      # HUD and loading-card styling
+├── scripts/
+│   └── smoke.mjs   # static smoke checks run by npm run check
+└── package.json    # dependencies and dev/build scripts
+```
 
 ## Notes
 
-- The shader is still a stylized Schwarzschild-inspired approximation rather
-  than a full Kerr solution.
-- The starfield is generated procedurally in the browser, so the page no
-  longer depends on assets from sibling projects. Small and low-memory devices
-  use a lighter starfield profile to reduce startup cost.
-- The page starts in still mode so the renderer can idle between interactions;
-  disk motion pauses automatically when the tab is hidden too.
-- Three.js is now installed from npm and resolved by Vite instead of being
-  vendored into the repo.
+- The shader is a stylized, Schwarzschild-inspired approximation rather than a
+  full Kerr solution; the spin control is artistic, not physically exact.
+- The starfield is generated procedurally in the browser, so the page does not
+  depend on assets from sibling projects. Small or low-memory devices get a
+  lighter starfield profile to reduce startup cost.
+- Three.js is installed from npm for the Vite build, and resolved from the same
+  CDN import map when the page is served statically.
