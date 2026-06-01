@@ -1,6 +1,6 @@
 // File: Solar-System/kuiperbelt.js
 // --- Kuiper Belt Module ---------------------------------------------
-import * as THREE from "./vendor/three/build/three.module.js";
+import * as THREE from "three";
 import * as CONSTANTS from "./constants.js";
 import { getSimulatedDays } from "./appState.js";
 import {

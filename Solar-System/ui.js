@@ -1,6 +1,6 @@
 // File: Solar-System/ui.js
 // --- UI Module ---------------------------------------------------------
-import * as THREE from "./vendor/three/build/three.module.js";
+import * as THREE from "three";
 import * as CONSTANTS from "./constants.js";
 import {
   updateFollowTarget,
@@ -16,6 +16,7 @@ import {
   error as logError,
 } from "./logger.js";
 import { getViewportSize, getComputedStyleSafe } from "./viewport.js";
+import { hasAnime, runAnime, stopAnime } from "./animationLibrary.js";
 
 /* ---------------------------------------------------------------------- */
 /*                        DOM element refs                                */
@@ -570,10 +571,10 @@ function initMenuToggle() {
     const isCurrentlyCollapsed = menuContainer.classList.contains("collapsed");
     const targetTranslateX = isCurrentlyCollapsed ? "0px" : getCollapsedX();
 
-    if (typeof anime !== "undefined") {
-      anime.remove(menuContainer); // Stop previous animation
+    if (hasAnime()) {
+      stopAnime(menuContainer); // Stop previous animation
     }
-    anime({
+    runAnime({
       targets: menuContainer,
       translateX: targetTranslateX,
       duration: 60,
@@ -729,8 +730,8 @@ export function displayObjectInfo(obj) {
   // Animate in with modern styling
   infoPanel.style.display = "block"; // Make it visible first
   infoPanel.classList.remove("show");
-  if (typeof anime !== "undefined") {
-    anime.remove(infoPanel); // Remove any existing animations on this element
+  if (hasAnime()) {
+    stopAnime(infoPanel); // Remove any existing animations on this element
   }
 
   // Use CSS transition for smooth animation
@@ -1040,8 +1041,8 @@ export function deselectObject() {
   // Remove outline with proper cleanup
   const outline = outlineMeshes.get(selectedObject);
   if (outline) {
-    if (typeof anime !== "undefined") {
-      if (outline.scale) anime.remove(outline.scale);
+    if (hasAnime()) {
+      if (outline.scale) stopAnime(outline.scale);
     }
     if (outline.parent) {
       outline.parent.remove(outline);
@@ -1123,7 +1124,7 @@ export function updateUIDisplay(simSpeed) {
   // Stop animations for outlines that are no longer selected or have been removed
   outlineMeshes.forEach((outline, obj) => {
     if (obj !== currentSelected && outline?.userData?.isAnimating) {
-      if (typeof anime !== "undefined") anime.remove(outline.scale);
+      if (hasAnime()) stopAnime(outline.scale);
       outline.userData.isAnimating = false;
       // Optional: Reset scale if needed, though removal in deselectObject should handle this
       // outline.scale.setScalar(CONSTANTS.OUTLINE_SCALE);
@@ -1137,7 +1138,7 @@ export function updateUIDisplay(simSpeed) {
     if (outline && !outline.userData.isAnimating) {
       outline.userData.isAnimating = true;
       const baseScale = outline.userData.baseScale ?? CONSTANTS.OUTLINE_SCALE;
-      anime({
+      runAnime({
         targets: outline.scale,
         x: [baseScale * 0.98, baseScale * 1.02],
         y: [baseScale * 0.98, baseScale * 1.02],
@@ -1158,8 +1159,8 @@ export function updateOutlines() {
   outlineMeshes.forEach((outline, obj) => {
     if (!outline || !obj) {
       logWarn("UI", "Invalid outline or object found, cleaning up...");
-      if (typeof anime !== "undefined") {
-        if (outline?.scale) anime.remove(outline.scale);
+      if (hasAnime()) {
+        if (outline?.scale) stopAnime(outline.scale);
       }
       outlineMeshes.delete(obj);
       return;
@@ -1169,8 +1170,8 @@ export function updateOutlines() {
     const mesh = obj.userData.planetMesh ?? obj;
     if (!mesh || !mesh.isMesh) {
       logWarn("UI", `Invalid mesh for ${obj.userData?.name}, cleaning up outline...`);
-      if (typeof anime !== "undefined") {
-        if (outline?.scale) anime.remove(outline.scale);
+      if (hasAnime()) {
+        if (outline?.scale) stopAnime(outline.scale);
       }
       if (outline.parent) outline.parent.remove(outline);
       if (outline.geometry) outline.geometry.dispose();

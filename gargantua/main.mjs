@@ -27,7 +27,6 @@ const ui = {
     loading: document.getElementById("loading"),
     loadingMessage: document.getElementById("loadingMessage"),
     hud: document.getElementById("hud"),
-    tipbar: document.getElementById("statusLine"),
     ranges: {
         distance: document.getElementById("distance"),
         angle: document.getElementById("angle"),
@@ -79,17 +78,14 @@ function formatOrbitOffset(value) {
     return `${rounded > 0 ? "+" : ""}${rounded}°`;
 }
 
-function updateTipbar() {
-    // tipbar removed from redesigned HUD
-}
-
 function syncHud() {
     ui.hud.classList.toggle("is-open", hudOpen);
     ui.hud.setAttribute("aria-hidden", String(!hudOpen));
     ui.hud.toggleAttribute("inert", !hudOpen);
     ui.hudToggle.dataset.open = String(hudOpen);
     ui.hudToggle.setAttribute("aria-expanded", String(hudOpen));
-    ui.hudToggle.innerHTML = hudOpen ? "&#x2715;" : "&#x2699;";
+    ui.hudToggle.setAttribute("aria-label", hudOpen ? "Hide controls" : "Show controls");
+    ui.hudToggle.textContent = hudOpen ? "\u2715" : "\u2699";
 
     if (hudOpen) {
         const [firstFocusable] = getHudFocusables();
@@ -145,7 +141,6 @@ function syncMotionControl() {
     ui.toggleMotion.dataset.active = String(state.animationEnabled);
     ui.toggleMotion.setAttribute("aria-pressed", String(state.animationEnabled));
     ui.toggleMotion.textContent = state.animationEnabled ? "Pause" : "Play";
-    updateTipbar();
 }
 
 function syncControls() {

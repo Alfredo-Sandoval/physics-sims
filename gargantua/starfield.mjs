@@ -11,13 +11,71 @@ function mulberry32(seed) {
     };
 }
 
+function finiteNumberOrNull(value) {
+    return Number.isFinite(value) ? value : null;
+}
+
+function getStarfieldProfile() {
+    const nav = typeof navigator === "undefined" ? {} : navigator;
+    const viewportWidth = typeof window === "undefined" ? 0 : window.innerWidth;
+    const viewportHeight = typeof window === "undefined" ? 0 : window.innerHeight;
+    const shortestSide = Math.min(viewportWidth || Infinity, viewportHeight || Infinity);
+    const longestSide = Math.max(viewportWidth, viewportHeight);
+    const deviceMemory = finiteNumberOrNull(Number(nav.deviceMemory));
+    const cpuCores = finiteNumberOrNull(Number(nav.hardwareConcurrency));
+    const prefersReducedData = typeof window !== "undefined" &&
+        typeof window.matchMedia === "function" &&
+        window.matchMedia("(prefers-reduced-data: reduce)").matches;
+
+    const tinyViewport = Number.isFinite(shortestSide) && shortestSide <= 480;
+    const smallViewport = Number.isFinite(shortestSide) &&
+        (shortestSide <= 640 || longestSide <= 1180);
+    const veryLowMemory = deviceMemory !== null && deviceMemory <= 2;
+    const lowMemory = deviceMemory !== null && deviceMemory <= 4;
+    const lowCoreCount = cpuCores !== null && cpuCores <= 4;
+
+    if (prefersReducedData || tinyViewport || veryLowMemory || (smallViewport && (lowMemory || lowCoreCount))) {
+        return {
+            width: 1024,
+            height: 512,
+            dustStars: 1900,
+            glowStars: 150,
+            brightStars: 22,
+            generateMipmaps: false,
+        };
+    }
+
+    if (smallViewport || lowMemory || lowCoreCount) {
+        return {
+            width: 1536,
+            height: 768,
+            dustStars: 3300,
+            glowStars: 240,
+            brightStars: 36,
+            generateMipmaps: false,
+        };
+    }
+
+    return {
+        width: 2048,
+        height: 1024,
+        dustStars: 5200,
+        glowStars: 340,
+        brightStars: 55,
+        generateMipmaps: true,
+    };
+}
+
 export function createStarfieldTexture() {
-    const width = 2048;
-    const height = 1024;
+    const profile = getStarfieldProfile();
+    const { width, height } = profile;
     const canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { alpha: false });
+    if (!ctx) {
+        throw new Error("Unable to create starfield canvas context.");
+    }
     const random = mulberry32(42);
 
     const bg = ctx.createLinearGradient(0, 0, 0, height);
@@ -36,7 +94,7 @@ export function createStarfieldTexture() {
     ctx.fillStyle = band;
     ctx.fillRect(0, 0, width, height);
 
-    for (let i = 0; i < 5200; i += 1) {
+    for (let i = 0; i < profile.dustStars; i += 1) {
         const x = random() * width;
         const y = random() * height;
         const brightness = 0.2 + random() * 0.85;
@@ -61,7 +119,7 @@ export function createStarfieldTexture() {
         ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
     };
 
-    for (let i = 0; i < 340; i += 1) {
+    for (let i = 0; i < profile.glowStars; i += 1) {
         const x = random() * width;
         const y = random() * height;
         const color = starColors[Math.floor(random() * starColors.length)];
@@ -69,7 +127,7 @@ export function createStarfieldTexture() {
         drawGlowStar(x, y, radius, color, 0.24 + random() * 0.35);
     }
 
-    for (let i = 0; i < 55; i += 1) {
+    for (let i = 0; i < profile.brightStars; i += 1) {
         const x = random() * width;
         const y = random() * height;
         const color = starColors[Math.floor(random() * starColors.length)];
@@ -87,11 +145,11 @@ export function createStarfieldTexture() {
 
     const texture = new THREE.CanvasTexture(canvas);
     texture.colorSpace = THREE.SRGBColorSpace;
-    texture.minFilter = THREE.LinearMipmapLinearFilter;
+    texture.minFilter = profile.generateMipmaps ? THREE.LinearMipmapLinearFilter : THREE.LinearFilter;
     texture.magFilter = THREE.LinearFilter;
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.ClampToEdgeWrapping;
-    texture.generateMipmaps = true;
+    texture.generateMipmaps = profile.generateMipmaps;
     texture.needsUpdate = true;
     return texture;
 }

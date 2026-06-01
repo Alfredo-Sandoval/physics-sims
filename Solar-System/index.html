@@ -198,7 +198,16 @@
       </div>
     </div>
 
-    <script src="./vendor/anime/anime.min.js"></script>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.184.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.184.0/examples/jsm/",
+          "three/webgpu": "https://unpkg.com/three@0.184.0/build/three.webgpu.js"
+        }
+      }
+    </script>
+    <script src="https://unpkg.com/animejs@4.4.1/dist/bundles/anime.umd.min.js"></script>
 
     <script type="module">
       try {

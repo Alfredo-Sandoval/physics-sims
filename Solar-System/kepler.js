@@ -17,7 +17,7 @@
 //   // state.{x,y} are in the orbital plane, units = semi-major-axis (e.g. AU)
 // ----------------------------------------------------------------------
 
-import * as THREE from "./vendor/three/build/three.module.js";
+import * as THREE from "three";
 import { warn as logWarn, error as logError } from "./logger.js";
 
 const DEG2RAD = Math.PI / 180;

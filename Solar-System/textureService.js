@@ -1,4 +1,4 @@
-import * as THREE from "./vendor/three/build/three.module.js";
+import * as THREE from "three";
 
 let basePath = new URL("./textures/", import.meta.url).toString();
 let loader = null;

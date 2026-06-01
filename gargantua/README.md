@@ -27,12 +27,19 @@ For a production bundle:
 npm run build
 ```
 
+For the local static smoke checks and production build:
+
+```bash
+npm test
+```
+
 ## Controls
 
 - Drag with a mouse or one finger to orbit
 - Scroll or pinch to zoom
 - `Space` toggles disk motion
 - `R` resets the view
+- `H` shows or hides the controls
 
 ## What’s Inside
 
@@ -48,7 +55,8 @@ npm run build
 - The shader is still a stylized Schwarzschild-inspired approximation rather
   than a full Kerr solution.
 - The starfield is generated procedurally in the browser, so the page no
-  longer depends on assets from sibling projects.
+  longer depends on assets from sibling projects. Small and low-memory devices
+  use a lighter starfield profile to reduce startup cost.
 - The page starts in still mode so the renderer can idle between interactions;
   disk motion pauses automatically when the tab is hidden too.
 - Three.js is now installed from npm and resolved by Vite instead of being

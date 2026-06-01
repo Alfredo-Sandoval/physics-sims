@@ -1,7 +1,7 @@
 // File: Solar-System/sceneSetup.js
 // --- Scene Setup -------------------------------------------------------
-import * as THREE from "./vendor/three/build/three.module.js";
-import { OrbitControls } from "./vendor/three/examples/jsm/controls/OrbitControls.js";
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import * as CONSTANTS from "./constants.js";
 import { debug as logDebug } from "./logger.js";
 import { getViewportSize } from "./viewport.js";

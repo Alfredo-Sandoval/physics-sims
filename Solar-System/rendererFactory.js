@@ -1,19 +1,11 @@
 // Renderer factory: tries WebGPU when opted-in and available, otherwise falls back to WebGL.
-import * as THREE from "./vendor/three/build/three.module.js";
+import * as THREE from "three";
 import * as SceneSetup from "./sceneSetup.js";
 import { getViewportSize } from "./viewport.js";
 import { debug as logDebug, info as logInfo, warn as logWarn, error as logError } from "./logger.js";
 
 const WEBGPU_PARAM = "webgpu";
 const WEBGPU_STORAGE_KEY = "sim:useWebGPU";
-
-function getWebGpuModuleUrl() {
-  const revisionNumber = Number.parseInt(String(THREE.REVISION ?? ""), 10);
-  if (Number.isFinite(revisionNumber) && revisionNumber > 0) {
-    return `https://unpkg.com/three@0.${revisionNumber}.0/examples/jsm/renderers/webgpu/WebGPURenderer.js`;
-  }
-  return "https://unpkg.com/three@0.164.1/examples/jsm/renderers/webgpu/WebGPURenderer.js";
-}
 
 function readUrlFlag() {
   try {
@@ -56,8 +48,7 @@ async function tryCreateWebGPURenderer() {
   }
 
   try {
-    const moduleUrl = getWebGpuModuleUrl();
-    const webgpuModule = await import(moduleUrl);
+    const webgpuModule = await import("three/webgpu");
     const WebGPURenderer = webgpuModule?.WebGPURenderer;
     if (!WebGPURenderer) throw new Error("WebGPURenderer export missing");
 

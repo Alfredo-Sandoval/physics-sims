@@ -8,7 +8,7 @@
     <script type="importmap">
         {
             "imports": {
-                "three": "https://unpkg.com/three@0.180.0/build/three.module.js"
+                "three": "https://unpkg.com/three@0.184.0/build/three.module.js"
             }
         }
     </script>
@@ -47,9 +47,9 @@
                 <div class="hud__sep"></div>
 
                 <div class="view-presets" role="group" aria-label="Orbit presets">
-                    <button type="button" data-view="-24">L</button>
-                    <button type="button" data-view="0">C</button>
-                    <button type="button" data-view="24">R</button>
+                    <button type="button" data-view="-24" aria-label="Set orbit left view" aria-pressed="false">L</button>
+                    <button type="button" data-view="0" aria-label="Set orbit center view" aria-pressed="true">C</button>
+                    <button type="button" data-view="24" aria-label="Set orbit right view" aria-pressed="false">R</button>
                 </div>
 
                 <div class="hud__sep"></div>
@@ -85,10 +85,8 @@
     </aside>
 
     <div class="toolbar">
-        <button id="hudToggle" class="hud-toggle" type="button" data-open="false" aria-controls="hud" aria-expanded="false">&#x2699;</button>
+        <button id="hudToggle" class="hud-toggle" type="button" data-open="false" aria-controls="hud" aria-expanded="false" aria-label="Show controls">&#x2699;</button>
     </div>
-
-    <p id="statusLine" style="display:none"></p>
 
     <script type="module" src="./main.mjs"></script>
 </body>

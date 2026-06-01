@@ -1,6 +1,6 @@
 // File: Solar-System/starfield.js
 // --- Starfield Module --------------------------------------------------
-import * as THREE from "./vendor/three/build/three.module.js";
+import * as THREE from "three";
 import * as CONSTANTS from "./constants.js";
 import { createStarTexture } from "./utils.js";
 import { debug as logDebug } from "./logger.js";

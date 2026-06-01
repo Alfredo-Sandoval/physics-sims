@@ -1,6 +1,6 @@
 // File: Solar-System/main.js
 // --- Main Module — Solar System Simulation ----------------------------
-import * as THREE from "./vendor/three/build/three.module.js";
+import * as THREE from "three";
 import * as CONSTANTS from "./constants.js";
 
 import * as SceneSetup from "./sceneSetup.js";
@@ -54,6 +54,7 @@ import {
 import { initTextureLoader } from "./textureService.js";
 import { PerformanceTuner } from "./performanceTuner.js";
 import { createRendererWithFallback } from "./rendererFactory.js";
+import { hasAnime, runAnime, stopAnime } from "./animationLibrary.js";
 
 /* ---------------------------------------------------------------------- */
 /*                        Global state (exported)                         */
@@ -1316,11 +1317,11 @@ function showLoadingScreen(show, msg = "Loading…") {
     div.style.opacity = 1; // Ensure opacity is reset if shown again
   } else if (div) {
     // Use Anime.js to fade out if available; otherwise hide immediately
-    if (typeof anime !== "undefined") {
+    if (hasAnime()) {
       try {
-        anime.remove(div);
+        stopAnime(div);
       } catch {}
-      anime({
+      runAnime({
         targets: div,
         opacity: [1, 0],
         duration: 500,

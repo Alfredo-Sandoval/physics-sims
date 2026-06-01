@@ -1,6 +1,6 @@
 // File: Solar-System/asteroidbelt.js
 // --- Asteroid‑belt Module ---------------------------------------------
-import * as THREE from "./vendor/three/build/three.module.js";
+import * as THREE from "three";
 import * as CONSTANTS from "./constants.js";
 import { getSimulatedDays, getCamera } from "./appState.js";
 import {

@@ -1,6 +1,6 @@
 // File: Solar-System/utils.js
 // --- Utility Functions -------------------------------------------------
-import * as THREE from "./vendor/three/build/three.module.js";
+import * as THREE from "three";
 import * as CONSTANTS from "./constants.js";
 import { eccentricAnomaly, trueAnomaly, radius } from "./kepler.js"; // Import Kepler helpers
 import { getTextureLoader } from "./textureService.js";

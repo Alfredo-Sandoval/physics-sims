@@ -8,6 +8,11 @@
     --muted: rgba(255, 255, 255, 0.44);
     --val: rgba(255, 255, 255, 0.72);
     --surface: rgba(0, 0, 0, 0.52);
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+    --hud-top-clearance: 12px;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -19,6 +24,7 @@ body {
     color: var(--ink);
     font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
     font-size: 12px;
+    -webkit-text-size-adjust: 100%;
 }
 
 #viewport { position: fixed; inset: 0; }
@@ -67,26 +73,47 @@ canvas {
     left: 0;
     right: 0;
     pointer-events: auto;
+    display: flex;
+    align-items: flex-end;
+    max-height: calc(100vh - var(--hud-top-clearance) - var(--safe-top));
+    max-height: calc(100dvh - var(--hud-top-clearance) - var(--safe-top));
+    overflow: hidden;
     backdrop-filter: blur(28px) saturate(1.4);
     -webkit-backdrop-filter: blur(28px) saturate(1.4);
     background: linear-gradient(180deg, rgba(0,0,0,0.42), rgba(0,0,0,0.62));
     border-top: 1px solid var(--line);
     padding: 0;
     opacity: 0;
-    transform: translateY(100%);
-    transition: opacity 180ms ease, transform 200ms ease;
+    visibility: hidden;
+    transform: translate3d(0, 100%, 0);
+    transition:
+        opacity 160ms ease,
+        transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1),
+        visibility 0s linear 200ms;
+    will-change: opacity, transform;
 }
 
 .hud.is-open {
     opacity: 1;
     transform: translateY(0);
     pointer-events: auto;
+    visibility: visible;
+    transition-delay: 0s;
 }
 
 .hud__inner {
-    max-width: 820px;
+    width: min(100%, 860px);
+    max-height: inherit;
     margin: 0 auto;
-    padding: 14px 20px 16px;
+    padding:
+        14px
+        calc(20px + var(--safe-right))
+        calc(16px + var(--safe-bottom))
+        calc(20px + var(--safe-left));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
 }
 
 .hud__row {
@@ -94,12 +121,15 @@ canvas {
     align-items: center;
     gap: 6px;
     flex-wrap: wrap;
+    min-width: 0;
 }
 
 .hud__group {
     display: flex;
     align-items: center;
     gap: 4px;
+    flex-wrap: wrap;
+    min-width: 0;
 }
 
 .hud__sep {
@@ -115,9 +145,11 @@ canvas {
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 4px 10px;
+    min-height: 34px;
+    min-width: 0;
+    padding: 5px 10px;
     border-radius: 6px;
-    transition: background 100ms;
+    transition: background-color 100ms ease;
 }
 
 .ctrl:hover { background: rgba(255, 255, 255, 0.04); }
@@ -125,7 +157,7 @@ canvas {
 .ctrl label {
     color: var(--muted);
     font-size: 10px;
-    letter-spacing: 0.06em;
+    letter-spacing: 0;
     text-transform: uppercase;
     white-space: nowrap;
     min-width: 28px;
@@ -135,7 +167,7 @@ canvas {
     -webkit-appearance: none;
     appearance: none;
     width: 72px;
-    height: 20px;
+    height: 28px;
     background: transparent;
     flex-shrink: 0;
 }
@@ -148,9 +180,9 @@ canvas {
 
 .ctrl input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
-    width: 10px;
-    height: 10px;
-    margin-top: -4px;
+    width: 12px;
+    height: 12px;
+    margin-top: -5px;
     border-radius: 50%;
     border: none;
     background: rgba(255, 255, 255, 0.72);
@@ -165,8 +197,8 @@ canvas {
 }
 
 .ctrl input[type="range"]::-moz-range-thumb {
-    width: 10px;
-    height: 10px;
+    width: 12px;
+    height: 12px;
     border: none;
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.72);
@@ -188,12 +220,19 @@ button {
     border-radius: 6px;
     background: transparent;
     color: var(--ink);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    min-height: 32px;
     padding: 5px 10px;
     font: inherit;
     font-size: 11px;
-    letter-spacing: 0.02em;
+    line-height: 1.1;
+    letter-spacing: 0;
     cursor: pointer;
-    transition: background 100ms, border-color 100ms;
+    touch-action: manipulation;
+    transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
     white-space: nowrap;
 }
 
@@ -218,15 +257,15 @@ button.secondary { color: var(--muted); }
 /* --- Toggle button (top-right) --- */
 .toolbar {
     position: fixed;
-    bottom: 16px;
-    right: 16px;
+    bottom: calc(16px + var(--safe-bottom));
+    right: calc(16px + var(--safe-right));
     pointer-events: auto;
     z-index: 10;
 }
 
 .hud-toggle {
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
     padding: 0;
     border-radius: 10px;
     background: var(--surface);
@@ -238,6 +277,11 @@ button.secondary { color: var(--muted); }
     font-size: 16px;
     line-height: 1;
     border-color: var(--line);
+    transition:
+        opacity 120ms ease,
+        transform 120ms ease,
+        background-color 100ms ease,
+        border-color 100ms ease;
 }
 
 .hud-toggle[data-open="true"] {
@@ -246,15 +290,21 @@ button.secondary { color: var(--muted); }
 }
 
 /* hide toggle when hud is open */
-.hud.is-open ~ .toolbar .hud-toggle { opacity: 0; pointer-events: none; }
+.hud.is-open ~ .toolbar .hud-toggle {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(4px);
+}
 
 /* --- Presets row --- */
 .view-presets {
     display: flex;
     gap: 4px;
+    flex-wrap: wrap;
 }
 
 .view-presets button {
+    min-width: 32px;
     padding: 4px 8px;
     font-size: 10px;
     border-radius: 4px;
@@ -271,20 +321,119 @@ button.secondary { color: var(--muted); }
     color: var(--muted);
     font-size: 10px;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0;
     margin-right: 4px;
     flex-shrink: 0;
 }
 
-@media (max-width: 720px) {
-    .hud__inner { padding: 12px 14px 14px; }
+@media (max-width: 720px), (max-height: 520px) {
+    body { font-size: 13px; }
+    .hud__inner {
+        padding:
+            12px
+            calc(14px + var(--safe-right))
+            calc(14px + var(--safe-bottom))
+            calc(14px + var(--safe-left));
+    }
     .hud__sep { display: none; }
-    .hud__row { gap: 4px; }
-    .ctrl input[type="range"] { width: 56px; }
-    .ctrl label { font-size: 9px; }
+    .hud__row { gap: 8px; }
+    .hud__group { gap: 6px; }
+    .ctrl {
+        min-height: 38px;
+        padding: 5px 8px;
+    }
+    .ctrl input[type="range"] { width: clamp(72px, 24vw, 128px); }
+    .ctrl label { font-size: 10px; }
+    .value {
+        min-width: 38px;
+        font-size: 12px;
+    }
+    button {
+        min-height: 36px;
+        padding: 6px 11px;
+        font-size: 12px;
+    }
 }
 
 @media (max-width: 480px) {
-    .hud__row { flex-direction: column; align-items: flex-start; gap: 6px; }
-    .hud__group { flex-wrap: wrap; }
+    .hud__row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+    .hud__group,
+    .view-presets {
+        width: 100%;
+    }
+    .ctrl {
+        display: grid;
+        grid-template-columns: minmax(44px, max-content) minmax(96px, 1fr) minmax(42px, max-content);
+        width: 100%;
+    }
+    .ctrl input[type="range"] { width: 100%; }
+    .view-presets button,
+    .hud__group > button {
+        flex: 1 1 0;
+    }
+}
+
+@media (max-height: 420px) and (orientation: landscape) {
+    .hud { --hud-top-clearance: 8px; }
+    .hud__inner {
+        padding-top: 8px;
+        padding-bottom: calc(8px + var(--safe-bottom));
+    }
+    .hud__row + .hud__row {
+        margin-top: 6px;
+        padding-top: 6px;
+    }
+    .ctrl {
+        min-height: 34px;
+        padding-top: 3px;
+        padding-bottom: 3px;
+    }
+    button { min-height: 34px; }
+}
+
+@media (pointer: coarse) {
+    .ctrl { min-height: 42px; }
+    .ctrl input[type="range"] { height: 34px; }
+    .ctrl input[type="range"]::-webkit-slider-thumb {
+        width: 18px;
+        height: 18px;
+        margin-top: -8px;
+    }
+    .ctrl input[type="range"]::-moz-range-thumb {
+        width: 18px;
+        height: 18px;
+    }
+    button {
+        min-width: 42px;
+        min-height: 42px;
+    }
+    .hud-toggle {
+        width: 44px;
+        height: 44px;
+    }
+}
+
+@media (pointer: coarse) and (max-height: 420px) and (orientation: landscape) {
+    .ctrl { min-height: 40px; }
+    button { min-height: 40px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hud,
+    .hud-toggle,
+    .ctrl,
+    button {
+        transition-duration: 1ms;
+        transition-timing-function: linear;
+    }
+    .hud {
+        transform: none;
+        transition-property: opacity, visibility;
+    }
+    .hud.is-open { transform: none; }
+    .hud.is-open ~ .toolbar .hud-toggle { transform: none; }
 }

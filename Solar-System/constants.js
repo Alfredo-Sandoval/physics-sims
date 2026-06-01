@@ -1,6 +1,6 @@
 // File: Solar-System/constants.js
 // --- Constants and Configuration ---
-import * as THREE from "./vendor/three/build/three.module.js";
+import * as THREE from "three";
 
 /* Debugging ------------------------------------------------------------- */
 export const DEBUG = false; // Set true to enable extra console output

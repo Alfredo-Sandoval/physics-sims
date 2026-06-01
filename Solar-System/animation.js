@@ -1,6 +1,6 @@
 // File: Solar-System/animation.js
 // --- Animation Module --------------------------------------------------
-import * as THREE from "./vendor/three/build/three.module.js";
+import * as THREE from "three";
 import * as CONSTANTS from "./constants.js";
 import { getOrbitalState } from "./kepler.js";
 import { getMoonLocalPosition } from "./utils.js";
