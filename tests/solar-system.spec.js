@@ -52,7 +52,7 @@ async function runSolarSystemSmoke() {
 
   await waitFor(() => doc.querySelector("canvas"), "renders a canvas");
   await waitFor(() => doc.querySelectorAll(".planet-label").length >= 9, "creates labels");
-  const app = await win.eval('import("/Solar-System/appState.js")');
+  const app = await win.eval('import("/Solar-System/src/core/state.js")');
   const state = app.getState();
   assert(doc.getElementById("errorOverlay")?.style.display !== "block", "app has no initialization error overlay");
 
@@ -183,7 +183,7 @@ async function runSolarSystemSmoke() {
   assert(tourRect.top >= tourInfoRect.bottom, "tour and body card share space without overlap");
   win.__solarSystemLearningTools.api.endTour();
 
-  const missingTextureNotes = await fetch("../Solar-System/solarsystem_data.json")
+  const missingTextureNotes = await fetch("../Solar-System/data/solar-system.json")
     .then((res) => res.json())
     .then((data) => {
       const notes = [];
@@ -200,7 +200,7 @@ async function runSolarSystemSmoke() {
 
   const mobileFrame = document.createElement("iframe");
   mobileFrame.title = "Solar System mobile app under test";
-  mobileFrame.src = "../Solar-System/";
+  mobileFrame.src = "../Solar-System/?worker=off";
   mobileFrame.style.width = "390px";
   mobileFrame.style.maxWidth = "none";
   mobileFrame.style.height = "844px";
@@ -249,6 +249,37 @@ async function runSolarSystemSmoke() {
   const mobileMetadata = mobileDoc.getElementById("metadataDock").getBoundingClientRect();
   assert(mobileInfo.top >= mobileMetadata.bottom && mobileInfo.bottom <= mobileWin.innerHeight,
     "mobile body details stay clear of metadata and within the viewport");
+
+  const mobileState = await mobileWin.eval('import("/Solar-System/src/core/state.js")');
+  const fallbackEarth = mobileState.getPlanets().find((body) => body.userData.name === "Earth");
+  const initialPosition = fallbackEarth.position.clone();
+  await waitFor(() => fallbackEarth.position.distanceTo(initialPosition) > 0.01,
+    "main-thread fallback advances planet positions");
+  assert(true, "main-thread fallback advances planet positions");
+
+  const application = await mobileWin.eval('import("/Solar-System/src/app/application.js")');
+  application.cleanup();
+  assert(!mobileDoc.querySelector("canvas") && !mobileDoc.querySelector(".planet-label"),
+    "cleanup removes the renderer and generated labels");
+  await wait(150);
+  assert(mobileState.getSimulatedDays() === 0 && mobileState.getScene() === null,
+    "cleanup stops frame updates and clears shared state");
+
+  mobileWin.history.replaceState(null, "", "?worker=on");
+  await application.init();
+  assert(mobileDoc.querySelectorAll("canvas").length === 1 && mobileState.getPlanets().length === 8,
+    "restart creates one renderer and one planet catalog");
+  mobileDoc.getElementById("togglePlaybackBtn").click();
+  assert(mobileState.getSimulationSpeed() === 0, "restart binds the playback button once");
+  mobileWin.dispatchEvent(new mobileWin.KeyboardEvent("keydown", { key: " ", bubbles: true }));
+  assert(mobileState.getSimulationSpeed() === 1, "restart binds keyboard playback once");
+  const restartedEarth = mobileState.getPlanets().find((body) => body.userData.name === "Earth");
+  await waitFor(() => restartedEarth.position.length() > 0, "restarted worker supplies planet positions");
+  const restartedPosition = restartedEarth.position.clone();
+  await waitFor(() => restartedEarth.position.distanceTo(restartedPosition) > 0.01,
+    "restarted simulation continues moving");
+  assert(true, "restarted simulation continues moving");
+
 }
 
 runSolarSystemSmoke()

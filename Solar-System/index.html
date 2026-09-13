@@ -18,7 +18,7 @@
       rel="stylesheet"
     />
 
-    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./src/ui/styles.css" />
     <script>
       // Default to collapsed menu on small screens (only if not set by user)
       (function() {
@@ -30,6 +30,7 @@
         } catch (e) {}
       })();
     </script>
+    <link rel="stylesheet" href="./src/ui/learningTools.css" />
   </head>
   <body>
     <h1 class="sr-only">Solar System Simulation</h1>
@@ -264,40 +265,20 @@
     </script>
     <script src="https://unpkg.com/animejs@4.4.1/dist/bundles/anime.umd.min.js"></script>
 
-    <script type="module">
-      try {
-        if (location.protocol === "file:") throw new Error("local-file");
-        const [{ init }, { initLearningTools }] = await Promise.all([
-          import("./main.js"),
-          import("./learningTools.js"),
-        ]);
-        if (document.readyState === "loading") {
-          document.addEventListener("DOMContentLoaded", () => {
-            init();
-            initLearningTools();
-          });
-        } else {
-          init();
-          initLearningTools();
-        }
-        const modelAssumptions = document.getElementById("modelAssumptions");
-        if (modelAssumptions && window.matchMedia("(max-width: 720px)").matches) {
-          modelAssumptions.removeAttribute("open");
-        }
-      } catch (err) {
-        console.error("[SolarSystem] Failed to load", err);
+    <script>
+      if (location.protocol === "file:") {
         const loadingScreen = document.getElementById("loadingScreen");
-        if (loadingScreen) {
-          if (location.protocol === "file:") {
-            loadingScreen.textContent = "This simulation needs a local web server. From the physics-sims folder, run: python3 -m http.server 8888";
-            const link = document.createElement("a");
-            link.href = "http://localhost:8888/Solar-System/";
-            link.textContent = "Open the solar system on localhost";
-            loadingScreen.appendChild(link);
-          } else {
-            loadingScreen.textContent = `Failed to load: ${String(err?.message || "")}. Reload the page to try again.`;
-          }
-        }
+        loadingScreen.textContent = "This simulation needs a local web server. From the physics-sims folder, run: python3 -m http.server 8888";
+        const link = document.createElement("a");
+        link.href = "http://localhost:8888/Solar-System/";
+        link.textContent = "Open the solar system on localhost";
+        loadingScreen.appendChild(link);
+      } else {
+        import("./src/app/entry.js").catch((error) => {
+          console.error("[SolarSystem] Failed to load", error);
+          document.getElementById("loadingScreen").textContent =
+            `Failed to load: ${error.message}. Reload the page to try again.`;
+        });
       }
     </script>
     </main>

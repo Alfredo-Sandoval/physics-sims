@@ -1,0 +1,208 @@
+.learning-tools-palette {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: start center;
+  padding: max(7vh, 48px) 16px 16px;
+  background: rgba(3, 7, 18, 0.62);
+  color: #f2f7ff;
+  font-family: "Chakra Petch", system-ui, sans-serif;
+}
+.learning-tools-palette[hidden] {
+  display: none;
+}
+.learning-tools-dialog {
+  width: min(620px, calc(100vw - 28px));
+  overflow: hidden;
+  border: 1px solid rgba(196, 215, 255, 0.26);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(23, 29, 49, 0.96), rgba(8, 12, 24, 0.96));
+  box-shadow: 0 26px 80px rgba(0, 0, 0, 0.58), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(18px) saturate(1.2);
+}
+.learning-tools-search-header {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border-bottom: 1px solid rgba(196, 215, 255, 0.18);
+}
+.learning-tools-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.learning-tools-title {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.learning-tools-kbd {
+  border: 1px solid rgba(196, 215, 255, 0.26);
+  border-radius: 7px;
+  padding: 2px 7px;
+  color: rgba(242, 247, 255, 0.78);
+  background: rgba(255, 255, 255, 0.06);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.72rem;
+}
+.learning-tools-input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid rgba(196, 215, 255, 0.28);
+  border-radius: 12px;
+  padding: 12px 13px;
+  color: #f2f7ff;
+  background: rgba(255, 255, 255, 0.08);
+  font: 600 1rem "Chakra Petch", system-ui, sans-serif;
+  letter-spacing: 0;
+  outline: none;
+}
+.learning-tools-input:focus-visible {
+  border-color: rgba(91, 188, 255, 0.7);
+  box-shadow: 0 0 0 3px rgba(91, 188, 255, 0.18);
+}
+.learning-tools-results {
+  max-height: min(54vh, 430px);
+  margin: 0;
+  padding: 8px;
+  overflow: auto;
+  list-style: none;
+}
+.learning-tools-result {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 11px;
+  color: #f2f7ff;
+  background: transparent;
+  text-align: left;
+  font-family: "Chakra Petch", system-ui, sans-serif;
+  cursor: pointer;
+}
+.learning-tools-result:hover,
+.learning-tools-result[aria-selected="true"] {
+  background: rgba(91, 188, 255, 0.16);
+}
+.learning-tools-result-name {
+  font-size: 0.96rem;
+  font-weight: 600;
+}
+.learning-tools-result-meta,
+.learning-tools-empty {
+  color: rgba(216, 227, 255, 0.68);
+  font-size: 0.76rem;
+}
+.learning-tools-empty {
+  padding: 18px 12px 20px;
+}
+.learning-tools-launcher,
+.learning-tools-tour {
+  position: fixed;
+  z-index: 9000;
+  font-family: "Chakra Petch", system-ui, sans-serif;
+}
+.learning-tools-launcher {
+  right: 16px;
+  bottom: 16px;
+  border: 1px solid rgba(196, 215, 255, 0.28);
+  border-radius: 12px;
+  padding: 9px 12px;
+  color: #f2f7ff;
+  background: rgba(14, 20, 36, 0.86);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.38);
+  cursor: pointer;
+}
+.learning-tools-launcher:hover,
+.learning-tools-launcher:focus-visible {
+  border-color: rgba(91, 188, 255, 0.62);
+  outline: none;
+}
+.learning-tools-tour {
+  position: relative;
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  pointer-events: auto;
+  border: 1px solid rgba(196, 215, 255, 0.28);
+  border-radius: 16px;
+  color: #f2f7ff;
+  background: linear-gradient(180deg, rgba(24, 30, 50, 0.95), rgba(8, 12, 24, 0.95));
+  box-shadow: 0 22px 58px rgba(0, 0, 0, 0.48), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px) saturate(1.18);
+}
+.learning-tools-tour[hidden] {
+  display: none;
+}
+.learning-tools-tour-content {
+  display: grid;
+  gap: 10px;
+  padding: 15px;
+}
+.learning-tools-tour-count {
+  color: rgba(216, 227, 255, 0.68);
+  font: 600 0.72rem "JetBrains Mono", ui-monospace, monospace;
+}
+.learning-tools-tour-title {
+  margin: 0;
+  font-size: 1.02rem;
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+.learning-tools-tour-body {
+  margin: 0;
+  color: rgba(235, 242, 255, 0.82);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+.learning-tools-tour-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  padding-top: 4px;
+}
+.learning-tools-button {
+  border: 1px solid rgba(196, 215, 255, 0.24);
+  border-radius: 10px;
+  padding: 8px 10px;
+  color: #f2f7ff;
+  background: rgba(255, 255, 255, 0.07);
+  font: 600 0.82rem "Chakra Petch", system-ui, sans-serif;
+  cursor: pointer;
+}
+.learning-tools-button:hover,
+.learning-tools-button:focus-visible {
+  border-color: rgba(91, 188, 255, 0.62);
+  outline: none;
+}
+.learning-tools-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+[data-learning-focus="true"] {
+  outline: 2px solid rgba(91, 188, 255, 0.88) !important;
+  outline-offset: 3px !important;
+}
+@media (max-width: 720px) {
+  .learning-tools-launcher {
+    right: 12px;
+    bottom: 12px;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .learning-tools-dialog,
+  .learning-tools-tour,
+  .learning-tools-launcher {
+    transition: border-color 140ms ease, background 140ms ease, transform 140ms ease;
+  }
+  .learning-tools-result {
+    transition: background 120ms ease;
+  }
+}

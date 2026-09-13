@@ -5,9 +5,9 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const solarDir = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
 const texturesDir = path.join(solarDir, "textures");
 const htmlPath = path.join(solarDir, "index.html");
-const dataPath = path.join(solarDir, "solarsystem_data.json");
-const workerPath = path.join(solarDir, "simulation-worker.js");
-const orbitalRuntimePath = path.join(solarDir, "orbitalRuntime.js");
+const dataPath = path.join(solarDir, "data/solar-system.json");
+const workerPath = path.join(solarDir, "src/simulation/workers/orbitWorker.js");
+const orbitalRuntimePath = path.join(solarDir, "src/simulation/orbitalRuntime.js");
 
 const requiredDomIds = [
   "main",
@@ -248,6 +248,43 @@ async function validateTextures(textureRefs) {
   }
 }
 
+async function validateModuleGraph(sourceFiles) {
+  const graph = new Map();
+  for (const file of sourceFiles.filter((file) => file.startsWith(path.join(solarDir, "src") + path.sep))) {
+    const source = (await readFile(file, "utf8"))
+      .replace(/^\s*\/\/.*$/gm, "")
+      .replace(/\/\*[\s\S]*?\*\//g, "");
+    const dependencies = [];
+    const references = source.matchAll(/(?:from\s*|import\s*\(\s*|new URL\(\s*)["'](\.[^"']+)["']/g);
+    for (const [, reference] of references) {
+      const target = path.resolve(path.dirname(file), reference);
+      // Texture URLs name directories; imports, workers and data URLs name files.
+      if (reference.endsWith("/")) continue;
+      check(await fileExists(target), `${path.relative(solarDir, file)} references missing ${reference}`);
+      if (target.endsWith(".js")) dependencies.push(target);
+      if (file.includes(`${path.sep}simulation${path.sep}`)) {
+        check(!/[/\\](?:ui|rendering|navigation|app)[/\\]/.test(path.relative(path.join(solarDir, "src"), target)),
+          `simulation must not depend on presentation code: ${reference}`);
+      }
+    }
+    graph.set(file, dependencies);
+  }
+  const visiting = new Set();
+  const visited = new Set();
+  function visit(file) {
+    if (visiting.has(file)) {
+      check(false, `circular module dependency at ${path.relative(solarDir, file)}`);
+      return;
+    }
+    if (visited.has(file)) return;
+    visiting.add(file);
+    for (const dependency of graph.get(file) ?? []) visit(dependency);
+    visiting.delete(file);
+    visited.add(file);
+  }
+  for (const file of graph.keys()) visit(file);
+}
+
 async function main() {
   const html = await readFile(htmlPath, "utf8");
   const domIds = extractDomIds(html);
@@ -259,8 +296,8 @@ async function main() {
   check(importMap.imports?.three, "import map must include 'three'");
   check(importMap.imports?.["three/addons/"], "import map must include 'three/addons/'");
   check(
-    /import\(["']\.\/learningTools\.js["']\)/.test(html),
-    "index.html must initialize Solar-System/learningTools.js"
+    /import\(["']\.\/src\/app\/entry\.js["']\)/.test(html),
+    "index.html must load the application entry point"
   );
   check(/aria-controls=["']controlSurface["']/.test(html), "menu toggle must identify its controlled surface");
   check(/Simulation date/.test(html), "metadata must distinguish the live simulation date");
@@ -268,7 +305,7 @@ async function main() {
 
   const workerSource = await readFile(workerPath, "utf8");
   check(
-    /import\s*\{\s*getInterpolatedEphemerisPositionAU\s*\}\s*from\s*["']\.\/orbitalRuntime\.js["']/.test(
+    /import\s*\{\s*getInterpolatedEphemerisPositionAU\s*\}\s*from\s*["']\.\.\/orbitalRuntime\.js["']/.test(
       workerSource
     ),
     "simulation worker must use the shared ephemeris interpolator"
@@ -279,6 +316,7 @@ async function main() {
   );
 
   const sourceFiles = await readSolarFiles();
+  await validateModuleGraph(sourceFiles);
   for (const sourcePath of sourceFiles) {
     validateNoStaleThreeImports(sourcePath, await readFile(sourcePath, "utf8"));
   }
@@ -287,11 +325,11 @@ async function main() {
   try {
     planets = JSON.parse(await readFile(dataPath, "utf8"));
   } catch (error) {
-    errors.push(`solarsystem_data.json does not parse: ${error.message}`);
+    errors.push(`data/solar-system.json does not parse: ${error.message}`);
     planets = [];
   }
 
-  check(Array.isArray(planets), "solarsystem_data.json must contain a top-level array");
+  check(Array.isArray(planets), "data/solar-system.json must contain a top-level array");
 
   const bodyNames = new Set();
   const textureRefs = [];

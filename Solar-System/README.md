@@ -59,10 +59,9 @@ first time, while Three.js loads.
 
 - Built with Three.js (loaded from the unpkg CDN via an import map)
 - Modular runtime split across focused ES modules (see below)
-- Planet and moon data live in `solarsystem_data.json`, with lightweight
+- Planet and moon data live in `data/solar-system.json`, with lightweight
   annotations for placeholder texture reuse
-- Belt position updates run in a Web Worker (`simulation-worker.js`) to keep the
-  main thread responsive
+- Orbit and belt updates use separate Web Workers under `src/simulation/workers/`
 - Coordinate frame: J2000 ecliptic with +Y as north; prograde orbits appear
   counterclockwise when viewed from +Y
 
@@ -70,30 +69,36 @@ first time, while Three.js loads.
 
 ```text
 Solar-System/
-├── index.html              # markup, import map, control layout
-├── main.js                 # app bootstrap and render loop
-├── solarsystem_data.json   # planet/moon/belt data (source of truth)
-├── celestialBodies.js      # body and orbit construction
-├── kepler.js               # orbital element math
-├── orbitalRuntime.js       # per-frame orbital state
-├── cameraFollow.js         # framing and gesture-preserving body tracking
-├── simulation-worker.js    # off-thread belt updates
-├── asteroidbelt.js         # main asteroid belt
-├── kuiperbelt.js           # Kuiper belt
-├── ui.js / controls.js     # HUD, panels, and input handling
-├── sceneSetup.js           # camera, lights, renderer wiring
-├── starfield.js            # background star field
-├── textures/               # body texture maps
-└── styles.css              # styling
+├── index.html              # markup, import map, file:// help
+├── data/solar-system.json  # planet and moon catalog
+├── textures/               # body texture assets
+├── src/
+│   ├── app/                # entry.js, startup/cleanup, one render loop
+│   ├── core/               # shared state, configuration, events, viewport
+│   ├── simulation/         # catalog loading, orbital math, body updates
+│   │   └── workers/        # orbit and belt worker entry points
+│   ├── rendering/          # scene, bodies, materials, textures, quality
+│   │   └── belts/          # asteroid, Kuiper, and Trojan rendering
+│   ├── navigation/         # pointer, keyboard, camera tracking
+│   └── ui/                 # controls, labels, body details, telemetry, CSS
+└── scripts/smoke.mjs       # data, asset, and module-boundary checks
 ```
 
+`src/app/entry.js` starts the application. `application.js` owns setup and cleanup;
+`renderLoop.js` coordinates each frame. Simulation modules do not import UI or
+rendering modules. Keep feature-specific behavior with its owner instead of
+adding to a shared utility file. All paths work directly over HTTP; no build step.
+
 ## Tests
+
+Run `npm test` inside `Solar-System/` for data, assets, module paths, and
+dependency-cycle checks.
 
 A browser smoke test for this app lives in the repo's [tests/](../tests/)
 directory. Serve the repo root and open
 <http://localhost:8888/tests/index.test.html>; it boots the app in an iframe and
 checks rendering, labels, navigation, relative sizes, camera tracking, readouts,
-and desktop/mobile panel layout.
+desktop/mobile panel layout, worker-off operation, and cleanup/restart.
 
 ## Future improvements
 
