@@ -23,3 +23,19 @@ The browser test runner waited for its full timeout after a module parse error b
 ## 2026-09-13T16:31:50.254Z — gpt-6 — Alfredo Sandoval
 
 The commit/push memory lookup matched unrelated repositories and truncated the output. Use exact repository keywords before broader workflow terms.
+
+## 2026-09-13T20:03:03.201Z — gpt-6 — Alfredo Sandoval
+
+A source-review batch exceeded its output cap and clipped a function excerpt. Keep reads limited to the specific functions needed for each finding.
+
+## 2026-09-13T20:07:20.516Z — gpt-6 — Alfredo Sandoval
+
+Combining a skill read with source inspection clipped the source output. Keep skill reads separate from code reads to avoid repeating the lookup.
+
+## 2026-09-13T20:17:56.945Z — gpt-6 — Alfredo Sandoval
+
+The Solar-System test command was invoked from the collection root, which has no package.json. Run npm test with Solar-System as the working directory.
+
+## 2026-09-13T20:29:53.873Z — gpt-6 — Alfredo Sandoval
+
+Synthetic pointer events in the picking test triggered OrbitControls' native pointer-capture check because no real pointer was active. Isolate the custom picking handler by disabling OrbitControls during those synthetic events.

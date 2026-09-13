@@ -141,10 +141,10 @@ function composeMatrix(out, offset, px, py, pz, q, sx, sy, sz) {
 }
 
 function handleUpdateBelt(message) {
-  const { beltId, simulatedDays, deltaTime, matrixBuffer } = message;
+  const { beltId, simulatedDays, revision, matrixBuffer } = message;
   const belt = belts.get(beltId);
   if (!belt || belt.count === 0) {
-    postMessage({ type: "updateResult", beltId, matrixBuffer });
+    postMessage({ type: "updateResult", beltId, matrixBuffer, simulatedDays, revision });
     return;
   }
 
@@ -199,13 +199,10 @@ function handleUpdateBelt(message) {
     const yFinal = zIncl;
 
     const rotIndex = i * 3;
-    const rx = rotation[rotIndex + 0] + rotationSpeed[rotIndex + 0] * deltaTime;
-    const ry = rotation[rotIndex + 1] + rotationSpeed[rotIndex + 1] * deltaTime;
-    const rz = rotation[rotIndex + 2] + rotationSpeed[rotIndex + 2] * deltaTime;
+    const rx = rotation[rotIndex + 0] + rotationSpeed[rotIndex + 0] * simulatedDays;
+    const ry = rotation[rotIndex + 1] + rotationSpeed[rotIndex + 1] * simulatedDays;
+    const rz = rotation[rotIndex + 2] + rotationSpeed[rotIndex + 2] * simulatedDays;
 
-    rotation[rotIndex + 0] = rx;
-    rotation[rotIndex + 1] = ry;
-    rotation[rotIndex + 2] = rz;
 
     const quat = eulerToQuaternion(rx, ry, rz);
 
@@ -221,7 +218,7 @@ function handleUpdateBelt(message) {
     composeMatrix(matrixArray, i * 16, px, py, pz, quat, sx, sy, sz);
   }
 
-  postMessage({ type: "updateResult", beltId, matrixBuffer }, [matrixBuffer]);
+  postMessage({ type: "updateResult", beltId, matrixBuffer, simulatedDays, revision }, [matrixBuffer]);
 }
 
 self.onmessage = (event) => {

@@ -1010,3 +1010,14 @@ summary:focus-visible, .info-close-btn:focus-visible { outline: 2px solid var(--
 }
 
 #topDownBtn { grid-column: 1 / -1; }
+
+/* Time transport and camera state belong with their controls, leaving space for the sky. */
+.speed-actions, .time-step-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.time-step-actions { margin-top: 8px; }
+.speed-actions .controlBtn, .time-step-actions .controlBtn { min-width: 0; padding: 9px 5px; font-size: 12px; min-height: 38px; }
+#reversePlaybackBtn[aria-pressed="true"] { color: #efc58a; border-color: #ae885a; background: rgba(137, 96, 40, .14); }
+.navigation-state-actions { display: grid; gap: 6px; margin-bottom: 10px; }
+#trackBodyBtn[aria-pressed="true"] { color: #9cdbff; border-color: rgba(91, 188, 255, .5); }
+@media (max-width: 768px) {
+  .speed-actions .controlBtn, .time-step-actions .controlBtn { min-height: 44px; font-size: 13px; }
+}

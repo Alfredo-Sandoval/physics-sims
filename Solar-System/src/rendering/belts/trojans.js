@@ -1,8 +1,11 @@
+import { createRandom } from "../../core/random.js";
+let random = createRandom("createJupiterTrojans");
 import * as THREE from "three";
 import * as CONSTANTS from "../../core/config.js";
 import { info as logInfo, warn as logWarn } from "../../core/logger.js";
 
 export function createJupiterTrojans(scene, planets, planetConfigs) {
+  random = createRandom("createJupiterTrojans");
   // Find Jupiter
   const jupiterPlanet = planets.find((p) => p.userData.name === "Jupiter");
   if (!jupiterPlanet) {
@@ -56,10 +59,10 @@ export function createJupiterTrojans(scene, planets, planetConfigs) {
 
     for (let i = 0; i < count; i++) {
       const angleSpread =
-        (Math.random() - 0.5) * 2 * ((CONSTANTS.JUPITER_TROJAN_SPREAD_DEG * Math.PI) / 180);
-      const distanceSpread = (Math.random() - 0.5) * 2;
+        (random() - 0.5) * 2 * ((CONSTANTS.JUPITER_TROJAN_SPREAD_DEG * Math.PI) / 180);
+      const distanceSpread = (random() - 0.5) * 2;
       const inclination =
-        (Math.random() - 0.5) * 2 * ((CONSTANTS.JUPITER_TROJAN_INCLINATION_MAX_DEG * Math.PI) / 180);
+        (random() - 0.5) * 2 * ((CONSTANTS.JUPITER_TROJAN_INCLINATION_MAX_DEG * Math.PI) / 180);
 
       const angle = centerAngle + angleSpread;
       const distance = jupiterScalePos + distanceSpread * CONSTANTS.ORBIT_SCALE_FACTOR;
@@ -70,16 +73,16 @@ export function createJupiterTrojans(scene, planets, planetConfigs) {
         distance * Math.sin(angle)
       );
 
-      const size = THREE.MathUtils.randFloat(
+      const size = random.range(
         CONSTANTS.JUPITER_TROJAN_SIZE_MIN,
         CONSTANTS.JUPITER_TROJAN_SIZE_MAX
       );
       scl.setScalar(size);
 
       quat.setFromEuler(new THREE.Euler(
-        Math.random() * Math.PI * 2,
-        Math.random() * Math.PI * 2,
-        Math.random() * Math.PI * 2
+        random() * Math.PI * 2,
+        random() * Math.PI * 2,
+        random() * Math.PI * 2
       ));
 
       matrix.compose(pos, quat, scl);

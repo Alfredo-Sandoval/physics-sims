@@ -6,6 +6,8 @@ let pointerRendererElement;
 let pointerMoveHandler, pointerDownHandler, pointerUpHandler, pointerCancelHandler, clickHandler;
 let controlsInstance;
 const pointer = new THREE.Vector2();
+const projected = new THREE.Vector3();
+const worldCenter = new THREE.Vector3();
 const raycaster = new THREE.Raycaster();
 raycaster.near = 0;
 raycaster.far = 10000;
@@ -54,6 +56,7 @@ export function setupPointerEvents(scene, camera, renderer, selectable) {
     pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
     pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
 
+    raycaster.far = camera.far;
     raycaster.setFromCamera(pointer, camera);
     const hits = raycaster.intersectObjects(selectableObjectsRef, true);
 
@@ -82,6 +85,30 @@ export function setupPointerEvents(scene, camera, renderer, selectable) {
       }
 
       if (tgt) break;
+    }
+
+    if (!tgt) {
+      let closest = Infinity;
+      const tolerance = e.pointerType === "touch" ? 18 : 10;
+      for (const body of selectableObjectsRef) {
+        const mesh = body.userData.planetMesh ?? body;
+        if (!mesh.isMesh || !mesh.visible) continue;
+        mesh.getWorldPosition(worldCenter);
+        projected.copy(worldCenter).project(camera);
+        if (projected.z < -1 || projected.z > 1) continue;
+        const x = (projected.x * 0.5 + 0.5) * rect.width + rect.left;
+        const y = (-projected.y * 0.5 + 0.5) * rect.height + rect.top;
+        const distance = Math.hypot(e.clientX - x, e.clientY - y);
+        if (distance > tolerance || distance >= closest) continue;
+        // Reject a candidate hidden behind another body by raycasting its center.
+        raycaster.setFromCamera({ x: projected.x, y: projected.y }, camera);
+        const blockers = raycaster.intersectObjects(selectableObjectsRef, true);
+        const visibleHit = blockers.find((hit) => hit.object.isMesh);
+        let owner = visibleHit?.object;
+        while (owner && owner !== body && owner !== mesh) owner = owner.parent;
+        if (visibleHit && !owner && visibleHit.object.userData.clickTarget !== body) continue;
+        closest = distance; tgt = body;
+      }
     }
 
     if (tgt) {

@@ -304,16 +304,10 @@ async function main() {
   check(/NASA\/JPL Horizons/.test(html), "model notes must disclose the ephemeris source");
 
   const workerSource = await readFile(workerPath, "utf8");
-  check(
-    /import\s*\{\s*getInterpolatedEphemerisPositionAU\s*\}\s*from\s*["']\.\.\/orbitalRuntime\.js["']/.test(
-      workerSource
-    ),
-    "simulation worker must use the shared ephemeris interpolator"
-  );
-  check(
-    !/function\s+getInterpolatedEphemerisPositionAU\s*\(/.test(workerSource),
-    "simulation worker must not duplicate the shared ephemeris interpolator"
-  );
+  check(/import\s*\{\s*getPlanetPositionAU\s*\}\s*from\s*["']\.\.\/positions\.js["']/.test(workerSource),
+    "orbit worker must use the shared position solver");
+  check(!/function\s+(?:getOrbitalState|eccentricAnomaly)\s*\(/.test(workerSource),
+    "orbit worker must not duplicate orbital math");
 
   const sourceFiles = await readSolarFiles();
   await validateModuleGraph(sourceFiles);
@@ -400,6 +394,19 @@ async function main() {
       );
     }
   }
+
+  const { getPlanetPositionAU, angleAtDays, initialMoonPhase } = await import(pathToFileURL(path.join(solarDir, "src/simulation/positions.js")));
+  const circular = { orbitRadiusAU: 1, info: { orbitalEccentricity: 0 }, kepler: {} };
+  const quarterYear = 2 * Math.PI / Math.sqrt(0.01720209895 ** 2) / 4;
+  const quarter = getPlanetPositionAU(circular, quarterYear);
+  check(Math.abs(quarter.x) < 1e-10 && Math.abs(quarter.y - 1) < 1e-10,
+    "shared solver advances a circular orbit by a quarter revolution");
+  const reverse = getPlanetPositionAU(circular, -quarterYear);
+  check(Math.abs(reverse.y + 1) < 1e-10, "shared solver supports dates before the epoch");
+  check(Math.abs(angleAtDays(7, 28) - Math.PI / 2) < 1e-10, "moon phase uses the configured period in days");
+  check(Math.abs(angleAtDays(-7, 28) - 3 * Math.PI / 2) < 1e-10, "moon phase supports reverse time");
+  check(angleAtDays(7, 28) === angleAtDays(35, 28), "moon phase repeats after one orbit");
+  check(initialMoonPhase({ name: "Moon" }) === initialMoonPhase({ name: "Moon" }), "illustrative moon epoch phase is repeatable");
 
   await validateTextures(textureRefs);
 

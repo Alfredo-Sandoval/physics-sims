@@ -1,3 +1,4 @@
+import { runBehaviorChecks } from "./solar-system.behavior.spec.js";
 const logEl = document.getElementById("testLog");
 const lines = [];
 
@@ -197,6 +198,8 @@ async function runSolarSystemSmoke() {
   assert(missingTextureNotes.some((note) => note.startsWith("Moon:")), "placeholder texture note exists for Moon");
   assert(missingTextureNotes.some((note) => note.startsWith("Titan:")), "placeholder texture note exists for Titan");
   assert(missingTextureNotes.some((note) => note.startsWith("Triton:")), "placeholder texture note exists for Triton");
+
+  await runBehaviorChecks(win, { assert, wait, waitFor });
 
   const mobileFrame = document.createElement("iframe");
   mobileFrame.title = "Solar System mobile app under test";

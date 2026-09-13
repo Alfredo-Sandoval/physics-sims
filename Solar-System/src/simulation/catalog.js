@@ -66,10 +66,6 @@ export async function loadPlanetData() {
       }
 
       /* rotation speed --------------------------------------------------- */
-      const P = Math.abs(cfg.rotationPeriod || 0);
-      cfg.calculatedRotationSpeed = P
-        ? (2 * Math.PI) / (P * CONSTANTS.DAYS_PER_SIM_SECOND_AT_1X)
-        : 0;
       // Keep one spin convention: axial tilt encodes spin-axis orientation.
       // With this convention, direction should not be double-applied via signed periods.
       if (Number.isFinite(cfg.axialTilt)) {
@@ -106,9 +102,6 @@ export async function loadPlanetData() {
         m.orbitReference = m.orbitReference === "ecliptic" ? "ecliptic" : "equatorial";
 
         const Pm = Math.abs(m.orbitalPeriod || 0);
-        m.calculatedOrbitSpeed = Pm
-          ? (2 * Math.PI) / (Pm * CONSTANTS.DAYS_PER_SIM_SECOND_AT_1X)
-          : 0;
         // Check retrograde flag first, then fall back to orbital period sign.
         if (typeof m.retrograde === "boolean") {
           m.orbitDirection = m.retrograde ? -1 : 1;
@@ -117,9 +110,6 @@ export async function loadPlanetData() {
         }
 
         const Rm = Math.abs(m.rotationPeriod || 0);
-        m.calculatedRotationSpeed = Rm
-          ? (2 * Math.PI) / (Rm * CONSTANTS.DAYS_PER_SIM_SECOND_AT_1X)
-          : 0;
         const isTidallyLocked = Pm > 0 && Rm > 0 && Math.abs(Pm - Rm) < 1e-6;
         if (typeof m.spinRetrograde === "boolean") {
           m.rotationDirection = m.spinRetrograde ? -1 : 1;

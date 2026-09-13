@@ -70,19 +70,22 @@ function updatePropagationMode(days) {
     Number.isFinite(ephemerisMaxJD) &&
     simulationJD >= ephemerisMinJD &&
     simulationJD <= ephemerisMaxJD;
+  const mode = usingEphemeris ? "ephemeris" : "kepler";
+  if (propagationMode.dataset.mode === mode) return;
   propagationMode.textContent = usingEphemeris
     ? "Horizons ephemeris"
     : "Kepler approximation";
   propagationMode.dataset.mode = usingEphemeris ? "ephemeris" : "kepler";
 }
 export function updateDayCounter(days) {
-  const day = Math.floor(days);
+  const timestamp = (simulationEpochMs ?? 0) + days * 86400000;
+  const day = simulationEpochMs !== null ? Math.floor(timestamp / 86400000) : Math.floor(days);
+  updatePropagationMode(days);
   if (!dayCounter || day === lastDisplayedDay) return;
   lastDisplayedDay = day;
   dayCounter.textContent = simulationEpochMs !== null
-    ? dateFormatter.format(new Date(simulationEpochMs + day * 86400000))
+    ? dateFormatter.format(new Date(timestamp))
     : `Day ${day}`;
-  updatePropagationMode(days);
 }
 
 export function updateUIDisplay(simSpeed) {

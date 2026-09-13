@@ -26,7 +26,8 @@ first time, while Three.js loads.
   parameters; moons use simplified paths and configured rotation periods
 - **Asteroid and Kuiper belts** — rendered as point fields, with a worker
   handling the heavy position updates
-- **Date picker** — jump the simulation to a chosen calendar date
+- **Time navigation** — jump immediately to a UTC date, step by one day, return
+  to today, or reverse playback; date changes preserve pause/play state
 - **Scale modes** — *Enhanced Visibility* enlarges bodies independently;
   *Relative Sizes* uses one common radius scale for the Sun, planets, and moons.
   Orbital spacing still uses a separate scale.
@@ -34,7 +35,11 @@ first time, while Three.js loads.
 - **Information panel** — three quick measurements, one observation, visible
   texture disclosures, and expandable facts in a fixed dock
 - **Toggleable labels** — planet and moon labels for spatial navigation
-- **Time tracking** — a day counter and epoch label show simulation time
+- **Repeatable time** — planet positions, moon phases, and spins derive from
+  the date; illustrative moon phases and belt layouts are seeded consistently
+- **Adaptive detail** — distant bodies use simpler geometry; close inspection
+  uses finer geometry and up to 2048px textures when the source supports it
+- **Idle rendering** — paused scenes redraw for changes, then stop drawing
 
 ## Controls
 
@@ -46,7 +51,11 @@ first time, while Three.js loads.
   tracking the moving body. Dragging does not select a body.
 - **Speed slider** — adjust simulation speed (with pause/play and reset)
 - **"Go to" dropdowns** — focus a planet, then one of its moons
-- **Date picker** — set the simulation date
+- **Forward / Reverse** — change time direction, including while paused
+- **−1 day / Today / +1 day** — step or return to the present
+- **Date picker** — jump to a date at noon UTC; a new input replaces the last
+- **Back to previous view** — restore the prior body, camera position, and tracking
+- **Follow selected body** — toggle tracking while retaining selection and camera offset
 - **Toggle buttons** — orbit lines, asteroid belt, labels, scale mode,
   focus mode, shadows, and orbital planes
 - **Inner system / Whole system** — return to the inner planets or fit all eight
@@ -61,6 +70,9 @@ first time, while Three.js loads.
 - Modular runtime split across focused ES modules (see below)
 - Planet and moon data live in `data/solar-system.json`, with lightweight
   annotations for placeholder texture reuse
+- Worker and main-thread planet updates use the same orbital solver
+- Moon phases are illustrative, not measured epoch positions; precession uses
+  physical radii independently of the display scale
 - Orbit and belt updates use separate Web Workers under `src/simulation/workers/`
 - Coordinate frame: J2000 ecliptic with +Y as north; prograde orbits appear
   counterclockwise when viewed from +Y
@@ -98,14 +110,14 @@ A browser smoke test for this app lives in the repo's [tests/](../tests/)
 directory. Serve the repo root and open
 <http://localhost:8888/tests/index.test.html>; it boots the app in an iframe and
 checks rendering, labels, navigation, relative sizes, camera tracking, readouts,
-desktop/mobile panel layout, worker-off operation, and cleanup/restart.
+desktop/mobile layout, worker agreement, repeatable date changes, reverse time,
+Back/Follow navigation, adaptive detail, idle drawing, and cleanup/restart.
 
 ## Future improvements
 
 - Realistic-distance toggle (true orbital spacing, not just body sizes)
 - Additional moons for the outer planets
 - Comet and spacecraft trajectories
-- Guided tours of interesting features
 
 ## Credits
 

@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { rememberView } from "../navigation/history.js";
 import * as CONSTANTS from "../core/config.js";
 import { getSelectedObject, updateFollowTarget, stopCameraFollow, setSelectedObject as setSelectedObjectState } from "../core/state.js";
 import { debug as logDebug, warn as logWarn } from "../core/logger.js";
@@ -13,8 +14,7 @@ export { setEpochLabel, setFrameLabel, setEpochDate, setEphemerisMetadata,
   updateDayCounter, updateUIDisplay } from "./telemetry.js";
 
 const outlineMeshes = new Map(); // Object3D → outline Mesh
-// Cache for outline geometries to avoid geometry.clone() on each selection
-const outlineGeometryCache = new Map(); // originalGeometry.uuid → BufferGeometry (cached clone)
+// Outlines share body geometry; the detail controller owns its disposal.
 const OUTLINE_RENDER_ORDER = 2;
 const OUTLINE_SCALE_MIN = 1.02;
 const OUTLINE_SCALE_MAX = 1.12;
@@ -69,7 +69,6 @@ export function updateOutlines() {
         if (outline?.scale) stopAnime(outline.scale);
       }
       if (outline.parent) outline.parent.remove(outline);
-      if (outline.geometry) outline.geometry.dispose();
       if (outline.material) outline.material.dispose();
       outlineMeshes.delete(obj);
       return;
@@ -80,6 +79,7 @@ export function updateOutlines() {
       mesh.add(outline);
     }
 
+    outline.geometry = mesh.geometry;
     const baseScale = getOutlineBaseScale(mesh);
     outline.userData.baseScale = baseScale;
     if (!outline.userData.isAnimating) {
@@ -87,7 +87,8 @@ export function updateOutlines() {
     }
   });
 }
-export function selectObject(obj, follow = true) {
+export function selectObject(obj, follow = true, { remember = true } = {}) {
+  if (remember) rememberView();
   deselectObject(); // clear previous
 
   setSelectedObjectState(obj);
@@ -98,19 +99,7 @@ export function selectObject(obj, follow = true) {
   // Create outline for the main mesh (planet or sun)
   const mesh = obj.userData.planetMesh ?? obj;
   if (mesh && mesh.isMesh) {
-    // Reuse a cached outline geometry clone per source geometry
-    let outlineGeom = null;
-    const srcGeom = mesh.geometry;
-    const key = srcGeom?.uuid;
-    if (key && outlineGeometryCache.has(key)) {
-      outlineGeom = outlineGeometryCache.get(key);
-    } else {
-      outlineGeom = srcGeom?.clone();
-      if (outlineGeom && key) {
-        outlineGeom.userData = { ...(outlineGeom.userData || {}), outlineCached: true };
-        outlineGeometryCache.set(key, outlineGeom);
-      }
-    }
+    const outlineGeom = mesh.geometry;
 
     // Create a smooth silhouette outline by rendering the backfaces of a slightly
     // scaled clone so only the rim shows through the original mesh.
@@ -163,9 +152,6 @@ export function deselectObject() {
     }
 
     // Properly dispose of resources
-    if (outline.geometry && !outline.geometry.userData?.outlineCached) {
-      outline.geometry.dispose();
-    }
     if (outline.material) {
       if (outline.material.map) outline.material.map.dispose();
       outline.material.dispose();
@@ -192,9 +178,6 @@ export function cleanupUI() {
       if (outline.parent) {
         outline.parent.remove(outline);
       }
-      if (outline.geometry && !outline.geometry.userData?.outlineCached) {
-        outline.geometry.dispose();
-      }
       if (outline.material) {
         if (outline.material.map) outline.material.map.dispose();
         outline.material.dispose();
@@ -203,7 +186,5 @@ export function cleanupUI() {
   });
   outlineMeshes.clear();
 
-  for (const geometry of outlineGeometryCache.values()) geometry.dispose();
-  outlineGeometryCache.clear();
   setSelectedObjectState(null);
 }

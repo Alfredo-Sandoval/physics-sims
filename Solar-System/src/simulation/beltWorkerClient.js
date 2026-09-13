@@ -1,3 +1,5 @@
+import { getState } from "../core/state.js";
+import { emit } from "../core/events.js";
 // Client wrapper around the belt worker. Handles registration and update scheduling
 // for asteroid and Kuiper belt instanced meshes.
 
@@ -16,6 +18,7 @@ function ensureWorker() {
 export function disposeBeltWorker() {
   worker?.terminate();
   worker = null;
+  for (const state of belts.values()) clearTimeout(state.timer);
   belts.clear();
   beltUpdateIntervalMs = 16;
 }
@@ -60,7 +63,7 @@ function postWorkerMessage(message, transferList, onFailure) {
 
 function attachWorkerHandlers() {
   worker.onmessage = (event) => {
-    const { type, beltId, matrixBuffer } = event.data ?? {};
+    const { type, beltId, matrixBuffer, revision, simulatedDays } = event.data ?? {};
     if (type !== "updateResult" || !belts.has(beltId)) return;
 
     const state = belts.get(beltId);
@@ -74,11 +77,16 @@ function attachWorkerHandlers() {
 
     try {
       const matrixArray = new Float32Array(matrixBuffer);
-      state.onMatrices(matrixArray);
+      const current = getState();
+      if (revision === current.timeRevision && (current.simulationSpeed !== 0 || simulatedDays === current.simulatedDays)) {
+        state.onMatrices(matrixArray);
+        emit("render");
+      }
     } catch (error) {
       logWorkerWarning(`Failed to apply worker matrices for belt "${beltId}"`, error);
     } finally {
       state.availableBuffers.push(matrixBuffer);
+      flushBeltUpdate(beltId);
     }
   };
 
@@ -129,38 +137,37 @@ export function registerWorkerBelt({ beltId, orbitScaleFactor, instances, onMatr
 }
 
 export function requestWorkerBeltUpdate(beltId, simulatedDays, deltaTime) {
-  ensureWorker();
   const state = belts.get(beltId);
-  if (!state || state.inFlight) return;
+  if (!state) return;
+  state.pending = { simulatedDays, deltaTime, revision: getState().timeRevision };
+  flushBeltUpdate(beltId);
+}
 
-  const now = performance.now ? performance.now() : Date.now();
-  if (now - state.lastSent < beltUpdateIntervalMs) return;
-
+function flushBeltUpdate(beltId) {
+  const state = belts.get(beltId);
+  if (!state?.pending || state.inFlight || !worker) return;
+  clearTimeout(state.timer);
+  const delay = beltUpdateIntervalMs - (performance.now() - state.lastSent);
+  if (delay > 0 && getState().simulationSpeed !== 0) {
+    state.timer = setTimeout(() => flushBeltUpdate(beltId), delay);
+    return;
+  }
   const buffer = state.availableBuffers.pop();
   if (!buffer) return;
-
+  const pending = state.pending;
+  state.pending = null;
   state.inFlight = true;
-  state.lastSent = now;
-
-  postWorkerMessage(
-    {
-      type: "updateBelt",
-      beltId,
-      simulatedDays,
-      deltaTime,
-      matrixBuffer: buffer,
-    },
-    [buffer],
-    (error) => {
-      state.inFlight = false;
-      state.availableBuffers.push(buffer);
-      logWorkerWarning(`Failed to send update request for belt "${beltId}"`, error);
-    }
-  );
+  state.lastSent = performance.now();
+  postWorkerMessage({ type: "updateBelt", beltId, ...pending, matrixBuffer: buffer }, [buffer], (error) => {
+    state.inFlight = false;
+    state.availableBuffers.push(buffer);
+    logWorkerWarning(`Failed to update belt "${beltId}"`, error);
+  });
 }
 
 export function unregisterWorkerBelt(beltId) {
   if (!belts.has(beltId)) return;
+  clearTimeout(belts.get(beltId)?.timer);
   belts.delete(beltId);
   if (!worker) return;
   postWorkerMessage(

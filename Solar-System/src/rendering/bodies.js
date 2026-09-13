@@ -1,5 +1,6 @@
 // --- Celestial Bodies Module ------------------------------------------
 import * as THREE from "three";
+import { initialMoonPhase } from "../simulation/positions.js";
 import * as CONSTANTS from "../core/config.js";
 import { createPlanetMaterial, createTextSprite } from "./materials.js";
 import { createOrbitLine } from "./orbitLines.js";
@@ -134,7 +135,6 @@ export async function createPlanetsAndOrbits(scene, loader, configs) {
       type: "planet",
       config: cfg,
       orbitRadius: orbitR,
-      rotationSpeed: cfg.calculatedRotationSpeed,
       rotationDirection: cfg.rotationDirection,
       initialAngle: cfg.initialAngleRad ?? 0,
       currentAngle: cfg.initialAngleRad ?? 0,
@@ -596,18 +596,10 @@ function createMoonSystem(planetCfg, planetGroup, planetRadius, loader) {
     if (tex) {
       mat.emissiveMap = tex;
       mat.emissive = new THREE.Color(0xffffff);
-      mat.emissiveIntensity = 0.15; // Subtle boost that preserves texture details
+      mat.emissiveIntensity = 0.08; // Subtle boost that preserves texture details
     }
     mat.needsUpdate = true;
     const moon = new THREE.Mesh(geom, mat);
-
-    /* Self‑lights for tiny moons (optimized) ------------------------- */
-    // Only add self-lighting for very small moons that need it
-    if (moonR < CONSTANTS.MIN_MOON_RADIUS * 2) {
-      const light1 = new THREE.PointLight(0xffffff, 0.5, moonR * 10);
-      light1.castShadow = false; // Disable shadow casting for performance
-      moon.add(light1);
-    }
 
     // Moons don't cast shadows but can receive them
     moon.castShadow = false;
@@ -643,7 +635,7 @@ function createMoonSystem(planetCfg, planetGroup, planetRadius, loader) {
     };
 
     /* Position & userdata --------------------------------------------- */
-    const M0 = Math.random() * Math.PI * 2;
+    const M0 = initialMoonPhase(m);
     moon.position.copy(getMoonLocalPosition(M0, orbitSpec, planetAxialTiltRad));
     const orbitalPeriodRaw = readFiniteNumber(m.orbitalPeriod ?? m.orbitalPeriodDays);
     const rotationPeriodRaw = readFiniteNumber(m.rotationPeriod ?? m.rotationPeriodDays);
@@ -665,9 +657,7 @@ function createMoonSystem(planetCfg, planetGroup, planetRadius, loader) {
       parentPlanetName: planetCfg.name,
       config: m,
       orbitRadius: orbitR,
-      orbitSpeed: m.calculatedOrbitSpeed,
       orbitDirection: m.orbitDirection,
-      rotationSpeed: m.calculatedRotationSpeed,
       rotationDirection: m.rotationDirection,
       orbitSemiMajor: orbitSpec.orbitSemiMajor,
       orbitEccentricity: orbitSpec.orbitEccentricity,

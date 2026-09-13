@@ -180,12 +180,8 @@ export const MOON_ORBIT_SEGMENTS = 24; // Balanced for quality and performance
 
 /* Performance optimizations -------------------------------------------- */
 export const ENABLE_LOD = true; // Level of Detail system
-export const LOD_DISTANCE_NEAR = 50; // Distance for high detail
-export const LOD_DISTANCE_MEDIUM = 150; // Distance for medium detail
-export const LOD_DISTANCE_FAR = 500; // Distance for low detail
 export const ENABLE_FRUSTUM_CULLING = true; // Only render visible objects
 export const MAX_TEXTURE_SIZE = 1024; // Preserve more detail when zooming in
-export const ENABLE_TEXTURE_COMPRESSION = true; // Use compressed textures
 
 /* Star‑field ----------------------------------------------------------- */
 export const STARFIELD_RADIUS = 5000;
@@ -244,16 +240,16 @@ export const EPHEMERIS_SOURCE_NAME = "NASA/JPL Horizons";
 
 export function formatSimulationRate(simulationSpeed) {
   const speed = Number(simulationSpeed);
-  if (!Number.isFinite(speed) || speed <= 0) return "Paused";
+  if (!Number.isFinite(speed) || speed === 0) return "Paused";
 
-  const daysPerSecond = speed * DAYS_PER_SIM_SECOND_AT_1X;
+  const daysPerSecond = Math.abs(speed) * DAYS_PER_SIM_SECOND_AT_1X;
   const yearsPerMinute = (daysPerSecond * 60) / 365.25;
   const daysText = daysPerSecond < 1 ? daysPerSecond.toFixed(2) : daysPerSecond.toFixed(1);
   const yearsText = Number.isInteger(yearsPerMinute)
     ? yearsPerMinute.toFixed(0)
     : yearsPerMinute.toFixed(1);
   const yearUnit = Math.abs(yearsPerMinute - 1) < 1e-9 ? "year" : "years";
-  return `${daysText} simulated days/s · ${yearsText} Earth ${yearUnit}/min`;
+  return `${speed < 0 ? "Reverse · " : ""}${daysText} simulated days/s · ${yearsText} Earth ${yearUnit}/min`;
 }
 
 /* Lighting ------------------------------------------------------------- */

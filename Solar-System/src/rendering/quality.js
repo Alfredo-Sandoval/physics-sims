@@ -45,7 +45,7 @@ export class PerformanceTuner {
     } else if (avgFps < this.lowFps) {
       this.applyMildDownscale();
       this.lastAdjust = now;
-    } else if (avgFps > this.highFps && this.currentPixelRatio < this.maxPixelRatio - 0.05) {
+    } else if (avgFps > this.highFps && (this.currentPixelRatio < this.maxPixelRatio - 0.01 || this.beltIntervalMs > 36 || this.shadowIntervalMs > 100 || this.uiIntervalMs > 33)) {
       this.applyUpscale();
       this.lastAdjust = now;
     }
@@ -71,7 +71,7 @@ export class PerformanceTuner {
     this.setPixelRatio(Math.min(this.maxPixelRatio, this.currentPixelRatio + 0.06));
     this.setBeltInterval(Math.max(36, this.beltIntervalMs - 10));
     this.setShadowInterval(Math.max(100, this.shadowIntervalMs - 30));
-    this.setUiInterval(Math.max(40, this.uiIntervalMs - 8));
+    this.setUiInterval(Math.max(33, this.uiIntervalMs - 8));
   }
 
   setPixelRatio(value) {

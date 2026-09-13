@@ -15,7 +15,7 @@ import { clearTextureCache } from "../rendering/textures.js";
 import { onResize, offResize } from "../core/viewport.js";
 import { setScene, setCamera, setRenderer, setControls, setClock, setPlanets, setCelestialBodies,
   setMoons, setSun, setAsteroidBelt, setSimulationSpeed, setSimulatedDays, getMoons, resetState } from "../core/state.js";
-import { clearListeners as clearEventListeners } from "../core/events.js";
+import { emit, clearListeners as clearEventListeners } from "../core/events.js";
 import { debug as logDebug, info as logInfo, warn as logWarn, error as logError } from "../core/logger.js";
 import { initTextureLoader } from "../rendering/textures.js";
 import { PerformanceTuner } from "../rendering/quality.js";
@@ -281,6 +281,7 @@ function attachResizeHandler() {
   resizeHandler = () => {
     if (camera && renderer) {
       SceneSetup.handleWindowResize(camera, renderer);
+      emit("render");
     }
   };
   onResize(resizeHandler);

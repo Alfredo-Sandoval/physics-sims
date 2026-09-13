@@ -16,10 +16,8 @@
 //   // state.{x,y} are in the orbital plane, units = semi-major-axis (e.g. AU)
 // ----------------------------------------------------------------------
 
-import * as THREE from "three";
-import { warn as logWarn, error as logError } from "../core/logger.js";
 
-const DEG2RAD = Math.PI / 180;
+export const normalizeAngle = (angle) => ((angle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
 
 /* Mean motion --------------------------------------------------------- */
 export function meanMotion(aAU, mu = 0.01720209895 ** 2) {
@@ -40,7 +38,6 @@ export function eccentricAnomaly(M, e, tol = 1e-6) {
 
     // Prevent division by zero
     if (Math.abs(denominator) < 1e-10) {
-      logWarn("Kepler", "Numerical instability in eccentric anomaly calculation");
       break;
     }
 
@@ -57,7 +54,6 @@ export function trueAnomaly(E, e) {
 
   // Prevent division by zero for parabolic/hyperbolic orbits
   if (Math.abs(denominator) < 1e-10) {
-    logWarn("Kepler", "Near-parabolic orbit detected, using approximation");
     return E; // Fallback approximation
   }
 
@@ -77,23 +73,20 @@ export function getOrbitalState(tDays, elems) {
 
   // Validate inputs
   if (!Number.isFinite(a) || a <= 0) {
-    logError("Kepler", "Invalid semi-major axis", a);
     return { x: 0, y: 0, trueAnomaly: 0 };
   }
 
   if (!Number.isFinite(e) || e < 0) {
-    logError("Kepler", "Invalid eccentricity", e);
     return { x: 0, y: 0, trueAnomaly: 0 };
   }
 
   if (!Number.isFinite(tDays)) {
-    logError("Kepler", "Invalid time", tDays);
     return { x: 0, y: 0, trueAnomaly: 0 };
   }
 
   // Mean anomaly at time t
   const n = meanMotion(a); // rad/day
-  const M = THREE.MathUtils.euclideanModulo(M0 + n * tDays, 2 * Math.PI);
+  const M = normalizeAngle(M0 + n * tDays);
 
   // Eccentric anomaly
   const E = eccentricAnomaly(M, e);
@@ -118,7 +111,6 @@ export function getOrbitalState(tDays, elems) {
 
   // Validate final results
   if (!Number.isFinite(x) || !Number.isFinite(y)) {
-    logError("Kepler", "Invalid orbital position calculated", { x, y, a, e, nu });
     return { x: a, y: 0, trueAnomaly: 0 }; // Fallback to circular orbit
   }
 

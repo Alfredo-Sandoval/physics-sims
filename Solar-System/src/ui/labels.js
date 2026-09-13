@@ -4,6 +4,8 @@ import { getViewportSize } from "../core/viewport.js";
 import { formatMeasurement } from "./dom.js";
 
 /* Planet labels */
+const labelSizes = new Map();
+let labelViewportKey = "";
 const planetLabels = new Map(); // Object3D → HTML label element
 const planetLabelLines = new Map(); // Object3D → SVG line element
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -208,21 +210,25 @@ function getLabelPriority(body) {
   return 10;
 }
 
-function getLabelMinSpacingPx(type) {
-  if (type === "star") return 60;
-  if (type === "moon") return 28;
-  return 44;
+function overlaps(a, b, gap = 6) {
+  return a.left < b.right + gap && a.right + gap > b.left && a.top < b.bottom + gap && a.bottom + gap > b.top;
 }
-
-function labelWouldOverlap(placed, x, y, spacing) {
-  for (let i = 0; i < placed.length; i += 1) {
-    const other = placed[i];
-    const minDistance = (spacing + other.spacing) * 0.5;
-    const dx = x - other.x;
-    const dy = y - other.y;
-    if (dx * dx + dy * dy < minDistance * minDistance) return true;
+function panelBounds() {
+  const elements = [...document.querySelectorAll("#controlSurface, #menuToggle, #metadataDock, #info, .learning-tools-tour, .learning-tools-launcher")];
+  return elements.filter((element) => {
+    const style = getComputedStyle(element);
+    if (element.id === "controlSurface" && document.getElementById("menuContainer").classList.contains("collapsed")) return false;
+    return !element.hidden && style.display !== "none" && style.visibility !== "hidden" && Number(style.opacity) !== 0;
+  }).map((element) => element.getBoundingClientRect()).filter((rect) => rect.width && rect.height);
+}
+function measureLabel(label) {
+  if (!labelSizes.has(label)) {
+    const display = label.style.display;
+    label.style.display = "block";
+    labelSizes.set(label, { width: label.offsetWidth, height: label.offsetHeight });
+    label.style.display = display;
   }
-  return false;
+  return labelSizes.get(label);
 }
 
 export function updatePlanetLabels(camera, celestialBodies) {
@@ -240,7 +246,9 @@ export function updatePlanetLabels(camera, celestialBodies) {
     body.getWorldPosition(bound.position);
     bound.radius = getWorldRadius(getOcclusionMesh(body));
   }
-  const placedLabels = [];
+  const viewportKey = `${width}:${height}:${document.fonts?.status}`;
+  if (viewportKey !== labelViewportKey) { labelViewportKey = viewportKey; labelSizes.clear(); }
+  const placedLabels = panelBounds();
   const bodies = [...celestialBodies].sort((a, b) => getLabelPriority(b) - getLabelPriority(a));
 
   for (let i = 0; i < bodies.length; i += 1) {
@@ -279,22 +287,25 @@ export function updatePlanetLabels(camera, celestialBodies) {
     const x = (labelTempVector.x * 0.5 + 0.5) * width;
     const y = (labelTempVector.y * -0.5 + 0.5) * height;
 
-    const offset = 20;
-    const labelX = x + offset;
-    const labelY = y - offset;
-    const spacing = getLabelMinSpacingPx(body.userData?.type);
-    const forceVisible = body === getSelectedObject() || body.userData?.type === "star";
-    if (!forceVisible && labelWouldOverlap(placedLabels, labelX, labelY, spacing)) {
-      label.style.display = "none";
-      hideLabelConnector(body);
-      continue;
+    const size = measureLabel(label);
+    const candidates = [
+      [x + 18, y - size.height - 8], [x - size.width - 18, y - size.height - 8],
+      [x + 18, y + 10], [x - size.width - 18, y + 10],
+      [x - size.width / 2, y + 24], [x - size.width / 2, y - size.height - 24],
+    ];
+    let placement;
+    for (const [left, top] of candidates) {
+      const box = { left, top, right: left + size.width, bottom: top + size.height };
+      if (left < 8 || top < 8 || box.right > width - 8 || box.bottom > height - 8) continue;
+      if (placedLabels.some((other) => overlaps(box, other))) continue;
+      placement = box; break;
     }
-
-    placedLabels.push({ x: labelX, y: labelY, spacing });
-    label.style.translate = `${labelX.toFixed(1)}px ${labelY.toFixed(1)}px`;
+    if (!placement) { label.style.display = "none"; hideLabelConnector(body); continue; }
+    placedLabels.push(placement);
+    label.style.translate = `${placement.left.toFixed(1)}px ${placement.top.toFixed(1)}px`;
     label.style.display = "block";
     label.style.opacity = 1;
-    updateLabelConnector(body, x, y, labelX, labelY);
+    updateLabelConnector(body, x, y, placement.left + size.width / 2, placement.top + size.height / 2);
   }
 }
 function setupLabelToggles() {
@@ -354,6 +365,7 @@ export function cleanupLabels() {
     }
   });
   planetLabels.clear();
+  labelSizes.clear();
   occluderBounds.clear();
 
   // Clear planet label lines

@@ -41,6 +41,12 @@
       <h1>Physics Sims Browser Tests</h1>
       <pre id="testLog">Starting...</pre>
     </main>
+    <script>
+      window.addEventListener("error", (event) => {
+        document.body.dataset.testStatus = "failed";
+        document.getElementById("testLog").textContent += `\nFAIL ${event.message}`;
+      });
+    </script>
     <script type="module" src="./solar-system.spec.js"></script>
   </body>
 </html>

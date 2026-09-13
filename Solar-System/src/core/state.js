@@ -1,4 +1,5 @@
 // Centralized state management for the solar system simulation.
+import { emit } from "./events.js";
 
 import {
   ZOOM,
@@ -20,6 +21,7 @@ const state = {
   asteroidBelt: null,
   simulationSpeed: 1,
   simulatedDays: 0,
+  timeRevision: 0,
   followTarget: null,
   followDistance: 50,
   followRequestId: 0,
@@ -87,20 +89,34 @@ export const setAsteroidBelt = (belt) => {
 
 export const setSimulationSpeed = (speed) => {
   if (Number.isFinite(speed)) {
+    if (state.simulationSpeed === speed) return;
     state.simulationSpeed = speed;
+    state.timeRevision += 1;
+    emit("render");
   }
 };
 
 export const setSimulatedDays = (days) => {
   if (Number.isFinite(days)) {
+    if (state.simulatedDays === days) return;
     state.simulatedDays = days;
+    emit("render");
   }
 };
+
+export function seekToDays(days) {
+  if (!Number.isFinite(days)) return;
+  state.timeRevision += 1;
+  setSimulatedDays(days);
+  emit("render");
+}
 
 export const updateFollowTarget = (target, distance) => {
   state.followTarget = target ?? null;
   state.followRequestId += 1;
   state.frameRequested = Boolean(target);
+  emit("render");
+  emit("tracking");
 
   const sel = target ?? state.selectedObject;
   let radius = 0;
@@ -152,6 +168,8 @@ export const updateFollowTarget = (target, distance) => {
 export const stopCameraFollow = () => {
   state.followTarget = null;
   state.frameRequested = false;
+  emit("render");
+  emit("tracking");
 
   if (!state.selectedObject && state.controls) {
     state.controls.minDistance = Math.max(
@@ -167,6 +185,7 @@ export const cancelCameraFraming = () => {
 
 export const setSelectedObject = (obj) => {
   state.selectedObject = obj ?? null;
+  emit("render");
 };
 
 export const resetState = () => {
@@ -182,6 +201,7 @@ export const resetState = () => {
   state.asteroidBelt = null;
   state.simulationSpeed = 1;
   state.simulatedDays = 0;
+  state.timeRevision = 0;
   state.followTarget = null;
   state.followDistance = 50;
   state.followRequestId = 0;

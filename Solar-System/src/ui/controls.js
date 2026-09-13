@@ -1,3 +1,6 @@
+import { on } from "../core/events.js";
+import { rememberView, hasPreviousView, restorePreviousView, clearViewHistory } from "../navigation/history.js";
+import { getFollowTarget, cancelCameraFraming } from "../core/state.js";
 import * as THREE from "three";
 import * as CONSTANTS from "../core/config.js";
 import { selectObject, deselectObject } from "./index.js";
@@ -6,6 +9,7 @@ import { getSelectedObject, getCamera, getControls, getRenderer, updateFollowTar
   stopCameraFollow, setSelectedObject } from "../core/state.js";
 import { initPlaybackControls, cleanupPlaybackControls } from "./playback.js";
 
+let navigationSubscriptions = [];
 let orbitLinesVisible = true;
 let selectionChangeHandler;
 let panelListeners;
@@ -51,7 +55,7 @@ function applyScaleModeToScene(scene, mode) {
   });
 
   const selected = getSelectedObject();
-  if (selected) {
+  if (selected && getFollowTarget() === selected) {
     updateFollowTarget(selected);
   }
 }
@@ -103,6 +107,29 @@ export function setupUIControls(planetConfigs, selectable, scene) {
   panelListeners?.abort();
   panelListeners = new AbortController();
   initPlaybackControls();
+  const back = document.getElementById("backViewBtn");
+  const follow = document.getElementById("trackBodyBtn");
+  const syncNavigation = () => {
+    back.disabled = !hasPreviousView();
+    const selected = getSelectedObject();
+    const tracking = Boolean(selected && getFollowTarget() === selected);
+    follow.disabled = !selected;
+    follow.textContent = selected ? `${tracking ? "Following" : "Follow"} ${selected.userData.name}` : "Follow selected body";
+    follow.setAttribute("aria-pressed", String(tracking));
+  };
+  navigationSubscriptions.forEach((unsubscribe) => unsubscribe());
+  navigationSubscriptions = [on("history", syncNavigation), on("tracking", syncNavigation)];
+  listen(window, "solar-system:selection-changed", syncNavigation);
+  listen(back, "click", () => restorePreviousView(selectObject, deselectObject));
+  listen(follow, "click", () => {
+    const selected = getSelectedObject();
+    if (!selected) return;
+    if (getFollowTarget() === selected) stopCameraFollow();
+    else { updateFollowTarget(selected); cancelCameraFraming(); }
+    syncNavigation();
+  });
+  syncNavigation();
+
 
   /* Planet navigation dropdown ---------------------------------------- */
   const planetNav = document.getElementById("planetNav");
@@ -198,6 +225,7 @@ export function setupUIControls(planetConfigs, selectable, scene) {
     const camera = getCamera();
     const controlsRef = getControls();
     if (!camera || !controlsRef) return;
+    rememberView();
     deselectObject();
     stopCameraFollow();
     // Flush residual drag damping before applying an explicit view preset.
@@ -440,6 +468,9 @@ export function setupUIControls(planetConfigs, selectable, scene) {
 }
 
 export function cleanupControls() {
+  navigationSubscriptions.forEach((unsubscribe) => unsubscribe());
+  navigationSubscriptions = [];
+  clearViewHistory();
   cleanupPlaybackControls();
   panelListeners?.abort();
   panelListeners = null;

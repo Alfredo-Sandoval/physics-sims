@@ -73,15 +73,21 @@
                 <button id="togglePlaybackBtn" class="controlBtn" type="button" aria-pressed="true">
                   Pause
                 </button>
+                <button id="reversePlaybackBtn" class="controlBtn" type="button" aria-label="Reverse playback direction" aria-pressed="false">Forward</button>
                 <button id="resetSpeedBtn" class="controlBtn" type="button">Reset&nbsp;(1x)</button>
               </div>
             </div>
 
             <div id="datePickerContainer" class="control-block">
-              <label for="datePicker">Jump simulation to date:</label>
+              <label for="datePicker">Jump to date (UTC):</label>
               <input type="date" id="datePicker" aria-label="Jump to a specific date" />
+              <div class="time-step-actions" role="group" aria-label="Step through time">
+                <button id="stepBackDayBtn" class="controlBtn" type="button" aria-label="Step back one day">−1 day</button>
+                <button id="todayBtn" class="controlBtn" type="button">Today</button>
+                <button id="stepForwardDayBtn" class="controlBtn" type="button" aria-label="Step forward one day">+1 day</button>
+              </div>
               <span id="datePickerHint" class="control-hint">
-                Playback continues after a date jump.
+                Jumps and day steps keep your playback state.
               </span>
             </div>
           </div>
@@ -118,6 +124,10 @@
               </select>
             </div>
 
+            <div class="navigation-state-actions">
+              <button id="backViewBtn" class="controlBtn" type="button" disabled>Back to previous view</button>
+              <button id="trackBodyBtn" class="controlBtn" type="button" aria-pressed="false" disabled>Follow selected body</button>
+            </div>
             <div class="control-block control-action-group">
               <button id="resetCameraBtn" class="controlBtn" type="button">Inner system</button>
               <button id="wholeSystemBtn" class="controlBtn" type="button">Whole system</button>
@@ -204,7 +214,7 @@
             <li><strong>Inventory:</strong> Moons, belts, and rings are illustrative selections. Body cards identify reused textures.</li>
             <li><strong>Rate:</strong> At 1×, one Earth year passes in 60 real seconds.</li>
             <li><strong>Source:</strong> <span id="ephemerisSource">NASA/JPL Horizons</span> state vectors,
-              <span id="ephemerisRange">valid range loading…</span>. Outside this interval, the app uses a two-body Kepler approximation. Moon paths are simplified.</li>
+              <span id="ephemerisRange">valid range loading…</span>. Outside this interval, the app uses a two-body Kepler approximation. Moon paths and epoch phases are illustrative and repeatable; they are not measured lunar ephemerides.</li>
           </ul>
         </details>
       </div>

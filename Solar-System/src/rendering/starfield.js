@@ -1,3 +1,5 @@
+import { createRandom } from "../core/random.js";
+let random = createRandom("createStarfield");
 // --- Starfield Module --------------------------------------------------
 import * as THREE from "three";
 import * as CONSTANTS from "../core/config.js";
@@ -15,6 +17,7 @@ import { debug as logDebug } from "../core/logger.js";
  * @returns {THREE.Group} Starfield group containing the skybox and procedural layers.
  */
 export function createStarfield(scene, texture) {
+  random = createRandom("createStarfield");
   const starfield = new THREE.Group();
   starfield.name = "starfield";
 
@@ -97,10 +100,10 @@ function createProceduralLayer(layerConfig, layerIndex, spriteTexture) {
 }
 
 function writeStarPosition(target, starIndex, minRadius, maxRadius) {
-  const radiusMix = Math.pow(Math.random(), 0.72);
+  const radiusMix = Math.pow(random(), 0.72);
   const radius = THREE.MathUtils.lerp(minRadius, maxRadius, radiusMix);
-  const y = Math.random() * 2 - 1;
-  const phi = Math.random() * Math.PI * 2;
+  const y = random() * 2 - 1;
+  const phi = random() * Math.PI * 2;
   const planar = Math.sqrt(Math.max(0, 1 - y * y));
   const x = Math.cos(phi) * planar;
   const z = Math.sin(phi) * planar;
@@ -119,15 +122,15 @@ function writeStarColor(target, starIndex, layerConfig, tint) {
 }
 
 function getStarColor(layerConfig, tint) {
-  const temperatureRoll = Math.random();
-  const hue = getTemperatureHue(temperatureRoll) + (Math.random() - 0.5) * 0.02;
+  const temperatureRoll = random();
+  const hue = getTemperatureHue(temperatureRoll) + (random() - 0.5) * 0.02;
   const saturationBase = Number(layerConfig?.saturation ?? 0.2);
-  const saturation = clamp(saturationBase * THREE.MathUtils.lerp(0.8, 1.2, Math.random()), 0.05, 0.4);
+  const saturation = clamp(saturationBase * THREE.MathUtils.lerp(0.8, 1.2, random()), 0.05, 0.4);
   const lightnessMin = Number(layerConfig?.lightnessMin ?? 0.6);
   const lightnessMax = Number(layerConfig?.lightnessMax ?? 0.92);
-  const lightness = THREE.MathUtils.lerp(lightnessMin, lightnessMax, Math.pow(Math.random(), 0.52));
+  const lightness = THREE.MathUtils.lerp(lightnessMin, lightnessMax, Math.pow(random(), 0.52));
   const color = new THREE.Color().setHSL(hue, saturation, clamp(lightness, 0.4, 1.0));
-  color.lerp(tint, CONSTANTS.STARFIELD_TINT_STRENGTH * THREE.MathUtils.lerp(0.8, 1.1, Math.random()));
+  color.lerp(tint, CONSTANTS.STARFIELD_TINT_STRENGTH * THREE.MathUtils.lerp(0.8, 1.1, random()));
   return color;
 }
 

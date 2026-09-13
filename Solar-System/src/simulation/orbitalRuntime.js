@@ -367,35 +367,17 @@ export function getEphemerisRangeJD(cfg, epochJDOverride = null) {
 }
 
 export function getPlanetRadiusForMoonPrecession(planetUserData) {
-  const mesh = planetUserData?.planetMesh;
-  const meshRadius = toFiniteNumber(mesh?.geometry?.parameters?.radius);
-  if (Number.isFinite(meshRadius) && meshRadius > 0) {
-    const sx = Math.abs(toFiniteNumber(mesh?.scale?.x) ?? 1);
-    const sy = Math.abs(toFiniteNumber(mesh?.scale?.y) ?? sx);
-    const sz = Math.abs(toFiniteNumber(mesh?.scale?.z) ?? sx);
-    const scale = Math.max(sx, sy, sz, 1);
-    return meshRadius * scale;
-  }
-
-  const displayRadius = toFiniteNumber(planetUserData?.displayRadius);
-  if (Number.isFinite(displayRadius) && displayRadius > 0) return displayRadius;
-
-  const scaledRadius = firstFinite([
-    toFiniteNumber(planetUserData?.config?.scaledRadius),
-    toFiniteNumber(planetUserData?.config?.scaledRadiusDisplayUnits),
-  ]);
-  if (Number.isFinite(scaledRadius) && scaledRadius > 0) return scaledRadius;
-
-  return null;
+  const cfg = planetUserData?.config;
+  const radius = cfg?.actualRadiusEarthRadii ?? cfg?.actualRadius;
+  return Number.isFinite(radius) ? radius * 6378.1366 : null;
 }
 
-function buildMoonPrecessionState(moonUserData, parentPlanetName, parentRadiusSceneUnits) {
+function buildMoonPrecessionState(moonUserData, parentPlanetName, parentRadiusKm) {
   const j2 = SUPPORTED_PRECESSION_J2[parentPlanetName];
   if (!Number.isFinite(j2) || j2 <= 0) return { enabled: false, nodeCoeff: 0, periCoeff: 0 };
 
   const semiMajor = firstFinite([
-    toFiniteNumber(moonUserData?.orbitSemiMajor),
-    toFiniteNumber(moonUserData?.orbitRadius),
+    toFiniteNumber(moonUserData?.config?.orbitRadiusKm),
   ]);
   const inclination = firstFinite([
     toFiniteNumber(moonUserData?.orbitInclinationRad),
@@ -413,11 +395,11 @@ function buildMoonPrecessionState(moonUserData, parentPlanetName, parentRadiusSc
     ])
   );
 
-  if (!Number.isFinite(semiMajor) || semiMajor <= 0 || !Number.isFinite(parentRadiusSceneUnits)) {
+  if (!Number.isFinite(semiMajor) || semiMajor <= 0 || !Number.isFinite(parentRadiusKm)) {
     return { enabled: false, nodeCoeff: 0, periCoeff: 0 };
   }
 
-  const radiusRatioSq = (parentRadiusSceneUnits / semiMajor) ** 2;
+  const radiusRatioSq = (parentRadiusKm / semiMajor) ** 2;
   const denom = Math.max(1e-8, (1 - eccentricity * eccentricity) ** 2);
   const cosI = Math.cos(inclination);
   const cosISq = cosI * cosI;
@@ -431,12 +413,12 @@ function buildMoonPrecessionState(moonUserData, parentPlanetName, parentRadiusSc
   return { enabled: true, nodeCoeff, periCoeff };
 }
 
-function ensureMoonPrecessionState(moonUserData, parentPlanetName, parentRadiusSceneUnits) {
+function ensureMoonPrecessionState(moonUserData, parentPlanetName, parentRadiusKm) {
   if (!moonUserData) return null;
 
   const state = moonUserData.__moonPrecession;
-  const radiusKey = Number.isFinite(parentRadiusSceneUnits)
-    ? Number(parentRadiusSceneUnits.toFixed(6))
+  const radiusKey = Number.isFinite(parentRadiusKm)
+    ? Number(parentRadiusKm.toFixed(6))
     : null;
 
   if (state && state.parentPlanetName === parentPlanetName && state.radiusKey === radiusKey) {
@@ -445,7 +427,7 @@ function ensureMoonPrecessionState(moonUserData, parentPlanetName, parentRadiusS
 
   const baseNode = firstFinite([toFiniteNumber(moonUserData.orbitAscendingNodeRad), 0]);
   const basePeri = firstFinite([toFiniteNumber(moonUserData.orbitArgPeriapsisRad), 0]);
-  const coeffs = buildMoonPrecessionState(moonUserData, parentPlanetName, parentRadiusSceneUnits);
+  const coeffs = buildMoonPrecessionState(moonUserData, parentPlanetName, parentRadiusKm);
 
   moonUserData.__moonPrecessionNodeOffset = 0;
   moonUserData.__moonPrecessionArgOffset = 0;
@@ -465,28 +447,12 @@ function ensureMoonPrecessionState(moonUserData, parentPlanetName, parentRadiusS
   return nextState;
 }
 
-export function applyMoonJ2PrecessionStep(
-  moonUserData,
-  parentPlanetName,
-  parentRadiusSceneUnits,
-  meanAnomalyDeltaRad
-) {
-  if (!moonUserData || !Number.isFinite(meanAnomalyDeltaRad) || meanAnomalyDeltaRad === 0) return;
-
-  const state = ensureMoonPrecessionState(moonUserData, parentPlanetName, parentRadiusSceneUnits);
+export function applyMoonJ2PrecessionAtTime(moonUserData, parentName, parentRadiusKm, days) {
+  const state = ensureMoonPrecessionState(moonUserData, parentName, parentRadiusKm);
   if (!state?.enabled) return;
-
-  const nextNodeOffset = wrapAnglePositive(
-    firstFinite([toFiniteNumber(moonUserData.__moonPrecessionNodeOffset), 0]) +
-      meanAnomalyDeltaRad * state.nodeCoeff
-  );
-  const nextArgOffset = wrapAnglePositive(
-    firstFinite([toFiniteNumber(moonUserData.__moonPrecessionArgOffset), 0]) +
-      meanAnomalyDeltaRad * state.periCoeff
-  );
-
-  moonUserData.__moonPrecessionNodeOffset = nextNodeOffset;
-  moonUserData.__moonPrecessionArgOffset = nextArgOffset;
-  moonUserData.orbitAscendingNodeRad = wrapAnglePositive(state.baseNode + nextNodeOffset);
-  moonUserData.orbitArgPeriapsisRad = wrapAnglePositive(state.basePeri + nextArgOffset);
+  const period = Math.abs(moonUserData.config?.orbitalPeriod);
+  if (!Number.isFinite(period) || period === 0) return;
+  const elapsedAngle = days / period * 2 * Math.PI * (moonUserData.orbitDirection ?? 1);
+  moonUserData.orbitAscendingNodeRad = wrapAnglePositive(state.baseNode + elapsedAngle * state.nodeCoeff);
+  moonUserData.orbitArgPeriapsisRad = wrapAnglePositive(state.basePeri + elapsedAngle * state.periCoeff);
 }

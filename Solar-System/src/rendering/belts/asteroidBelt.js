@@ -1,3 +1,5 @@
+import { createRandom } from "../../core/random.js";
+let random = createRandom("createAsteroidBelt");
 // --- Asteroid‑belt Module ---------------------------------------------
 import * as THREE from "three";
 import * as CONSTANTS from "../../core/config.js";
@@ -24,6 +26,7 @@ function normalizeAngle(angleRadians) {
  * - Deformed geometries for variety
  */
 export function createAsteroidBelt(scene, loader) {
+  random = createRandom("createAsteroidBelt");
   if (!CONSTANTS.ASTEROID_BELT_ENABLED) return null;
 
   const belt = new THREE.Group();
@@ -133,7 +136,7 @@ export function createAsteroidBelt(scene, loader) {
 
       // Add random deformation (craters and bumps)
       // Keep base size ~1.0, just add variation
-      const deform = 0.85 + Math.random() * 0.3; // 0.85 to 1.15
+      const deform = 0.85 + random() * 0.3; // 0.85 to 1.15
       positions.setXYZ(i, nx * deform, ny * deform, nz * deform);
     }
 
@@ -156,7 +159,7 @@ export function createAsteroidBelt(scene, loader) {
   const color = new THREE.Color();
 
   const sampleBiased = (min, max, power = 2.2) =>
-    min + (max - min) * Math.pow(Math.random(), power);
+    min + (max - min) * Math.pow(random(), power);
 
   // Kirkwood gaps (AU)
   const gapsAU = [2.06, 2.5, 2.82, 2.95];
@@ -169,14 +172,14 @@ export function createAsteroidBelt(scene, loader) {
     const r1 = outerR / CONSTANTS.ORBIT_SCALE_FACTOR;
 
     for (let attempt = 0; attempt < 12; attempt++) {
-      const rAU = r0 + (r1 - r0) * Math.pow(Math.random(), 0.6);
+      const rAU = r0 + (r1 - r0) * Math.pow(random(), 0.6);
 
       let inGap = false;
       for (const g of gapsAU) {
         const dist = Math.abs(rAU - g);
         if (dist < gapWidthAU) {
           const p = 1 - dist / gapWidthAU;
-          if (Math.random() < p * gapDepth) {
+          if (random() < p * gapDepth) {
             inGap = true;
             break;
           }
@@ -195,15 +198,15 @@ export function createAsteroidBelt(scene, loader) {
   for (let i = 0; i < dustCount; i++) {
     const rAU = sampleRadius();
     const r = rAU * CONSTANTS.ORBIT_SCALE_FACTOR;
-    const theta = Math.random() * Math.PI * 2;
-    const y = (Math.random() * 2 - 1) * (thick * 0.25);
+    const theta = random() * Math.PI * 2;
+    const y = (random() * 2 - 1) * (thick * 0.25);
     const base = i * 3;
     dustPositions[base + 0] = r * Math.cos(theta);
     dustPositions[base + 1] = y;
     dustPositions[base + 2] = r * Math.sin(theta);
 
-    color.copy(dustColorA).lerp(dustColorB, Math.random());
-    color.multiplyScalar(THREE.MathUtils.randFloat(0.7, 1.1));
+    color.copy(dustColorA).lerp(dustColorB, random());
+    color.multiplyScalar(random.range(0.7, 1.1));
     dustColors[base + 0] = color.r;
     dustColors[base + 1] = color.g;
     dustColors[base + 2] = color.b;
@@ -229,11 +232,11 @@ export function createAsteroidBelt(scene, loader) {
   // Generate orbital parameters for an asteroid
   function generateOrbitalParams() {
     const a = sampleRadius(); // semi-major axis in AU
-    const e = Math.pow(Math.random(), 1.8) * 0.22; // bias toward low eccentricity
-    const i = Math.pow(Math.random(), 2.4) * 0.35; // bias toward low inclination (rad)
-    const Omega = Math.random() * Math.PI * 2; // longitude of ascending node
-    const omega = Math.random() * Math.PI * 2; // argument of periapsis
-    const M0 = Math.random() * Math.PI * 2; // initial mean anomaly
+    const e = Math.pow(random(), 1.8) * 0.22; // bias toward low eccentricity
+    const i = Math.pow(random(), 2.4) * 0.35; // bias toward low inclination (rad)
+    const Omega = random() * Math.PI * 2; // longitude of ascending node
+    const omega = random() * Math.PI * 2; // argument of periapsis
+    const M0 = random() * Math.PI * 2; // initial mean anomaly
 
     // Orbital period using Kepler's 3rd law: T² ∝ a³
     // T in Earth days
@@ -333,9 +336,9 @@ export function createAsteroidBelt(scene, loader) {
       const pos = calculateOrbitalPosition(orbitalParams, 0);
 
       const rotation = new THREE.Euler(
-        Math.random() * Math.PI * 2,
-        Math.random() * Math.PI * 2,
-        Math.random() * Math.PI * 2
+        random() * Math.PI * 2,
+        random() * Math.PI * 2,
+        random() * Math.PI * 2
       );
 
       const baseSize = sampleBiased(
@@ -343,22 +346,22 @@ export function createAsteroidBelt(scene, loader) {
         CONSTANTS.ASTEROID_MAX_SIZE * 3.2,
         2.4
       );
-      const elong = THREE.MathUtils.randFloat(0.6, 1.5);
-      scale.set(baseSize, baseSize * elong, baseSize * THREE.MathUtils.randFloat(0.7, 1.3));
+      const elong = random.range(0.6, 1.5);
+      scale.set(baseSize, baseSize * elong, baseSize * random.range(0.7, 1.3));
 
       const quat = new THREE.Quaternion().setFromEuler(rotation);
       matrix.compose(pos, quat, scale);
       inst.setMatrixAt(i, matrix);
-      color.copy(material.color).multiplyScalar(THREE.MathUtils.randFloat(0.85, 1.15));
+      color.copy(material.color).multiplyScalar(random.range(0.85, 1.15));
       inst.setColorAt(i, color);
 
       workerInstances.push({
         orbitalParams,
         rotation: [rotation.x, rotation.y, rotation.z],
         rotationSpeed: [
-          THREE.MathUtils.randFloat(-0.01, 0.01),
-          THREE.MathUtils.randFloat(-0.01, 0.01),
-          THREE.MathUtils.randFloat(-0.01, 0.01),
+          random.range(-0.01, 0.01),
+          random.range(-0.01, 0.01),
+          random.range(-0.01, 0.01),
         ],
         scale: [scale.x, scale.y, scale.z],
       });
@@ -478,9 +481,9 @@ function createNamedAsteroids(scene, belt) {
       a: data.a,
       e: data.e,
       i: data.i,
-      Omega: Math.random() * Math.PI * 2,
-      omega: Math.random() * Math.PI * 2,
-      M0: Math.random() * Math.PI * 2,
+      Omega: random() * Math.PI * 2,
+      omega: random() * Math.PI * 2,
+      M0: random() * Math.PI * 2,
       T: Math.sqrt(data.a * data.a * data.a) * 365.25,
     };
 

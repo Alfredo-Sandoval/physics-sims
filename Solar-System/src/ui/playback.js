@@ -4,16 +4,16 @@ let lastActiveSimulationSpeed = 1;
 let listeners;
 
 export function isPausedSpeed(speed) {
-  return !Number.isFinite(speed) || speed <= 0;
+  return !Number.isFinite(speed) || speed === 0;
 }
 
 function clampSimulationSpeed(speed) {
   if (!Number.isFinite(speed)) return 1.0;
-  return Math.max(0, Math.min(5.0, speed));
+  return Math.max(-5, Math.min(5, speed));
 }
 
 export function getResumeSpeed() {
-  return Math.max(0.1, Math.min(5.0, lastActiveSimulationSpeed || 1.0));
+  return lastActiveSimulationSpeed || 1;
 }
 
 function syncPlaybackUi(speed) {
@@ -24,8 +24,11 @@ function syncPlaybackUi(speed) {
   const togglePlaybackBtn = document.getElementById("togglePlaybackBtn");
   const resetSpeedBtn = document.getElementById("resetSpeedBtn");
   const paused = isPausedSpeed(normalized);
+  const reverse = document.getElementById("reversePlaybackBtn");
+  const backwards = (paused ? lastActiveSimulationSpeed : normalized) < 0;
+  if (reverse) { reverse.textContent = backwards ? "Reverse" : "Forward"; reverse.setAttribute("aria-pressed", String(backwards)); }
 
-  if (speedSlider) speedSlider.value = String(normalized);
+  if (speedSlider) speedSlider.value = String(Math.abs(normalized));
   if (speedSpan) speedSpan.textContent = normalized.toFixed(1) + "×";
   if (speedRate) speedRate.textContent = CONSTANTS.formatSimulationRate(normalized);
   if (togglePlaybackBtn) {
@@ -64,13 +67,18 @@ export function initPlaybackControls() {
     applySimulationSpeed(simulationSpeed);
 
     speedSlider.addEventListener("input", () => {
-      applySimulationSpeed(parseFloat(speedSlider.value));
+      applySimulationSpeed(parseFloat(speedSlider.value) * Math.sign(getResumeSpeed()));
     }, options);
   }
 
   togglePlaybackBtn?.addEventListener("click", () => {
     const currentSpeed = getSimulationSpeed() ?? 1;
     applySimulationSpeed(isPausedSpeed(currentSpeed) ? getResumeSpeed() : 0);
+  }, options);
+
+  document.getElementById("reversePlaybackBtn")?.addEventListener("click", () => {
+    lastActiveSimulationSpeed = -getResumeSpeed();
+    applySimulationSpeed(isPausedSpeed(getSimulationSpeed()) ? 0 : -getSimulationSpeed());
   }, options);
 
   resetSpeedBtn?.addEventListener("click", () => {

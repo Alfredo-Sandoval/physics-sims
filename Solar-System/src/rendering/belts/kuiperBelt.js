@@ -1,3 +1,5 @@
+import { createRandom } from "../../core/random.js";
+let random = createRandom("createKuiperBelt");
 // --- Kuiper Belt Module ---------------------------------------------
 import * as THREE from "three";
 import * as CONSTANTS from "../../core/config.js";
@@ -23,6 +25,7 @@ function normalizeAngle(angleRadians) {
  * - More spread out than asteroid belt
  */
 export function createKuiperBelt(scene, loader) {
+  random = createRandom("createKuiperBelt");
   if (!CONSTANTS.KUIPER_BELT_ENABLED) return null;
 
   const belt = new THREE.Group();
@@ -91,7 +94,7 @@ export function createKuiperBelt(scene, loader) {
       const nz = z / len;
 
       // Add random deformation (craters and bumps) - more irregular than asteroids
-      const deform = 0.75 + Math.random() * 0.5; // 0.75 to 1.25
+      const deform = 0.75 + random() * 0.5; // 0.75 to 1.25
       positions.setXYZ(i, nx * deform, ny * deform, nz * deform);
     }
 
@@ -113,7 +116,7 @@ export function createKuiperBelt(scene, loader) {
   const scale = new THREE.Vector3();
   const color = new THREE.Color();
   const sampleBiased = (min, max, power = 2.1) =>
-    min + (max - min) * Math.pow(Math.random(), power);
+    min + (max - min) * Math.pow(random(), power);
 
   // Sample radius with mid-belt bias (Kuiper Belt is more spread out)
   function sampleRadius() {
@@ -121,17 +124,17 @@ export function createKuiperBelt(scene, loader) {
     const r1 = outerR / CONSTANTS.ORBIT_SCALE_FACTOR;
 
     // More uniform distribution than asteroid belt
-    return r0 + (r1 - r0) * Math.pow(Math.random(), 0.8);
+    return r0 + (r1 - r0) * Math.pow(random(), 0.8);
   }
 
   // Generate orbital parameters for a Kuiper Belt object
   function generateOrbitalParams() {
     const a = sampleRadius(); // semi-major axis in AU
-    const e = THREE.MathUtils.randFloat(0, 0.25); // higher eccentricity possible
-    const i = THREE.MathUtils.randFloat(0, 0.5); // higher inclination possible
-    const Omega = Math.random() * Math.PI * 2; // longitude of ascending node
-    const omega = Math.random() * Math.PI * 2; // argument of periapsis
-    const M0 = Math.random() * Math.PI * 2; // initial mean anomaly
+    const e = random.range(0, 0.25); // higher eccentricity possible
+    const i = random.range(0, 0.5); // higher inclination possible
+    const Omega = random() * Math.PI * 2; // longitude of ascending node
+    const omega = random() * Math.PI * 2; // argument of periapsis
+    const M0 = random() * Math.PI * 2; // initial mean anomaly
 
     // Orbital period using Kepler's 3rd law: T² ∝ a³
     // T in Earth days
@@ -229,30 +232,30 @@ export function createKuiperBelt(scene, loader) {
       const pos = calculateOrbitalPosition(orbitalParams, 0);
 
       const rotation = new THREE.Euler(
-        Math.random() * Math.PI * 2,
-        Math.random() * Math.PI * 2,
-        Math.random() * Math.PI * 2
+        random() * Math.PI * 2,
+        random() * Math.PI * 2,
+        random() * Math.PI * 2
       );
 
       const baseSize =
         sampleBiased(CONSTANTS.KUIPER_MIN_SIZE, CONSTANTS.KUIPER_MAX_SIZE, 2.4) *
         CONSTANTS.KUIPER_VISUAL_SCALE;
-      const elong = THREE.MathUtils.randFloat(0.5, 1.8); // More irregular shapes
-      scale.set(baseSize, baseSize * elong, baseSize * THREE.MathUtils.randFloat(0.6, 1.4));
+      const elong = random.range(0.5, 1.8); // More irregular shapes
+      scale.set(baseSize, baseSize * elong, baseSize * random.range(0.6, 1.4));
 
       const quat = new THREE.Quaternion().setFromEuler(rotation);
       matrix.compose(pos, quat, scale);
       inst.setMatrixAt(i, matrix);
-      color.copy(material.color).multiplyScalar(THREE.MathUtils.randFloat(0.85, 1.15));
+      color.copy(material.color).multiplyScalar(random.range(0.85, 1.15));
       inst.setColorAt(i, color);
 
       workerInstances.push({
         orbitalParams,
         rotation: [rotation.x, rotation.y, rotation.z],
         rotationSpeed: [
-          THREE.MathUtils.randFloat(-0.005, 0.005),
-          THREE.MathUtils.randFloat(-0.005, 0.005),
-          THREE.MathUtils.randFloat(-0.005, 0.005),
+          random.range(-0.005, 0.005),
+          random.range(-0.005, 0.005),
+          random.range(-0.005, 0.005),
         ],
         scale: [scale.x, scale.y, scale.z],
       });
@@ -381,11 +384,11 @@ function createNamedKBObjects(scene, belt) {
     // Orbital parameters (simplified)
     const orbitalParams = {
       a: data.a,
-      e: 0.2 + Math.random() * 0.3, // High eccentricity typical of KBOs
-      i: Math.random() * 0.5, // Inclination
-      Omega: Math.random() * Math.PI * 2,
-      omega: Math.random() * Math.PI * 2,
-      M0: Math.random() * Math.PI * 2,
+      e: 0.2 + random() * 0.3, // High eccentricity typical of KBOs
+      i: random() * 0.5, // Inclination
+      Omega: random() * Math.PI * 2,
+      omega: random() * Math.PI * 2,
+      M0: random() * Math.PI * 2,
       T: Math.sqrt(data.a * data.a * data.a) * 365.25,
     };
 
