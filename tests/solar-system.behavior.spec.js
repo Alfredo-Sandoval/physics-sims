@@ -4,6 +4,7 @@ export async function runBehaviorChecks(win, { assert, wait, waitFor }) {
   const ui = await win.eval('import("/Solar-System/src/ui/index.js")');
   const playback = await win.eval('import("/Solar-System/src/ui/playback.js")');
   const solver = await win.eval('import("/Solar-System/src/simulation/positions.js")');
+  const config = await win.eval('import("/Solar-System/src/core/config.js")');
   const state = app.getState();
   const renderer = state.renderer;
   const earth = state.planets.find((body) => body.userData.name === "Earth");
@@ -23,6 +24,14 @@ export async function runBehaviorChecks(win, { assert, wait, waitFor }) {
     .flatMap((body) => [...body.position.toArray(), ...(body.userData.planetMesh ?? body).quaternion.toArray()]);
 
   playback.applySimulationSpeed(0);
+  // Exercise the rendered surface at the orbital clock's actual 1× rate.
+  await nextDraw(() => app.seekToDays(0));
+  for (const seconds of [0.1, 1]) {
+    await nextDraw(() => app.seekToDays(seconds * config.DAYS_PER_SIM_SECOND_AT_1X));
+    const angle = earth.userData.planetMesh.rotation.y;
+    assert(angle > seconds * 2 * Math.PI / 21 && angle < seconds * 2 * Math.PI / 19,
+      `Earth's displayed spin takes about 20 seconds per turn at 1× (${seconds}s sample)`);
+  }
   await nextDraw(() => { setDate("2025-03-15"); setDate("2026-06-20"); });
   const expectedDays = (Date.parse("2026-06-20T12:00:00Z") - epoch) / 86400000;
   assert(Math.abs(app.getSimulatedDays() - expectedDays) < 1e-9, "rapid date changes keep the latest target");

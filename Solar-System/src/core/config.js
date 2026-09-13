@@ -51,6 +51,8 @@ export const RELATIVE_SCALE_EARTH_RADIUS = SUN_RADIUS * EARTH_RADIUS_KM / SUN_RA
 export const CLOUD_SCALE_FACTOR = 1.02;
 export const CLOUD_OPACITY = 0.7;
 export const CLOUD_ROTATION_SPEED_MULTIPLIER = 1.1;
+// Slow illustrative surface rotation relative to orbital time: Earth takes ~20 s at 1×.
+export const PLANET_SPIN_SLOWDOWN = 120;
 
 /* Planetary rings (visual only) --------------------------------------- */
 export const SATURN_RING_INNER_RADIUS_FACTOR = 1.15;

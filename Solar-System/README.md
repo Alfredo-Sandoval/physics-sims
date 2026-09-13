@@ -37,6 +37,9 @@ first time, while Three.js loads.
 - **Toggleable labels** — planet and moon labels for spatial navigation
 - **Repeatable time** — planet positions, moon phases, and spins derive from
   the date; illustrative moon phases and belt layouts are seeded consistently
+- **Readable surface rotation** — planet spins run 120× slower than orbital
+  time (Earth turns about once every 20 seconds at 1×); surface orientations
+  are illustrative. Moon rotation remains tied to its orbital clock.
 - **Adaptive detail** — distant bodies use simpler geometry; close inspection
   uses finer geometry and up to 2048px textures when the source supports it
 - **Idle rendering** — paused scenes redraw for changes, then stop drawing
