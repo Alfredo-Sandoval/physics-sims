@@ -57,7 +57,7 @@ const TOUR_STOPS = [
   },
   {
     title: "Scale lesson",
-    body: "Switching scale modes exposes the main compromise in solar-system models: real sizes and real distances cannot both be shown comfortably on one screen.",
+    body: "Relative mode uses one body-size scale, from the Sun to the smallest moon. Earth becomes tiny beside the Sun. Select any body to inspect it; orbital spacing still uses a separate scale.",
     selectPlanet: "Earth",
     focusSelector: "#toggleScaleModeBtn",
     setRelativeScale: true,
@@ -326,9 +326,11 @@ function injectStyles() {
   outline: none;
 }
 .learning-tools-tour {
-  right: 16px;
-  bottom: 64px;
-  width: min(340px, calc(100vw - 28px));
+  position: relative;
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  pointer-events: auto;
   border: 1px solid rgba(196, 215, 255, 0.28);
   border-radius: 16px;
   color: #f2f7ff;
@@ -390,12 +392,6 @@ function injectStyles() {
   outline-offset: 3px !important;
 }
 @media (max-width: 720px) {
-  .learning-tools-tour {
-    left: 12px;
-    right: 12px;
-    bottom: 68px;
-    width: auto;
-  }
   .learning-tools-launcher {
     right: 12px;
     bottom: 12px;
@@ -607,7 +603,8 @@ function buildTourPanel(api) {
   actions.append(closeButton, previousButton, nextButton);
   content.append(count, title, body, actions);
   panel.appendChild(content);
-  doc.body.append(launcher, panel);
+  doc.body.appendChild(launcher);
+  (byId("inspectionDock") || doc.body).appendChild(panel);
 
   launcher.addEventListener("click", () => api.startTour());
   closeButton.addEventListener("click", () => api.endTour());
@@ -641,6 +638,14 @@ function focusTourControl(instance, selector) {
   const control = doc.querySelector(selector);
   if (!control) return;
 
+  // Tour controls stay available inside the compact, collapsible control groups.
+  for (let parent = control.parentElement; parent; parent = parent.parentElement) {
+    if (parent.tagName === "DETAILS") parent.open = true;
+  }
+  const menuToggle = byId("menuToggle");
+  if (window.innerWidth > 768 && byId("menuContainer")?.contains(control) && menuToggle?.getAttribute("aria-expanded") === "false") {
+    menuToggle.click();
+  }
   control.setAttribute("data-learning-focus", "true");
   if (typeof control.scrollIntoView === "function") {
     control.scrollIntoView({ block: "nearest", inline: "nearest" });

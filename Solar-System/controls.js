@@ -14,6 +14,7 @@ import {
   setSimulationSpeed,
   updateFollowTarget,
   stopCameraFollow,
+  cancelCameraFraming,
   setSelectedObject,
   getCelestialBodies,
 } from "./appState.js";
@@ -28,11 +29,13 @@ let orbitLinesVisible = true;
 // Interaction tracking
 let isUserInteracting = false;
 let manualInteractionTimeout = null;
-const INTERACTION_IDLE_DELAY_MS = CONSTANTS.ZOOM.IDLE_DELAY_MS;
 let selectableObjectsRef = [];
 
 // Listener references so we can detach during cleanup
 let pointerMoveHandler = null;
+let pointerDownHandler = null;
+let pointerUpHandler = null;
+let pointerCancelHandler = null;
 let clickHandler = null;
 let wheelHandler = null;
 let keydownHandler = null;
@@ -41,6 +44,7 @@ let controlsEndHandler = null;
 let pointerRendererElement = null;
 let zoomRendererElement = null;
 let controlsInstance = null;
+let selectionChangeHandler = null;
 let lastActiveSimulationSpeed = simulationSpeed > 0 ? simulationSpeed : 1.0;
 const SCALE_MODE_ENHANCED = "enhanced";
 const SCALE_MODE_RELATIVE = "relative";
@@ -49,7 +53,7 @@ const SCALE_MODE_RELATIVE = "relative";
 const pointer = new THREE.Vector2();
 const raycaster = new THREE.Raycaster();
 // Improve raycaster precision for small objects
-raycaster.near = 0.1;
+raycaster.near = 0;
 raycaster.far = 10000;
 
 function broadcastUiModeEvent(name, detail) {
@@ -73,12 +77,14 @@ function syncPlaybackUi(speed) {
   const normalized = clampSimulationSpeed(speed);
   const speedSlider = document.getElementById("speedSlider");
   const speedSpan = document.getElementById("speedValue");
+  const speedRate = document.getElementById("speedRate");
   const togglePlaybackBtn = document.getElementById("togglePlaybackBtn");
   const resetSpeedBtn = document.getElementById("resetSpeedBtn");
   const paused = isPausedSpeed(normalized);
 
   if (speedSlider) speedSlider.value = String(normalized);
-  if (speedSpan) speedSpan.textContent = normalized.toFixed(1) + "x";
+  if (speedSpan) speedSpan.textContent = normalized.toFixed(1) + "×";
+  if (speedRate) speedRate.textContent = CONSTANTS.formatSimulationRate(normalized);
   if (togglePlaybackBtn) {
     togglePlaybackBtn.textContent = paused ? "Resume" : "Pause";
     togglePlaybackBtn.setAttribute("aria-pressed", String(!paused));
@@ -190,24 +196,35 @@ export function setupPointerEvents(scene, camera, renderer, selectable) {
   pointerRendererElement = renderer?.domElement ?? null;
   if (!pointerRendererElement) return;
 
-  // Throttle pointer move events for performance
-  let lastPointerUpdate = 0;
-  const POINTER_THROTTLE_MS = 16; // ~60fps
-
-  pointerMoveHandler = (e) => {
-    const now = performance.now();
-    if (now - lastPointerUpdate < POINTER_THROTTLE_MS) return;
-    lastPointerUpdate = now;
-
-    // Compute NDC relative to the renderer element, not the window
-    const rect = pointerRendererElement.getBoundingClientRect();
-    pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-    pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+  let press = null;
+  const activePointers = new Set();
+  pointerDownHandler = (event) => {
+    activePointers.add(event.pointerId);
+    if (activePointers.size !== 1 || !event.isPrimary || event.button !== 0) {
+      press = null;
+      return;
+    }
+    press = { id: event.pointerId, x: event.clientX, y: event.clientY, dragged: false };
   };
-
-  pointerRendererElement.addEventListener("pointermove", pointerMoveHandler, {
-    passive: true,
-  });
+  pointerMoveHandler = (event) => {
+    if (press?.id === event.pointerId && Math.hypot(event.clientX - press.x, event.clientY - press.y) > 6) {
+      press.dragged = true;
+    }
+  };
+  pointerUpHandler = (event) => {
+    const isTap = press?.id === event.pointerId && !press.dragged;
+    activePointers.delete(event.pointerId);
+    press = null;
+    if (isTap) clickHandler(event);
+  };
+  pointerCancelHandler = (event) => {
+    activePointers.delete(event.pointerId);
+    press = null;
+  };
+  pointerRendererElement.addEventListener("pointerdown", pointerDownHandler);
+  pointerRendererElement.addEventListener("pointermove", pointerMoveHandler, { passive: true });
+  pointerRendererElement.addEventListener("pointerup", pointerUpHandler);
+  pointerRendererElement.addEventListener("pointercancel", pointerCancelHandler);
 
   clickHandler = (e) => {
     e.preventDefault();
@@ -222,6 +239,7 @@ export function setupPointerEvents(scene, camera, renderer, selectable) {
     let tgt = null;
     for (const hit of hits) {
       const obj = hit.object;
+      if (!obj.isMesh) continue;
 
       if (obj.userData?.clickTarget?.userData?.isSelectable) {
         tgt = obj.userData.clickTarget;
@@ -246,11 +264,7 @@ export function setupPointerEvents(scene, camera, renderer, selectable) {
     }
 
     if (tgt) {
-      if (tgt !== getUIReferences().selectedObject) {
-        selectObject(tgt);
-        setSelectedObject(tgt);
-        updateFollowTarget(tgt);
-      }
+      selectObject(tgt);
     } else if (getUIReferences().selectedObject) {
       deselectObject();
       setSelectedObject(null);
@@ -258,7 +272,6 @@ export function setupPointerEvents(scene, camera, renderer, selectable) {
     }
   };
 
-  pointerRendererElement.addEventListener("click", clickHandler);
 }
 
 function cleanupPointerListeners() {
@@ -266,11 +279,14 @@ function cleanupPointerListeners() {
     if (pointerMoveHandler) {
       pointerRendererElement.removeEventListener("pointermove", pointerMoveHandler);
     }
-    if (clickHandler) {
-      pointerRendererElement.removeEventListener("click", clickHandler);
-    }
+    if (pointerDownHandler) pointerRendererElement.removeEventListener("pointerdown", pointerDownHandler);
+    if (pointerUpHandler) pointerRendererElement.removeEventListener("pointerup", pointerUpHandler);
+    if (pointerCancelHandler) pointerRendererElement.removeEventListener("pointercancel", pointerCancelHandler);
   }
   pointerMoveHandler = null;
+  pointerDownHandler = null;
+  pointerUpHandler = null;
+  pointerCancelHandler = null;
   clickHandler = null;
   pointerRendererElement = null;
   selectableObjectsRef = [];
@@ -353,6 +369,16 @@ export function setupUIControls(planetConfigs, selectable, scene) {
     }
   };
 
+  if (selectionChangeHandler) window.removeEventListener("solar-system:selection-changed", selectionChangeHandler);
+  selectionChangeHandler = (event) => {
+    const { name, type, parentPlanetName } = event.detail;
+    const planetName = type === "moon" ? parentPlanetName : name;
+    if (planetNav) planetNav.value = planetName || "";
+    updateMoonDropdown(planetName);
+    if (moonNav && type === "moon") moonNav.value = name;
+  };
+  window.addEventListener("solar-system:selection-changed", selectionChangeHandler);
+
   if (planetNav) {
     planetNav.addEventListener("change", () => {
       const name = planetNav.value;
@@ -387,35 +413,43 @@ export function setupUIControls(planetConfigs, selectable, scene) {
     });
   }
 
-  /* Camera reset ------------------------------------------------------- */
-  document.getElementById("resetCameraBtn")?.addEventListener("click", () => {
+  const setCameraView = (position, up) => {
     const camera = getCamera();
     const controlsRef = getControls();
     if (!camera || !controlsRef) return;
-    camera.position.set(150, 100, 150);
-    camera.up.set(0, 1, 0);
+    deselectObject();
+    stopCameraFollow();
+    // Flush residual drag damping before applying an explicit view preset.
+    const damping = controlsRef.enableDamping;
+    controlsRef.enableDamping = false;
+    controlsRef.update();
+    camera.position.copy(position);
+    camera.up.copy(up);
+    camera.near = 0.1;
+    camera.updateProjectionMatrix();
     controlsRef.target.set(0, 0, 0);
     controlsRef.update();
-    deselectObject();
-    setSelectedObject(null);
-    stopCameraFollow();
-  });
+    controlsRef.enableDamping = damping;
+  };
 
-  /* Angled ecliptic view --------------------------------------------- */
+  document.getElementById("resetCameraBtn")?.addEventListener("click", () => {
+    setCameraView(new THREE.Vector3(200, 150, 200), new THREE.Vector3(0, 1, 0));
+  });
+  document.getElementById("wholeSystemBtn")?.addEventListener("click", () => {
+    const camera = getCamera();
+    if (!camera) return;
+    const radius = Math.max(...planetConfigs.map((cfg) =>
+      cfg.orbitRadiusAU * (1 + (cfg.info?.orbitalEccentricity || 0)) * CONSTANTS.ORBIT_SCALE_FACTOR));
+    const halfFov = Math.atan(Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * Math.min(1, camera.aspect));
+    const distance = radius / Math.sin(halfFov) * 1.12;
+    setCameraView(new THREE.Vector3(1, 0.8, 1).normalize().multiplyScalar(distance), new THREE.Vector3(0, 1, 0));
+  });
+  // View from ecliptic north (+Y); +X is screen-right, prograde is CCW.
   document.getElementById("topDownBtn")?.addEventListener("click", () => {
     const camera = getCamera();
-    const controlsRef = getControls();
-    if (!camera || !controlsRef) return;
+    if (!camera) return;
     const distance = Math.max(camera.position.length(), CONSTANTS.DEFAULT_CAMERA_DISTANCE);
-    const y = distance * 0.4;
-    const xz = distance * 0.65;
-    camera.position.set(xz, y, xz);
-    camera.up.set(0, 1, 0);
-    controlsRef.target.set(0, 0, 0);
-    controlsRef.update();
-    deselectObject();
-    setSelectedObject(null);
-    stopCameraFollow();
+    setCameraView(new THREE.Vector3(0, distance, 0), new THREE.Vector3(0, 0, -1));
   });
 
   /* Toggle orbit‑lines ------------------------------------------------- */
@@ -641,33 +675,11 @@ export function setupZoomDetection(renderer, controls) {
       clearTimeout(manualInteractionTimeout);
       manualInteractionTimeout = null;
     }
-    stopCameraFollow();
-
-    // Dynamic Resolution: Drop to 1.0 (or lower) for performance during interaction
-    if (renderer) {
-      renderer.userData = renderer.userData || {};
-      const currentPixelRatio = renderer.getPixelRatio();
-      renderer.userData.originalPixelRatio = currentPixelRatio;
-      if (currentPixelRatio > 1) {
-        renderer.setPixelRatio(Math.min(1.0, currentPixelRatio));
-      }
-    }
+    cancelCameraFraming();
   };
 
   controlsEndHandler = () => {
-    if (manualInteractionTimeout) {
-      clearTimeout(manualInteractionTimeout);
-      manualInteractionTimeout = null;
-    }
-    manualInteractionTimeout = setTimeout(() => {
-      isUserInteracting = false;
-      manualInteractionTimeout = null;
-
-      // Dynamic Resolution: Restore high quality
-      if (renderer && renderer.userData?.originalPixelRatio) {
-        renderer.setPixelRatio(renderer.userData.originalPixelRatio);
-      }
-    }, INTERACTION_IDLE_DELAY_MS);
+    isUserInteracting = false;
   };
 
   controls.addEventListener("start", controlsStartHandler);
@@ -717,6 +729,8 @@ export function getIsManualZoom() {
 }
 
 export function cleanupControls() {
+  if (selectionChangeHandler) window.removeEventListener("solar-system:selection-changed", selectionChangeHandler);
+  selectionChangeHandler = null;
   cleanupPointerListeners();
   cleanupZoomDetectionListeners();
   cleanupKeyboardShortcuts();

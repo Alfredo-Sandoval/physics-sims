@@ -358,6 +358,14 @@ export function getInterpolatedEphemerisPositionAU(cfg, simulatedDays, epochJDOv
   return interpolateFromCache(cache, targetJD);
 }
 
+export function getEphemerisRangeJD(cfg, epochJDOverride = null) {
+  const epochJD = resolveEpochJD(cfg, epochJDOverride);
+  if (!Number.isFinite(epochJD)) return null;
+  const cache = getCachedEphemeris(cfg, epochJD);
+  if (!cache || !Number.isFinite(cache.minJD) || !Number.isFinite(cache.maxJD)) return null;
+  return { minJD: cache.minJD, maxJD: cache.maxJD };
+}
+
 export function getPlanetRadiusForMoonPrecession(planetUserData) {
   const mesh = planetUserData?.planetMesh;
   const meshRadius = toFiniteNumber(mesh?.geometry?.parameters?.radius);

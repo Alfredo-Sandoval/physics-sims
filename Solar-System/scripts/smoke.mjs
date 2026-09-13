@@ -1,11 +1,13 @@
 import { readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const solarDir = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
 const texturesDir = path.join(solarDir, "textures");
 const htmlPath = path.join(solarDir, "index.html");
 const dataPath = path.join(solarDir, "solarsystem_data.json");
+const workerPath = path.join(solarDir, "simulation-worker.js");
+const orbitalRuntimePath = path.join(solarDir, "orbitalRuntime.js");
 
 const requiredDomIds = [
   "main",
@@ -13,9 +15,11 @@ const requiredDomIds = [
   "errorOverlay",
   "menuContainer",
   "menuToggle",
+  "controlSurface",
   "controls",
   "speedSlider",
   "speedValue",
+  "speedRate",
   "togglePlaybackBtn",
   "resetSpeedBtn",
   "planetNavContainer",
@@ -24,6 +28,7 @@ const requiredDomIds = [
   "moonNav",
   "datePickerContainer",
   "datePicker",
+  "datePickerHint",
   "additionalControls",
   "resetCameraBtn",
   "topDownBtn",
@@ -53,7 +58,11 @@ const requiredDomIds = [
   "epochLabel",
   "frameLabel",
   "dayCounter",
+  "propagationStatus",
+  "propagationMode",
   "scaleIndicator",
+  "ephemerisSource",
+  "ephemerisRange",
 ];
 
 const planetFields = {
@@ -253,6 +262,21 @@ async function main() {
     /import\(["']\.\/learningTools\.js["']\)/.test(html),
     "index.html must initialize Solar-System/learningTools.js"
   );
+  check(/aria-controls=["']controlSurface["']/.test(html), "menu toggle must identify its controlled surface");
+  check(/Simulation date/.test(html), "metadata must distinguish the live simulation date");
+  check(/NASA\/JPL Horizons/.test(html), "model notes must disclose the ephemeris source");
+
+  const workerSource = await readFile(workerPath, "utf8");
+  check(
+    /import\s*\{\s*getInterpolatedEphemerisPositionAU\s*\}\s*from\s*["']\.\/orbitalRuntime\.js["']/.test(
+      workerSource
+    ),
+    "simulation worker must use the shared ephemeris interpolator"
+  );
+  check(
+    !/function\s+getInterpolatedEphemerisPositionAU\s*\(/.test(workerSource),
+    "simulation worker must not duplicate the shared ephemeris interpolator"
+  );
 
   const sourceFiles = await readSolarFiles();
   for (const sourcePath of sourceFiles) {
@@ -306,6 +330,36 @@ async function main() {
         bodyNames.add(moonName);
         addTextureRef(textureRefs, moonName, moon?.textureUrl, moon?.textureNote);
       }
+    }
+  }
+
+  if (Array.isArray(planets) && planets.length > 0) {
+    const { getEphemerisRangeJD, getInterpolatedEphemerisPositionAU } = await import(
+      pathToFileURL(orbitalRuntimePath)
+    );
+    const earth = planets.find((planet) => planet?.name === "Earth");
+    const samples = earth?.ephemeris?.samples ?? [];
+    const epochJD = earth?.kepler?.epochJD;
+    const range = getEphemerisRangeJD(earth, epochJD);
+    check(samples.length >= 2, "Earth ephemeris must contain interpolation samples");
+    check(range?.minJD === samples[0]?.jd, "shared ephemeris range must start at the first sample");
+    check(range?.maxJD === samples.at(-1)?.jd, "shared ephemeris range must end at the last sample");
+
+    if (samples.length >= 2 && Number.isFinite(epochJD)) {
+      const first = samples[0];
+      const atFirst = getInterpolatedEphemerisPositionAU(earth, first.jd - epochJD, epochJD);
+      const positionError = atFirst
+        ? Math.max(
+            Math.abs(atFirst.x - first.x),
+            Math.abs(atFirst.y - first.y),
+            Math.abs(atFirst.z - first.z)
+          )
+        : Infinity;
+      check(positionError < 1e-12, "shared ephemeris interpolation must reproduce exact samples");
+      check(
+        getInterpolatedEphemerisPositionAU(earth, range.maxJD - epochJD + 1, epochJD) === null,
+        "shared ephemeris interpolation must report dates outside its valid range"
+      );
     }
   }
 

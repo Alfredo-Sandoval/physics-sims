@@ -27,10 +27,12 @@ first time, while Three.js loads.
 - **Asteroid and Kuiper belts** — rendered as point fields, with a worker
   handling the heavy position updates
 - **Date picker** — jump the simulation to a chosen calendar date
-- **Scale modes** — switch between *Enhanced Visibility* (bodies enlarged so
-  they read on screen) and *Relative Sizes*
+- **Scale modes** — *Enhanced Visibility* enlarges bodies independently;
+  *Relative Sizes* uses one common radius scale for the Sun, planets, and moons.
+  Orbital spacing still uses a separate scale.
 - **Focus mode** — dim the rest of the scene to highlight a selected body
-- **Information panel** — facts about each celestial body
+- **Information panel** — three quick measurements, one observation, visible
+  texture disclosures, and expandable facts in a fixed dock
 - **Toggleable labels** — planet and moon labels for spatial navigation
 - **Time tracking** — a day counter and epoch label show simulation time
 
@@ -39,14 +41,19 @@ first time, while Three.js loads.
 - **Left-click and drag** — rotate the camera
 - **Right-click and drag** — pan
 - **Mouse wheel** — zoom in/out
-- **Click a body** — select it and open its details
+- **Click a body or its label** — select it, open details, and frame it once;
+  subsequent orbit, zoom, and pan gestures preserve your viewing offset while
+  tracking the moving body. Dragging does not select a body.
 - **Speed slider** — adjust simulation speed (with pause/play and reset)
 - **"Go to" dropdowns** — focus a planet, then one of its moons
 - **Date picker** — set the simulation date
 - **Toggle buttons** — orbit lines, asteroid belt, labels, scale mode,
   focus mode, shadows, and orbital planes
-- **Reset Camera** — return to the initial view
-- **Top-Down (Ecliptic)** — standardized north-up view (prograde = CCW)
+- **Inner system / Whole system** — return to the inner planets or fit all eight
+  planetary orbits in view
+- **Top-Down (Ecliptic)** — look from ecliptic north (prograde = CCW)
+- **Keyboard** — Space pauses/resumes, 0–8 selects a body, R restores the inner
+  view, and / or Ctrl/Cmd+K searches bodies and controls
 
 ## Technical details
 
@@ -69,6 +76,7 @@ Solar-System/
 ├── celestialBodies.js      # body and orbit construction
 ├── kepler.js               # orbital element math
 ├── orbitalRuntime.js       # per-frame orbital state
+├── cameraFollow.js         # framing and gesture-preserving body tracking
 ├── simulation-worker.js    # off-thread belt updates
 ├── asteroidbelt.js         # main asteroid belt
 ├── kuiperbelt.js           # Kuiper belt
@@ -84,7 +92,8 @@ Solar-System/
 A browser smoke test for this app lives in the repo's [tests/](../tests/)
 directory. Serve the repo root and open
 <http://localhost:8888/tests/index.test.html>; it boots the app in an iframe and
-checks rendering, labels, dropdown navigation, and accessibility attributes.
+checks rendering, labels, navigation, relative sizes, camera tracking, readouts,
+and desktop/mobile panel layout.
 
 ## Future improvements
 

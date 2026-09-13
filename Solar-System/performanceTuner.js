@@ -13,8 +13,7 @@ export class PerformanceTuner {
     this.currentPixelRatio = this.maxPixelRatio;
     this.minPixelRatio = 0.7;
 
-    this.samples = [];
-    this.sampleWindowMs = 1500; // rolling window for FPS average
+    this.frameTimeMs = 1000 / 60;
     this.lastAdjust = performance.now ? performance.now() : Date.now();
     this.adjustCooldownMs = 500;
 
@@ -33,15 +32,10 @@ export class PerformanceTuner {
   }
 
   tick(deltaSeconds) {
-    const fps = deltaSeconds > 0 ? 1 / deltaSeconds : 60;
     const now = performance.now ? performance.now() : Date.now();
-    this.samples.push({ fps, t: now });
-    while (this.samples.length && now - this.samples[0].t > this.sampleWindowMs) {
-      this.samples.shift();
-    }
-
-    const avgFps =
-      this.samples.reduce((sum, s) => sum + s.fps, 0) / (this.samples.length || 1);
+    // Smooth frame duration directly; averaging reciprocal FPS overweights fast frames.
+    if (deltaSeconds > 0) this.frameTimeMs += (deltaSeconds * 1000 - this.frameTimeMs) * 0.05;
+    const avgFps = 1000 / this.frameTimeMs;
 
     if (now - this.lastAdjust < this.adjustCooldownMs) return this.uiIntervalMs;
 
@@ -86,13 +80,11 @@ export class PerformanceTuner {
     const previous = this.currentPixelRatio;
     try {
       this.renderer.setPixelRatio(next);
-      this.renderer.setSize(window.innerWidth, window.innerHeight, false);
       this.currentPixelRatio = next;
     } catch (error) {
       console.warn("[PerformanceTuner] Failed to apply renderer pixel ratio update", error);
       try {
         this.renderer.setPixelRatio(previous);
-        this.renderer.setSize(window.innerWidth, window.innerHeight, false);
       } catch (restoreError) {
         console.warn("[PerformanceTuner] Failed to restore previous renderer pixel ratio", restoreError);
       }

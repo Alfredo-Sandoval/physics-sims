@@ -15,11 +15,13 @@ import { createKuiperBelt, updateKuiperBelt } from "./kuiperbelt.js";
 import { findCelestialBodyByName, clearTextureCache, getMoonLocalPosition } from "./utils.js";
 import {
   applyMoonJ2PrecessionStep,
+  getEphemerisRangeJD,
   getPlanetRadiusForMoonPrecession,
 } from "./orbitalRuntime.js";
 import { updateScene } from "./animation.js";
 import { onResize, offResize } from "./viewport.js";
 import {
+  getState,
   getSimulationSpeed,
   getSimulatedDays,
   getMoons,
@@ -52,6 +54,7 @@ import {
   error as logError,
 } from "./logger.js";
 import { initTextureLoader } from "./textureService.js";
+import { CameraFollowController } from "./cameraFollow.js";
 import { PerformanceTuner } from "./performanceTuner.js";
 import { createRendererWithFallback } from "./rendererFactory.js";
 import { hasAnime, runAnime, stopAnime } from "./animationLibrary.js";
@@ -67,6 +70,8 @@ let simulationEpochJD = null;
 let simulationEpochDateUtc = null;
 let simulationEpochLabel = null;
 let simulationFrameLabel = null;
+let ephemerisMinJD = null;
+let ephemerisMaxJD = null;
 
 let clock;
 let textureLoader;
@@ -88,6 +93,8 @@ let workerReady = false;
 let posBuffers = [];
 let posAvailableBuffers = [];
 let posInFlight = false;
+let pendingRotationTime = 0;
+let lastPositionRequestDay = null;
 // Returned buffer waiting to be applied
 let pendingPositionBuffer = null;
 // Avoid flooding rotation requests
@@ -138,6 +145,8 @@ function shouldUseWorker() {
 }
 
 function resetWorkerStreamingState() {
+  pendingRotationTime = 0;
+  lastPositionRequestDay = null;
   posBuffers = [];
   posAvailableBuffers = [];
   posInFlight = false;
@@ -253,7 +262,8 @@ function applyWorkerRotationUpdates(updates) {
 
 // Send position update request to worker
 function requestPositionUpdates(planets, simulatedDays) {
-  if (!workerReady || !simulationWorker) return;
+  // A busy worker must not trigger the legacy path and clone the full ephemeris.
+  if (!workerReady || !simulationWorker || posInFlight || lastPositionRequestDay === simulatedDays) return;
 
   // Prefer typed-array buffer to minimize per-frame cloning/GC
   if (!posInFlight) {
@@ -272,6 +282,7 @@ function requestPositionUpdates(planets, simulatedDays) {
           },
           [buffer]
         );
+        lastPositionRequestDay = simulatedDays;
       } catch (error) {
         posInFlight = false;
         failoverToMainThread(
@@ -297,7 +308,9 @@ function requestPositionUpdates(planets, simulatedDays) {
 
 // Send rotation update request to worker
 function requestRotationUpdates(planets, delta, simulationSpeed) {
-  if (!workerReady || !simulationWorker || rotationInFlight) return;
+  if (!workerReady || !simulationWorker) return;
+  pendingRotationTime += delta * simulationSpeed;
+  if (rotationInFlight || pendingRotationTime <= 0) return;
 
   const planetData = planets.map((group) => {
     const ud = group.userData;
@@ -313,7 +326,10 @@ function requestRotationUpdates(planets, delta, simulationSpeed) {
     }
 
     return {
-      config: ud.config,
+      config: {
+        calculatedRotationSpeed: ud.config.calculatedRotationSpeed,
+        rotationDirection: ud.config.rotationDirection,
+      },
       moons: moonMeshes.map((moon, index) => {
         moon.userData.moonIndex = index;
         const mu = moon.userData;
@@ -334,10 +350,11 @@ function requestRotationUpdates(planets, delta, simulationSpeed) {
       type: "UPDATE_ROTATIONS",
       data: {
         planets: planetData,
-        delta: delta,
-        simulationSpeed: simulationSpeed,
+        delta: pendingRotationTime,
+        simulationSpeed: 1,
       },
     });
+    pendingRotationTime = 0;
   } catch (error) {
     rotationInFlight = false;
     failoverToMainThread("Failed to send UPDATE_ROTATIONS request; using main-thread mode", error);
@@ -532,6 +549,11 @@ export async function init() {
     if (simulationEpochLabel) UI.setEpochLabel(simulationEpochLabel);
     if (simulationFrameLabel) UI.setFrameLabel(simulationFrameLabel);
     if (simulationEpochDateUtc) UI.setEpochDate(simulationEpochDateUtc);
+    UI.setEphemerisMetadata({
+      source: CONSTANTS.EPHEMERIS_SOURCE_NAME,
+      minJD: ephemerisMinJD,
+      maxJD: ephemerisMaxJD,
+    });
 
     /* Loading splash */
     showLoadingScreen(true, "Loading textures…");
@@ -869,68 +891,8 @@ function detachResizeHandler() {
 /* ---------------------------------------------------------------------- */
 function startAnimationLoop() {
   logInfo("Animation", "startAnimationLoop called");
-  const targetWorldPos = new THREE.Vector3(); // Cache vector for target position
-  const idealCamPos = new THREE.Vector3(); // Cache vector for ideal camera position
-  const followDirection = new THREE.Vector3(); // Direction used for follow offsets
-  const parentWorldPos = new THREE.Vector3(); // Parent position cache for moons
-  const upVector = new THREE.Vector3(0, 1, 0); // Global up for gentle elevation bias
-
-  const CAMERA_DISTANCE_PADDING = 1.35;
-  const CAMERA_VERTICAL_OFFSET_RATIO = 0.22;
-  const MIN_RADIUS_FALLBACK = 0.75;
-  const worldScaleScratch = new THREE.Vector3();
-
-  const getWorldScaleFactor = (object) => {
-    if (!object) return 1;
-    if (typeof object.getWorldScale === "function") {
-      object.getWorldScale(worldScaleScratch);
-      const sx = Math.abs(worldScaleScratch.x || 0);
-      const sy = Math.abs(worldScaleScratch.y || 0);
-      const sz = Math.abs(worldScaleScratch.z || 0);
-      const scale = Math.max(sx, sy, sz);
-      return Number.isFinite(scale) && scale > 0 ? scale : 1;
-    }
-    const sx = Math.abs(object.scale?.x ?? 1);
-    const sy = Math.abs(object.scale?.y ?? sx);
-    const sz = Math.abs(object.scale?.z ?? sx);
-    return Math.max(sx, sy, sz, 1);
-  };
-
-  const getApproxSceneRadius = (object) => {
-    if (!object) return MIN_RADIUS_FALLBACK;
-    const ud = object.userData ?? {};
-
-    const planetMesh = ud.planetMesh;
-    if (planetMesh?.geometry?.parameters?.radius) {
-      return Math.max(
-        MIN_RADIUS_FALLBACK,
-        planetMesh.geometry.parameters.radius * getWorldScaleFactor(planetMesh)
-      );
-    }
-
-    const geometry = object.geometry;
-    if (geometry?.parameters?.radius) {
-      return Math.max(
-        MIN_RADIUS_FALLBACK,
-        geometry.parameters.radius * getWorldScaleFactor(object)
-      );
-    }
-
-    if (typeof ud.displayRadius === "number" && Number.isFinite(ud.displayRadius)) {
-      return Math.max(MIN_RADIUS_FALLBACK, ud.displayRadius);
-    }
-
-    const scaledRadius = ud.config?.scaledRadius ?? ud.config?.scaledRadiusDisplayUnits;
-    if (typeof scaledRadius === "number" && Number.isFinite(scaledRadius)) {
-      return Math.max(MIN_RADIUS_FALLBACK, scaledRadius);
-    }
-
-    if (geometry?.boundingSphere?.radius) {
-      return Math.max(MIN_RADIUS_FALLBACK, geometry.boundingSphere.radius);
-    }
-
-    return MIN_RADIUS_FALLBACK;
-  };
+  const cameraFollow = new CameraFollowController();
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
   // Throttle expensive UI work to ~30fps
   let lastUiUpdateMs = 0;
@@ -940,9 +902,11 @@ function startAnimationLoop() {
     animationFrameId = requestAnimationFrame(animate);
 
     const currentSpeed = getSimulationSpeed() ?? 1.0;
-    const delta = clock.getDelta();
+    const elapsed = clock.getDelta();
+    if (document.hidden) return;
+    const delta = Math.min(elapsed, 0.1);
     if (performanceTuner) {
-      uiUpdateIntervalMs = performanceTuner.tick(delta) ?? uiUpdateIntervalMs;
+      uiUpdateIntervalMs = performanceTuner.tick(elapsed) ?? uiUpdateIntervalMs;
     }
 
     // Multithreaded updates
@@ -982,70 +946,7 @@ function startAnimationLoop() {
       updateJupiterTrojans(scene, planets);
     }
 
-    // Camera following logic (pause while user manually interacts)
-    const userInteracting =
-      typeof Controls.getIsManualZoom === "function" ? Controls.getIsManualZoom() : false;
-    const followTarget = getFollowTarget();
-    if (followTarget && followTarget.userData && !userInteracting) {
-      followTarget.getWorldPosition(targetWorldPos);
-
-      const userData = followTarget.userData;
-      const targetRadius = getApproxSceneRadius(followTarget);
-      let desiredDistance = Math.max(
-        getFollowDistance() || 0,
-        targetRadius * CAMERA_DISTANCE_PADDING
-      );
-
-      const type = userData.type;
-      if (type === "planet") {
-        desiredDistance = Math.max(
-          desiredDistance,
-          targetRadius * CONSTANTS.PLANET_CAMERA_DISTANCE_MULTIPLIER
-        );
-        followDirection.copy(camera.position).sub(targetWorldPos);
-      } else if (type === "moon") {
-        desiredDistance = Math.max(
-          desiredDistance,
-          targetRadius * CONSTANTS.MOON_CAMERA_DISTANCE_MULTIPLIER
-        );
-        const parentName = userData.parentPlanetName;
-        const parentObject = parentName
-          ? findCelestialBodyByName(parentName, celestialBodies)
-          : null;
-        if (parentObject) {
-          parentObject.getWorldPosition(parentWorldPos);
-          followDirection.copy(targetWorldPos).sub(parentWorldPos);
-        } else {
-          followDirection.copy(targetWorldPos);
-        }
-      } else {
-        if (type === "star") {
-          desiredDistance = Math.max(desiredDistance, 80);
-        }
-        followDirection.copy(camera.position).sub(targetWorldPos);
-      }
-
-      if (followDirection.lengthSq() < 1e-8) {
-        followDirection.set(0, 0, 1);
-      } else {
-        followDirection.normalize();
-      }
-
-      const safetyDistance = Math.max(desiredDistance, targetRadius * CAMERA_DISTANCE_PADDING);
-      if (type === "planet" || type === "moon") {
-        const radialPadding = Math.max(targetRadius * 0.8, 2);
-        idealCamPos
-          .copy(targetWorldPos)
-          .addScaledVector(followDirection, safetyDistance + radialPadding)
-          .addScaledVector(upVector, safetyDistance * CAMERA_VERTICAL_OFFSET_RATIO);
-      } else {
-        idealCamPos.copy(targetWorldPos).addScaledVector(followDirection, safetyDistance);
-      }
-
-      const alpha = 1 - Math.exp(-CONSTANTS.CAMERA_FOLLOW_LERP_FACTOR * delta);
-      camera.position.lerp(idealCamPos, alpha);
-      controls.target.lerp(targetWorldPos, alpha);
-    }
+    cameraFollow.update(getState(), delta, reducedMotion.matches);
 
     // OrbitControls update
     if (controls) {
@@ -1182,6 +1083,15 @@ async function loadPlanetData() {
   simulationEpochJD = Number.isFinite(epochMeta.epochJD) ? epochMeta.epochJD : null;
   simulationEpochDateUtc = epochMeta.epochDateUtc || null;
   simulationEpochLabel = epochMeta.epochDate || epochMeta.epoch || null;
+  const ephemerisRanges = planetConfigs
+    .map((cfg) => getEphemerisRangeJD(cfg, simulationEpochJD))
+    .filter(Boolean);
+  ephemerisMinJD = ephemerisRanges.length
+    ? Math.max(...ephemerisRanges.map((range) => range.minJD))
+    : null;
+  ephemerisMaxJD = ephemerisRanges.length
+    ? Math.min(...ephemerisRanges.map((range) => range.maxJD))
+    : null;
   const referenceFrame = epochMeta.referenceFrame || ephemerisMeta.frame || null;
   const referenceCenter = epochMeta.referenceCenter || ephemerisMeta.center || null;
   const referenceTimescale = epochMeta.timescale || ephemerisMeta.timescale || null;
@@ -1571,6 +1481,8 @@ export function cleanup() {
   simulationEpochDateUtc = null;
   simulationEpochLabel = null;
   simulationFrameLabel = null;
+  ephemerisMinJD = null;
+  ephemerisMaxJD = null;
   shadowManager = null;
   resetState();
   clearEventListeners();

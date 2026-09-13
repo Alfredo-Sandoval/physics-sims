@@ -11,7 +11,7 @@ export const ZOOM = {
   MIN_DISTANCE_BASE: 20,
   NEAR_SUN_FACTOR: 1.5,
   SELECTION_FACTOR: 1.2,
-  MIN_SELECTION_DISTANCE: 10,
+  MIN_SELECTION_DISTANCE: 0.0001,
   OUTWARD_EPSILON: 0.5,
   LERP_FACTOR: 0.3,
   IDLE_DELAY_MS: 800,
@@ -26,6 +26,7 @@ export const CAMERA_FOLLOW_LERP_FACTOR = 10; // higher = snappier
 
 /* Basic sizes ---------------------------------------------------------- */
 export const SUN_RADIUS = 25; // render‑unit radius of Sun
+export const SUN_RADIUS_KM = 695700; // Matches the mean diameter in the Sun's data card
 export const EARTH_RADIUS_KM = 6378.1366; // JPL equatorial radius (km) for info display
 
 /* Colours -------------------------------------------------------------- */
@@ -45,12 +46,8 @@ export const MOON_DISPLAY_SCALE_FACTOR = 1.5; // Moon scaling relative to planet
 export const MIN_PLANET_RADIUS = 1.0; // Minimum visual size for planets
 export const MIN_MOON_RADIUS = 0.15; // Minimum visual size for moons
 export const MAX_MOON_RADIUS = 2; // Maximum visual size for moons
-export const RELATIVE_SCALE_EARTH_RADIUS = 2.4; // Earth radius in scene units for relative-size mode
-export const RELATIVE_SCALE_MIN_PLANET_RADIUS = 0.55;
-export const RELATIVE_SCALE_MAX_PLANET_RADIUS = 34;
-export const RELATIVE_SCALE_MOON_MULTIPLIER = 1.35; // Moon boost to remain visible in relative mode
-export const RELATIVE_SCALE_MIN_MOON_RADIUS = 0.08;
-export const RELATIVE_SCALE_MAX_MOON_RADIUS = 2.4;
+// One common body-size scale, anchored to the Sun. Orbital spacing is separate.
+export const RELATIVE_SCALE_EARTH_RADIUS = SUN_RADIUS * EARTH_RADIUS_KM / SUN_RADIUS_KM;
 
 export const CLOUD_SCALE_FACTOR = 1.02;
 export const CLOUD_OPACITY = 0.7;
@@ -244,6 +241,21 @@ export const ORBIT_ICE_GIANT_TINT = 0x96c3ff;
 /* Time scaling --------------------------------------------------------- */
 export const BASE_ORBIT_SPEED_UNIT_TIME = 60; // sim‑sec per Earth‑year when baseOrbitSpeedFactor = 1
 export const DAYS_PER_SIM_SECOND_AT_1X = 365.25 / BASE_ORBIT_SPEED_UNIT_TIME;
+export const EPHEMERIS_SOURCE_NAME = "NASA/JPL Horizons";
+
+export function formatSimulationRate(simulationSpeed) {
+  const speed = Number(simulationSpeed);
+  if (!Number.isFinite(speed) || speed <= 0) return "Paused";
+
+  const daysPerSecond = speed * DAYS_PER_SIM_SECOND_AT_1X;
+  const yearsPerMinute = (daysPerSecond * 60) / 365.25;
+  const daysText = daysPerSecond < 1 ? daysPerSecond.toFixed(2) : daysPerSecond.toFixed(1);
+  const yearsText = Number.isInteger(yearsPerMinute)
+    ? yearsPerMinute.toFixed(0)
+    : yearsPerMinute.toFixed(1);
+  const yearUnit = Math.abs(yearsPerMinute - 1) < 1e-9 ? "year" : "years";
+  return `${daysText} simulated days/s · ${yearsText} Earth ${yearUnit}/min`;
+}
 
 /* Lighting ------------------------------------------------------------- */
 export const AMBIENT_LIGHT_INTENSITY = 0.06;

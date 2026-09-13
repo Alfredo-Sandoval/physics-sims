@@ -110,16 +110,8 @@ export function setupControls(camera, renderer) {
     CONSTANTS.ZOOM.MIN_DISTANCE_BASE,
     CONSTANTS.SUN_RADIUS * CONSTANTS.ZOOM.NEAR_SUN_FACTOR
   );
-  controls.maxDistance = CONSTANTS.STARFIELD_RADIUS * 0.8;
-  // Start target straight ahead of the camera to avoid initial pull to origin
-  try {
-    const forward = new THREE.Vector3();
-    camera.getWorldDirection(forward);
-    const startTarget = camera.position.clone().add(forward.multiplyScalar(150));
-    controls.target.copy(startTarget);
-  } catch {
-    controls.target.set(0, 0, 0);
-  }
+  controls.maxDistance = CONSTANTS.STARFIELD_RADIUS * 3;
+  controls.target.set(0, 0, 0);
   controls.update();
   return controls;
 }
@@ -173,7 +165,7 @@ export function setupLighting(scene) {
 
 export function updateBounceLight(camera) {
   if (!bounceFillLight || !camera) return;
-  const dir = camera.position.clone().normalize();
+  const dir = bounceFillLight.position.copy(camera.position).normalize();
   if (!Number.isFinite(dir.x) || !Number.isFinite(dir.y) || !Number.isFinite(dir.z)) {
     return;
   }

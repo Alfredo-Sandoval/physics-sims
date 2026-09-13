@@ -1,9 +1,10 @@
+import { getInterpolatedEphemerisPositionAU } from "./orbitalRuntime.js";
+
 // Solar System Simulation Worker
 // Handles orbital calculations and position updates in a separate thread.
 
 const DEG2RAD = Math.PI / 180;
 const TWO_PI = Math.PI * 2;
-const AU_KM = 149597870.7;
 
 function toFiniteNumber(value) {
   const numeric = Number(value);
@@ -13,14 +14,6 @@ function toFiniteNumber(value) {
 function firstFinite(values) {
   for (let i = 0; i < values.length; i += 1) {
     if (Number.isFinite(values[i])) return values[i];
-  }
-  return null;
-}
-
-function firstNonEmptyString(values) {
-  for (let i = 0; i < values.length; i += 1) {
-    const value = values[i];
-    if (typeof value === "string" && value.trim()) return value.trim();
   }
   return null;
 }
@@ -112,96 +105,6 @@ function getOrbitalState(tDays, elems) {
   return { x, y, trueAnomaly: nu };
 }
 
-function parseVectorObject(value, keys) {
-  if (!value || typeof value !== "object") return null;
-  const vector = [
-    toFiniteNumber(value[keys[0]]),
-    toFiniteNumber(value[keys[1]]),
-    toFiniteNumber(value[keys[2]]),
-  ];
-  return vector.every((n) => Number.isFinite(n)) ? vector : null;
-}
-
-function parseVectorArray(value) {
-  if (!Array.isArray(value) || value.length < 3) return null;
-  const vector = [toFiniteNumber(value[0]), toFiniteNumber(value[1]), toFiniteNumber(value[2])];
-  return vector.every((n) => Number.isFinite(n)) ? vector : null;
-}
-
-function readPositionVector(sample) {
-  const fromArray = parseVectorArray(sample?.position);
-  if (fromArray) return fromArray;
-
-  const fromObject = parseVectorObject(sample?.position, ["x", "y", "z"]);
-  if (fromObject) return fromObject;
-
-  const fromUpperObject = parseVectorObject(sample?.position, ["X", "Y", "Z"]);
-  if (fromUpperObject) return fromUpperObject;
-
-  const x = firstFinite([toFiniteNumber(sample?.x), toFiniteNumber(sample?.X)]);
-  const y = firstFinite([toFiniteNumber(sample?.y), toFiniteNumber(sample?.Y)]);
-  const z = firstFinite([toFiniteNumber(sample?.z), toFiniteNumber(sample?.Z), 0]);
-  if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) return null;
-  return [x, y, z];
-}
-
-function readVelocityVector(sample) {
-  const fromArray = parseVectorArray(sample?.velocity);
-  if (fromArray) return fromArray;
-
-  const fromObject = parseVectorObject(sample?.velocity, ["x", "y", "z"]);
-  if (fromObject) return fromObject;
-
-  const fromUpperObject = parseVectorObject(sample?.velocity, ["X", "Y", "Z"]);
-  if (fromUpperObject) return fromUpperObject;
-
-  const vx = firstFinite([toFiniteNumber(sample?.vx), toFiniteNumber(sample?.vX)]);
-  const vy = firstFinite([toFiniteNumber(sample?.vy), toFiniteNumber(sample?.vY)]);
-  const vz = firstFinite([toFiniteNumber(sample?.vz), toFiniteNumber(sample?.vZ)]);
-  if (!Number.isFinite(vx) || !Number.isFinite(vy) || !Number.isFinite(vz)) return null;
-  return [vx, vy, vz];
-}
-
-function resolveDistanceFactor(unitHint, vector) {
-  if (typeof unitHint === "string") {
-    const unit = unitHint.toLowerCase();
-    if (unit.includes("au")) return 1;
-    if (unit.includes("km")) return 1 / AU_KM;
-  }
-
-  const maxMagnitude = Math.max(Math.abs(vector[0]), Math.abs(vector[1]), Math.abs(vector[2]));
-  return maxMagnitude > 1000 ? 1 / AU_KM : 1;
-}
-
-function resolveVelocityFactor(unitHint, vector) {
-  if (typeof unitHint === "string") {
-    const unit = unitHint.toLowerCase();
-    if (unit.includes("au/day") || unit.includes("au/d")) return 1;
-    if (unit.includes("au/s")) return 86400;
-    if (unit.includes("km/s")) return 86400 / AU_KM;
-    if (unit.includes("km/day") || unit.includes("km/d")) return 1 / AU_KM;
-  }
-
-  const maxMagnitude = Math.max(Math.abs(vector[0]), Math.abs(vector[1]), Math.abs(vector[2]));
-  return maxMagnitude > 1 ? 86400 / AU_KM : 1;
-}
-
-function resolveEphemerisSource(source) {
-  if (!source) return null;
-  if (Array.isArray(source.ephemeris)) return { samples: source.ephemeris, meta: source.ephemerisMeta ?? source };
-
-  if (source.ephemeris && typeof source.ephemeris === "object") {
-    const nested = Array.isArray(source.ephemeris.samples)
-      ? source.ephemeris.samples
-      : Array.isArray(source.ephemeris.states)
-        ? source.ephemeris.states
-        : null;
-    if (nested) return { samples: nested, meta: source.ephemeris };
-  }
-
-  return null;
-}
-
 function resolveEpochJD(source, fallbackEpochJD = null) {
   return firstFinite([
     toFiniteNumber(source?.epochJD),
@@ -212,196 +115,6 @@ function resolveEpochJD(source, fallbackEpochJD = null) {
     toFiniteNumber(source?.ephemerisMeta?.epochJD),
     toFiniteNumber(fallbackEpochJD),
   ]);
-}
-
-function resolveSampleTimeJD(sample, epochJD, index, startJD, stepDays) {
-  const explicitJD = firstFinite([
-    toFiniteNumber(sample?.jd),
-    toFiniteNumber(sample?.JD),
-    toFiniteNumber(sample?.epochJD),
-    toFiniteNumber(sample?.tdbJD),
-    toFiniteNumber(sample?.JDTDB),
-    toFiniteNumber(sample?.timeJD),
-    toFiniteNumber(sample?.time?.jd),
-  ]);
-  if (Number.isFinite(explicitJD)) return explicitJD;
-
-  const relativeDays = firstFinite([
-    toFiniteNumber(sample?.tDays),
-    toFiniteNumber(sample?.dtDays),
-    toFiniteNumber(sample?.offsetDays),
-    toFiniteNumber(sample?.dayOffset),
-    toFiniteNumber(sample?.time?.days),
-  ]);
-  if (Number.isFinite(relativeDays) && Number.isFinite(epochJD)) return epochJD + relativeDays;
-
-  const dateHint = firstNonEmptyString([sample?.dateUtc, sample?.date, sample?.isoDate]);
-  const parsedDateJD = parseIsoDateToJulian(dateHint);
-  if (Number.isFinite(parsedDateJD)) return parsedDateJD;
-
-  if (Number.isFinite(startJD) && Number.isFinite(stepDays)) {
-    return startJD + index * stepDays;
-  }
-  return null;
-}
-
-function normalizeEphemerisSample(sample, meta, epochJD, index, startJD, stepDays) {
-  const timeJD = resolveSampleTimeJD(sample, epochJD, index, startJD, stepDays);
-  if (!Number.isFinite(timeJD)) return null;
-
-  const position = readPositionVector(sample);
-  if (!position) return null;
-
-  const positionUnit = firstNonEmptyString([
-    sample?.positionUnit,
-    sample?.distanceUnit,
-    sample?.units?.position,
-    sample?.units,
-    meta?.positionUnit,
-    meta?.distanceUnit,
-    meta?.units?.position,
-    meta?.units,
-  ]);
-  const posFactor = resolveDistanceFactor(positionUnit, position);
-
-  const normalized = {
-    jd: timeJD,
-    x: position[0] * posFactor,
-    y: position[1] * posFactor,
-    z: position[2] * posFactor,
-    hasVelocity: false,
-    vx: 0,
-    vy: 0,
-    vz: 0,
-  };
-
-  const velocity = readVelocityVector(sample);
-  if (!velocity) return normalized;
-
-  const velocityUnit = firstNonEmptyString([
-    sample?.velocityUnit,
-    sample?.speedUnit,
-    sample?.units?.velocity,
-    meta?.velocityUnit,
-    meta?.speedUnit,
-    meta?.units?.velocity,
-  ]);
-  const velFactor = resolveVelocityFactor(velocityUnit, velocity);
-  normalized.vx = velocity[0] * velFactor;
-  normalized.vy = velocity[1] * velFactor;
-  normalized.vz = velocity[2] * velFactor;
-  normalized.hasVelocity = [normalized.vx, normalized.vy, normalized.vz].every((n) => Number.isFinite(n));
-  return normalized;
-}
-
-function buildEphemerisCache(source, epochJD) {
-  const resolvedSource = resolveEphemerisSource(source);
-  if (!resolvedSource?.samples || resolvedSource.samples.length < 2) return null;
-
-  const { samples, meta } = resolvedSource;
-  const startJD = firstFinite([
-    toFiniteNumber(meta?.startJD),
-    toFiniteNumber(meta?.startJd),
-    toFiniteNumber(meta?.epochJD),
-    toFiniteNumber(source?.ephemerisStartJD),
-  ]);
-  const stepDays = firstFinite([
-    toFiniteNumber(meta?.stepDays),
-    toFiniteNumber(meta?.deltaDays),
-    toFiniteNumber(meta?.dtDays),
-    toFiniteNumber(source?.ephemerisStepDays),
-  ]);
-
-  const normalized = [];
-  for (let i = 0; i < samples.length; i += 1) {
-    const parsed = normalizeEphemerisSample(samples[i], meta, epochJD, i, startJD, stepDays);
-    if (parsed) normalized.push(parsed);
-  }
-  if (normalized.length < 2) return null;
-
-  normalized.sort((a, b) => a.jd - b.jd);
-  const hasVelocity = normalized.every((sample) => sample.hasVelocity);
-
-  return {
-    samples: normalized,
-    minJD: normalized[0].jd,
-    maxJD: normalized[normalized.length - 1].jd,
-    hasVelocity,
-  };
-}
-
-function findLowerSampleIndex(samples, targetJD) {
-  let lo = 0;
-  let hi = samples.length - 1;
-
-  while (lo <= hi) {
-    const mid = (lo + hi) >> 1;
-    if (samples[mid].jd <= targetJD) {
-      lo = mid + 1;
-    } else {
-      hi = mid - 1;
-    }
-  }
-
-  return Math.max(0, Math.min(samples.length - 2, lo - 1));
-}
-
-function interpolateLinear(a, b, t) {
-  return a + (b - a) * t;
-}
-
-function interpolateHermite(p0, p1, v0, v1, dt, t) {
-  const t2 = t * t;
-  const t3 = t2 * t;
-  const h00 = 2 * t3 - 3 * t2 + 1;
-  const h10 = t3 - 2 * t2 + t;
-  const h01 = -2 * t3 + 3 * t2;
-  const h11 = t3 - t2;
-  return h00 * p0 + h10 * dt * v0 + h01 * p1 + h11 * dt * v1;
-}
-
-function interpolateFromCache(cache, targetJD) {
-  if (!cache || !Number.isFinite(targetJD)) return null;
-  if (targetJD < cache.minJD || targetJD > cache.maxJD) return null;
-
-  const lowerIndex = findLowerSampleIndex(cache.samples, targetJD);
-  const a = cache.samples[lowerIndex];
-  const b = cache.samples[lowerIndex + 1];
-  if (!a || !b) return null;
-
-  const dt = b.jd - a.jd;
-  if (!Number.isFinite(dt) || Math.abs(dt) < 1e-12) return { x: a.x, y: a.y, z: a.z };
-
-  const t = (targetJD - a.jd) / dt;
-  if (Math.abs(t) < 1e-12) return { x: a.x, y: a.y, z: a.z };
-  if (Math.abs(1 - t) < 1e-12) return { x: b.x, y: b.y, z: b.z };
-
-  if (a.hasVelocity && b.hasVelocity) {
-    return {
-      x: interpolateHermite(a.x, b.x, a.vx, b.vx, dt, t),
-      y: interpolateHermite(a.y, b.y, a.vy, b.vy, dt, t),
-      z: interpolateHermite(a.z, b.z, a.vz, b.vz, dt, t),
-    };
-  }
-
-  return {
-    x: interpolateLinear(a.x, b.x, t),
-    y: interpolateLinear(a.y, b.y, t),
-    z: interpolateLinear(a.z, b.z, t),
-  };
-}
-
-function getInterpolatedEphemerisPositionAU(source, simulatedDays, fallbackEpochJD = null) {
-  if (!Number.isFinite(simulatedDays)) return null;
-
-  const epochJD = resolveEpochJD(source, fallbackEpochJD);
-  if (!Number.isFinite(epochJD)) return null;
-
-  const cache = source?.ephemerisCache ?? buildEphemerisCache(source, epochJD);
-  if (!cache) return null;
-
-  const targetJD = epochJD + simulatedDays;
-  return interpolateFromCache(cache, targetJD);
 }
 
 function resolveKeplerElements(source) {
@@ -507,7 +220,6 @@ function prepareInitPlanet(source, fallbackEpochJD) {
     inclinationRad: resolveAngleRad(undefined, source?.iDeg ?? source?.inclinationDeg),
     ascendingNodeRad: resolveAngleRad(undefined, source?.OmegaDeg ?? source?.longAscNodeDeg),
     epochJD: Number.isFinite(epochJD) ? epochJD : null,
-    ephemerisCache: Number.isFinite(epochJD) ? buildEphemerisCache(source, epochJD) : null,
     ephemeris: source?.ephemeris ?? null,
   };
 }
@@ -602,7 +314,8 @@ function updateRotations(data) {
   const delta = toFiniteNumber(data?.delta) ?? 0;
   const simulationSpeed = toFiniteNumber(data?.simulationSpeed) ?? 1;
   const updates = {};
-  const dt = Math.max(0.001, Math.min(delta, 0.1));
+  // The main thread accumulates elapsed time while a previous update is in flight.
+  const dt = Math.max(0, delta);
   const tf = dt * simulationSpeed;
 
   planets.forEach((planet, index) => {

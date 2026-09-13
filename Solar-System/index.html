@@ -1,4 +1,4 @@
-<!-- File: Solar-System/index.html (legacy visual style) -->
+<!-- File: Solar-System/index.html -->
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -7,9 +7,9 @@
     <title>Solar System Simulation</title>
 
     <!-- Favicon Links -->
-    <link rel="icon" href="/favicon.svg" sizes="any" />
-    <link rel="shortcut icon" href="/favicon.svg" />
-    <link rel="apple-touch-icon" href="/favicon.svg" />
+    <link rel="icon" href="../favicon.svg" sizes="any" />
+    <link rel="shortcut icon" href="../favicon.svg" />
+    <link rel="apple-touch-icon" href="../favicon.svg" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -41,9 +41,15 @@
 
     <!-- Collapsible menu -->
     <div id="menuContainer" aria-label="Solar system controls">
-      <button id="menuToggle" aria-label="Toggle menu"></button>
+      <button
+        id="menuToggle"
+        type="button"
+        aria-label="Open controls"
+        aria-controls="controlSurface"
+        aria-expanded="true"
+      ></button>
 
-      <div class="control-surface">
+      <div id="controlSurface" class="control-surface">
         <section class="control-section control-section-time" aria-labelledby="controls-time-heading">
           <h2 id="controls-time-heading" class="control-section-title">Time</h2>
           <div class="control-section-body">
@@ -59,7 +65,8 @@
                   value="1"
                   aria-label="Simulation speed"
                 />
-                <span id="speedValue">1.0x</span>
+                <span id="speedValue">1.0×</span>
+                <span id="speedRate" class="speed-rate">6.1 simulated days/s · 1 Earth year/min</span>
               </label>
               <div class="btnRow speed-actions" role="group" aria-label="Playback controls">
                 <button id="togglePlaybackBtn" class="controlBtn" type="button" aria-pressed="true">
@@ -70,8 +77,11 @@
             </div>
 
             <div id="datePickerContainer" class="control-block">
-              <label for="datePicker">Jump to Date:</label>
+              <label for="datePicker">Jump simulation to date:</label>
               <input type="date" id="datePicker" aria-label="Jump to a specific date" />
+              <span id="datePickerHint" class="control-hint">
+                Playback continues after a date jump.
+              </span>
             </div>
           </div>
         </section>
@@ -83,7 +93,7 @@
           <h2 id="controls-navigate-heading" class="control-section-title">Navigate</h2>
           <div class="control-section-body">
             <div id="planetNavContainer" class="control-block">
-              <label for="planetNav">Go to Planet:</label>
+              <label for="planetNav">Explore a body</label>
               <select id="planetNav">
                 <option value="">-- Select Planet --</option>
                 <optgroup label="Star"><option value="Sun">Sun</option></optgroup>
@@ -101,25 +111,27 @@
             </div>
 
             <div id="moonNavContainer" class="control-block">
-              <label for="moonNav">Go to Moon:</label>
+              <label for="moonNav">Explore its moons</label>
               <select id="moonNav" disabled>
                 <option value="">-- Select a planet first --</option>
               </select>
             </div>
 
             <div class="control-block control-action-group">
-              <button id="resetCameraBtn" class="controlBtn" type="button">Reset Camera</button>
+              <button id="resetCameraBtn" class="controlBtn" type="button">Inner system</button>
+              <button id="wholeSystemBtn" class="controlBtn" type="button">Whole system</button>
               <button id="topDownBtn" class="controlBtn" type="button">Top-Down (Ecliptic)</button>
             </div>
+            <p class="navigation-hint">Drag to orbit. Scroll or pinch to zoom. Right-drag or use two fingers to pan.</p>
           </div>
         </section>
 
         <div id="additionalControls" class="control-section-stack">
-          <section
+          <details
             class="control-section control-section-view"
             aria-labelledby="controls-view-heading"
           >
-            <h2 id="controls-view-heading" class="control-section-title">View / Layers</h2>
+            <summary id="controls-view-heading" class="control-section-title">View / layers</summary>
             <div class="control-section-body">
               <button id="toggleOrbitsBtn" class="controlBtn" type="button">Toggle Orbits</button>
               <button id="toggleAsteroidBeltBtn" class="controlBtn" type="button">Hide Asteroid Belt</button>
@@ -133,13 +145,13 @@
                 </button>
               </div>
             </div>
-          </section>
+          </details>
 
-          <section
+          <details
             class="control-section control-section-advanced"
             aria-labelledby="controls-advanced-heading"
           >
-            <h2 id="controls-advanced-heading" class="control-section-title">Advanced</h2>
+            <summary id="controls-advanced-heading" class="control-section-title">Scale / rendering</summary>
             <div class="control-section-body">
               <div class="btnRow">
                 <button
@@ -162,87 +174,84 @@
               <label><input type="checkbox" id="planesCheckbox" /> Orbital Planes</label>
               <label><input type="checkbox" id="shadowsCheckbox" /> Shadows</label>
             </div>
-          </section>
+          </details>
         </div>
       </div>
     </div>
 
-    <!-- Info card -->
-    <div id="info">
-      <div class="info-header">
-        <h3 id="info-title">Select a Celestial Body</h3>
-        <div class="info-type-badge" id="info-type-badge">Unknown</div>
+    <aside id="inspectionDock" aria-label="Simulation context and body details">
+      <div id="metadataDock">
+        <div id="simMetadata">
+          <div class="meta-pill meta-pill-strong">
+            <span class="meta-label">Simulation date</span>
+            <span class="meta-value" id="dayCounter">--</span>
+          </div>
+          <div id="scaleIndicator" class="meta-pill" role="status" aria-live="polite">
+            Scale Mode: Enhanced Visibility
+          </div>
+        </div>
+        <details id="modelAssumptions" class="model-assumptions">
+          <summary id="model-assumptions-title">Model notes</summary>
+          <dl class="model-metadata">
+            <div><dt>Data epoch</dt><dd id="epochLabel">--</dd></div>
+            <div><dt>Frame</dt><dd id="frameLabel">--</dd></div>
+            <div id="propagationStatus"><dt>Orbit model</dt><dd id="propagationMode">--</dd></div>
+          </dl>
+          <ul>
+            <li><strong>Body sizes:</strong> Enhanced mode enlarges bodies independently. Relative mode uses one common radius scale for the Sun, planets, and moons. Select a body to inspect it closely.</li>
+            <li><strong>Distances:</strong> Planetary orbits share an AU scale, separate from body sizes. Moon orbits are spread out for visibility. Neither mode shows body sizes and orbital distances on one physical scale.</li>
+            <li><strong>Inventory:</strong> Moons, belts, and rings are illustrative selections. Body cards identify reused textures.</li>
+            <li><strong>Rate:</strong> At 1×, one Earth year passes in 60 real seconds.</li>
+            <li><strong>Source:</strong> <span id="ephemerisSource">NASA/JPL Horizons</span> state vectors,
+              <span id="ephemerisRange">valid range loading…</span>. Outside this interval, the app uses a two-body Kepler approximation. Moon paths are simplified.</li>
+          </ul>
+        </details>
       </div>
 
-      <div class="info-quick-stats">
-        <div class="quick-stat">
-          <div class="stat-label">Distance</div>
-          <div class="stat-value" id="info-distance">--</div>
+      <section id="info" aria-labelledby="info-title">
+        <div class="info-header">
+          <h3 id="info-title">Select a body</h3>
+          <div class="info-type-badge" id="info-type-badge">Unknown</div>
         </div>
-        <div class="quick-stat">
-          <div class="stat-label">Size</div>
-          <div class="stat-value" id="info-size">--</div>
+        <div class="info-quick-stats">
+          <div class="quick-stat">
+            <div class="stat-label" id="info-distance-label">Distance from Sun</div>
+            <div class="stat-value" id="info-distance">--</div>
+          </div>
+          <div class="quick-stat">
+            <div class="stat-label" id="info-size-label">Radius</div>
+            <div class="stat-value" id="info-size">--</div>
+          </div>
+          <div class="quick-stat">
+            <div class="stat-label" id="info-period-label">Orbital period</div>
+            <div class="stat-value" id="info-body-type">--</div>
+          </div>
         </div>
-        <div class="quick-stat">
-          <div class="stat-label">Type</div>
-          <div class="stat-value" id="info-body-type">--</div>
+        <p id="info-texture-note" class="texture-note" hidden></p>
+        <div class="info-section" id="cool-facts-section">
+          <div id="info-cool-facts" class="info-content cool-facts"></div>
         </div>
-      </div>
-
-      <div class="info-section">
-        <h4>Physical Properties</h4>
-        <div id="info-physical" class="info-content">
-          <p>Select a celestial body to view its properties</p>
-        </div>
-      </div>
-
-      <div class="info-section">
-        <h4>Orbital Mechanics</h4>
-        <div id="info-orbital" class="info-content">
-          <p>Orbital information will appear here</p>
-        </div>
-      </div>
-
-      <div class="info-section" id="cool-facts-section">
-        <h4>Cool Facts</h4>
-        <div id="info-cool-facts" class="info-content cool-facts">
-          <p>Amazing facts about this celestial body</p>
-        </div>
-      </div>
-
-      <div class="info-section">
-        <h4>Detailed Data</h4>
-        <div id="info-details" class="info-content">
-          <p>Detailed information will appear here</p>
-        </div>
-      </div>
-    </div>
-
-    <div id="metadataDock">
-      <div id="simMetadata" role="status" aria-live="polite" aria-atomic="true">
-        <div class="meta-pill">
-          <span class="meta-label">Epoch</span>
-          <span class="meta-value" id="epochLabel">--</span>
-        </div>
-        <div class="meta-pill">
-          <span class="meta-label">Frame</span>
-          <span class="meta-value" id="frameLabel">--</span>
-        </div>
-        <div id="dayCounter" class="meta-pill meta-pill-strong">Days: 0</div>
-        <div id="scaleIndicator" class="meta-pill meta-pill-strong" role="status" aria-live="polite">
-          Scale Mode: Enhanced Visibility
-        </div>
-      </div>
-      <details id="modelAssumptions" class="model-assumptions" open>
-        <summary id="model-assumptions-title">Model notes</summary>
-        <ul>
-          <li><strong>Scale:</strong> Enhanced mode enlarges bodies for visibility; Relative mode reduces that boost while preserving usable navigation.</li>
-          <li><strong>Distance:</strong> Orbital spacing is compressed and visualized so the inner and outer system can share one scene.</li>
-          <li><strong>Inventory:</strong> Moons, belts, and ring detail are approximate teaching layers, not a complete census.</li>
-          <li><strong>Frame:</strong> Positions are framed around J2000-style orbital elements/ephemeris approximations for simulation context.</li>
-        </ul>
-      </details>
-    </div>
+        <details id="info-technical">
+          <summary>Measurements and facts</summary>
+          <div class="info-section">
+            <h4>Physical properties</h4>
+            <div id="info-physical" class="info-content"></div>
+          </div>
+          <div class="info-section">
+            <h4>Orbital mechanics</h4>
+            <div id="info-orbital" class="info-content"></div>
+          </div>
+          <div class="info-section" id="info-additional-section">
+            <h4>Additional facts</h4>
+            <div id="info-details" class="info-content"></div>
+          </div>
+          <details id="info-more-facts" hidden>
+            <summary>More observations</summary>
+            <div id="info-other-facts" class="info-content cool-facts"></div>
+          </details>
+        </details>
+      </section>
+    </aside>
 
     <script type="importmap">
       {
@@ -257,6 +266,7 @@
 
     <script type="module">
       try {
+        if (location.protocol === "file:") throw new Error("local-file");
         const [{ init }, { initLearningTools }] = await Promise.all([
           import("./main.js"),
           import("./learningTools.js"),
@@ -278,8 +288,15 @@
         console.error("[SolarSystem] Failed to load", err);
         const loadingScreen = document.getElementById("loadingScreen");
         if (loadingScreen) {
-          // Avoid innerHTML to prevent injection; display plain text
-          loadingScreen.textContent = `Failed to load: ${String(err?.message || "")}. Check console for details.`;
+          if (location.protocol === "file:") {
+            loadingScreen.textContent = "This simulation needs a local web server. From the physics-sims folder, run: python3 -m http.server 8888";
+            const link = document.createElement("a");
+            link.href = "http://localhost:8888/Solar-System/";
+            link.textContent = "Open the solar system on localhost";
+            loadingScreen.appendChild(link);
+          } else {
+            loadingScreen.textContent = `Failed to load: ${String(err?.message || "")}. Reload the page to try again.`;
+          }
         }
       }
     </script>

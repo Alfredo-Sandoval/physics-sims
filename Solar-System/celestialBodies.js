@@ -75,12 +75,13 @@ export function createSun(scene, loader) {
     type: "star",
     config: {
       name: "Sun",
+      actualRadius: CONSTANTS.SUN_RADIUS_KM / CONSTANTS.EARTH_RADIUS_KM,
       info: {
         Mass: "332,900 Earths",
         Composition: "Mostly hydrogen and helium",
         Temperature: "Photosphere ~5,500 C",
         Rotation: "25 days (equator), ~36 days (poles)",
-        Diameter: "1,391,400 km (mean)",
+        Diameter: `${(CONSTANTS.SUN_RADIUS_KM * 2).toLocaleString("en-US")} km (mean)`,
         Type: "G2 V",
         Age: "4.6 billion years",
       },
@@ -499,11 +500,7 @@ function createScaleProfile(enhancedRadius, relativeRadius) {
 function createPlanetScaleProfile(actualRadiusEarthRadii, enhancedRadius) {
   const actual = Number.isFinite(actualRadiusEarthRadii) ? actualRadiusEarthRadii : null;
   const relativeRadius = Number.isFinite(actual)
-    ? clampNumber(
-        actual * CONSTANTS.RELATIVE_SCALE_EARTH_RADIUS,
-        CONSTANTS.RELATIVE_SCALE_MIN_PLANET_RADIUS,
-        CONSTANTS.RELATIVE_SCALE_MAX_PLANET_RADIUS
-      )
+    ? actual * CONSTANTS.RELATIVE_SCALE_EARTH_RADIUS
     : enhancedRadius;
   return createScaleProfile(enhancedRadius, relativeRadius);
 }
@@ -511,11 +508,7 @@ function createPlanetScaleProfile(actualRadiusEarthRadii, enhancedRadius) {
 function createMoonScaleProfile(actualRadiusEarthRadii, enhancedRadius) {
   const actual = Number.isFinite(actualRadiusEarthRadii) ? actualRadiusEarthRadii : null;
   const relativeRadius = Number.isFinite(actual)
-    ? clampNumber(
-        actual * CONSTANTS.RELATIVE_SCALE_EARTH_RADIUS * CONSTANTS.RELATIVE_SCALE_MOON_MULTIPLIER,
-        CONSTANTS.RELATIVE_SCALE_MIN_MOON_RADIUS,
-        CONSTANTS.RELATIVE_SCALE_MAX_MOON_RADIUS
-      )
+    ? actual * CONSTANTS.RELATIVE_SCALE_EARTH_RADIUS
     : enhancedRadius;
   return createScaleProfile(enhancedRadius, relativeRadius);
 }

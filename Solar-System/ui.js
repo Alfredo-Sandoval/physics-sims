@@ -5,7 +5,6 @@ import * as CONSTANTS from "./constants.js";
 import {
   updateFollowTarget,
   stopCameraFollow,
-  getCamera,
   setSelectedObject as setSelectedObjectState,
   getSelectedObject as getSelectedObjectState,
 } from "./appState.js";
@@ -23,11 +22,19 @@ import { hasAnime, runAnime, stopAnime } from "./animationLibrary.js";
 /* ---------------------------------------------------------------------- */
 let infoPanel, infoTitle, infoTypeBadge, infoDistance, infoSize, infoBodyType;
 let infoPhysical, infoOrbital, infoCoolFacts, infoDetails, coolFactsSection;
-let speedSpan, dayCounter, debugDiv, debugToggleBtn;
+let speedSpan, speedRate, dayCounter, debugDiv, debugToggleBtn;
 let epochLabel;
 let frameLabel;
+let propagationMode;
+let ephemerisSource;
+let ephemerisRange;
 let materials;
+let lastDisplayedDay = null;
+let lastDisplayedSpeed = null;
+const dateFormatter = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 let simulationEpochMs = null; // epoch timestamp in ms for date computation
+let ephemerisMinJD = null;
+let ephemerisMaxJD = null;
 
 let selectedObject = null;
 const originalMaterials = new Map(); // Mesh → Material
@@ -57,18 +64,7 @@ let planetLabelToggleHandler = null;
 let moonLabelToggleHandler = null;
 let planetLabelLayer = null;
 
-// Cache layout metrics for the info panel to avoid forced reflow each frame
-const infoPanelMetrics = {
-  panelWidth: 480,
-  panelHeight: 400,
-  vw: 0,
-  vh: 0,
-  targetX: 0,
-  targetY: 0,
-};
-
-// Temp vector for projecting object position to screen
-const infoPanelTempVec = new THREE.Vector3();
+const currentDistanceTempVec = new THREE.Vector3();
 let infoPanelHideTimeoutId = null;
 
 /* ---------------------------------------------------------------------- */
@@ -87,9 +83,13 @@ export function initUI() {
   infoDetails = document.getElementById("info-details");
   coolFactsSection = document.getElementById("cool-facts-section");
   speedSpan = document.getElementById("speedValue");
+  speedRate = document.getElementById("speedRate");
   dayCounter = document.getElementById("dayCounter");
   epochLabel = document.getElementById("epochLabel");
   frameLabel = document.getElementById("frameLabel");
+  propagationMode = document.getElementById("propagationMode");
+  ephemerisSource = document.getElementById("ephemerisSource");
+  ephemerisRange = document.getElementById("ephemerisRange");
   setFrameLabel("--");
 
   materials = CONSTANTS.createMaterials();
@@ -113,7 +113,47 @@ export function setFrameLabel(text) {
 export function setEpochDate(isoDateUtc) {
   if (!isoDateUtc) return;
   const ms = Date.parse(isoDateUtc);
-  if (Number.isFinite(ms)) simulationEpochMs = ms;
+  if (Number.isFinite(ms)) { simulationEpochMs = ms; lastDisplayedDay = null; }
+}
+
+function julianDayToUtcDate(jd) {
+  if (!Number.isFinite(jd)) return null;
+  const date = new Date((jd - 2440587.5) * 86400000);
+  return Number.isFinite(date.getTime()) ? date : null;
+}
+
+function formatMonthYearUtc(jd) {
+  const date = julianDayToUtcDate(jd);
+  if (!date) return null;
+  return date.toLocaleString("en-US", { month: "short", year: "numeric", timeZone: "UTC" });
+}
+
+export function setEphemerisMetadata({ source, minJD, maxJD } = {}) {
+  ephemerisMinJD = Number.isFinite(minJD) ? minJD : null;
+  ephemerisMaxJD = Number.isFinite(maxJD) ? maxJD : null;
+
+  if (ephemerisSource) {
+    ephemerisSource.textContent = source || CONSTANTS.EPHEMERIS_SOURCE_NAME;
+  }
+  if (ephemerisRange) {
+    const start = formatMonthYearUtc(ephemerisMinJD);
+    const end = formatMonthYearUtc(ephemerisMaxJD);
+    ephemerisRange.textContent = start && end ? `valid ${start}–${end}` : "valid range unavailable";
+  }
+}
+
+function updatePropagationMode(days) {
+  if (!propagationMode || simulationEpochMs === null || !Number.isFinite(days)) return;
+  const simulationJD = simulationEpochMs / 86400000 + 2440587.5 + days;
+  const usingEphemeris =
+    Number.isFinite(ephemerisMinJD) &&
+    Number.isFinite(ephemerisMaxJD) &&
+    simulationJD >= ephemerisMinJD &&
+    simulationJD <= ephemerisMaxJD;
+  propagationMode.textContent = usingEphemeris
+    ? "Horizons ephemeris"
+    : "Kepler approximation";
+  propagationMode.dataset.mode = usingEphemeris ? "ephemeris" : "kepler";
 }
 
 function clearElement(el) {
@@ -123,13 +163,14 @@ function clearElement(el) {
   }
 }
 
-function appendInfoRow(container, label, value) {
+function appendInfoRow(container, label, value, valueId = null) {
   if (!container) return;
   const p = document.createElement("p");
   const strong = document.createElement("strong");
   strong.textContent = `${label}:`;
   const span = document.createElement("span");
   span.textContent = value ?? "--";
+  if (valueId) span.id = valueId;
   p.appendChild(strong);
   p.appendChild(document.createTextNode(" "));
   p.appendChild(span);
@@ -138,7 +179,34 @@ function appendInfoRow(container, label, value) {
 
 function renderInfoSection(container, rows) {
   clearElement(container);
-  rows.forEach(({ label, value }) => appendInfoRow(container, label, value));
+  rows.forEach(({ label, value, valueId }) => appendInfoRow(container, label, value, valueId));
+}
+
+function formatFiniteNumber(value, maximumFractionDigits = 2, minimumFractionDigits = 0) {
+  if (value === null || value === undefined || value === "") return "—";
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return "—";
+  return numeric.toLocaleString("en-US", { maximumFractionDigits, minimumFractionDigits });
+}
+
+function formatAstronomicalUnits(value) {
+  const text = formatFiniteNumber(value, 4, 4);
+  return text === "—" ? text : `${text} AU`;
+}
+
+function getCurrentHeliocentricDistanceAU(obj) {
+  if (!obj || obj.userData?.type !== "planet") return null;
+  obj.getWorldPosition(currentDistanceTempVec);
+  const distance = currentDistanceTempVec.length() / CONSTANTS.ORBIT_SCALE_FACTOR;
+  return Number.isFinite(distance) ? distance : null;
+}
+
+function updatePlanetDistanceReadout(obj) {
+  if (obj?.userData?.type !== "planet") return;
+  const distanceText = formatAstronomicalUnits(getCurrentHeliocentricDistanceAU(obj));
+  if (infoDistance && infoDistance.textContent !== distanceText) infoDistance.textContent = distanceText;
+  const row = document.getElementById("info-current-distance");
+  if (row && row.textContent !== distanceText) row.textContent = distanceText;
 }
 
 function populateParagraphList(container, items) {
@@ -224,9 +292,9 @@ export function createPlanetLabel(celestialBody) {
       extendedInfo.appendChild(document.createTextNode(`${label}: ${value}`));
       hasLine = true;
     };
-    if (config.info.massEarths !== undefined) addLine("Mass", `${config.info.massEarths} Earths`);
+    if (config.info.massEarths !== undefined) addLine("Mass", formatMeasurement(config.info.massEarths, "× Earth", 3));
     if (config.info.orbitalPeriod !== undefined)
-      addLine("Orbit", `${config.info.orbitalPeriod} days`);
+      addLine("Orbit", formatMeasurement(config.info.orbitalPeriod, "days"));
     if (config.info.composition) addLine("Type", config.info.composition.split(" ")[0]);
   }
 
@@ -305,7 +373,7 @@ const labelTempVector = new THREE.Vector3();
 const occlusionCameraPos = new THREE.Vector3();
 const occlusionTargetPos = new THREE.Vector3();
 const occlusionDirection = new THREE.Vector3();
-const occlusionOtherPos = new THREE.Vector3();
+const occluderBounds = new Map();
 const occlusionToOther = new THREE.Vector3();
 const occlusionScale = new THREE.Vector3();
 
@@ -343,20 +411,11 @@ function isBodyOccluded(targetBody, targetPos, camera, bodies) {
   if (!Number.isFinite(targetDistance) || targetDistance <= 0) return false;
   occlusionDirection.multiplyScalar(1 / targetDistance);
 
-  const targetType = targetBody.userData?.type;
-  for (const other of bodies) {
-    if (!other || other === targetBody) continue;
-    const otherType = other.userData?.type;
-    if (otherType !== "star" && otherType !== "planet" && otherType !== "moon") continue;
-    if (targetType === "planet" && otherType === "moon") continue;
-
-    const occluderMesh = getOcclusionMesh(other);
-    if (!occluderMesh) continue;
-    const radius = getWorldRadius(occluderMesh);
+  for (const [other, bound] of occluderBounds) {
+    if (other === targetBody) continue;
+    const radius = bound.radius;
     if (!Number.isFinite(radius) || radius <= 0) continue;
-
-    other.getWorldPosition(occlusionOtherPos);
-    occlusionToOther.subVectors(occlusionOtherPos, occlusionCameraPos);
+    occlusionToOther.subVectors(bound.position, occlusionCameraPos);
     const t = occlusionToOther.dot(occlusionDirection);
     if (t <= 0 || t >= targetDistance) continue;
     const d2 = occlusionToOther.lengthSq() - t * t;
@@ -398,6 +457,17 @@ export function updatePlanetLabels(camera, celestialBodies) {
   if (!camera || !Array.isArray(celestialBodies)) return;
 
   const { width, height } = getViewportSize();
+  if (!planetLabelsVisible && !moonLabelsVisible) return;
+  for (const body of celestialBodies) {
+    if (body.userData?.type !== "planet" && body.userData?.type !== "star") continue;
+    let bound = occluderBounds.get(body);
+    if (!bound) {
+      bound = { position: new THREE.Vector3(), radius: 0 };
+      occluderBounds.set(body, bound);
+    }
+    body.getWorldPosition(bound.position);
+    bound.radius = getWorldRadius(getOcclusionMesh(body));
+  }
   const placedLabels = [];
   const bodies = [...celestialBodies].sort((a, b) => getLabelPriority(b) - getLabelPriority(a));
 
@@ -419,7 +489,7 @@ export function updatePlanetLabels(camera, celestialBodies) {
     labelTempVector.copy(occlusionTargetPos);
     labelTempVector.project(camera);
 
-    if (labelTempVector.z > 1) {
+    if (labelTempVector.z > 1 || labelTempVector.z < -1 || Math.abs(labelTempVector.x) > 1 || Math.abs(labelTempVector.y) > 1) {
       label.style.display = "none";
       hideLabelConnector(body);
       continue;
@@ -449,8 +519,7 @@ export function updatePlanetLabels(camera, celestialBodies) {
     }
 
     placedLabels.push({ x: labelX, y: labelY, spacing });
-    label.style.left = `${labelX}px`;
-    label.style.top = `${labelY}px`;
+    label.style.translate = `${labelX.toFixed(1)}px ${labelY.toFixed(1)}px`;
     label.style.display = "block";
     label.style.opacity = 1;
     updateLabelConnector(body, x, y, labelX, labelY);
@@ -460,73 +529,10 @@ export function updatePlanetLabels(camera, celestialBodies) {
 /* ---------------------------------------------------------------------- */
 /*                       Info panel follow (per-frame)                    */
 /* ---------------------------------------------------------------------- */
-export function updateInfoFollow(camera) {
-  const refs = getUIReferences();
-  const obj = refs.selectedObject;
-  const panel = refs.infoPanel;
-  if (!obj || !panel || panel.style.display === "none") return;
-
-  const { width, height } = getViewportSize();
-  if (width <= 768) {
-    panel.style.left = "";
-    panel.style.top = "";
-    return;
+export function updateInfoFollow() {
+  if (selectedObject && infoPanel?.style.display !== "none") {
+    updatePlanetDistanceReadout(selectedObject);
   }
-
-  // Only re-sample expensive measurements when viewport changes
-  if (width !== infoPanelMetrics.vw || height !== infoPanelMetrics.vh) {
-    const cs = getComputedStyleSafe(panel);
-    infoPanelMetrics.panelWidth = parseFloat(cs.width) || infoPanelMetrics.panelWidth;
-    infoPanelMetrics.panelHeight = parseFloat(cs.height) || infoPanelMetrics.panelHeight;
-    infoPanelMetrics.vw = width;
-    infoPanelMetrics.vh = height;
-  }
-
-  const panelWidth = infoPanelMetrics.panelWidth;
-  const panelHeight = infoPanelMetrics.panelHeight;
-
-  // Project object position to screen coordinates
-  obj.getWorldPosition(infoPanelTempVec);
-  infoPanelTempVec.project(camera);
-
-  const objScreenX = (infoPanelTempVec.x * 0.5 + 0.5) * width;
-  const objScreenY = (infoPanelTempVec.y * -0.5 + 0.5) * height;
-
-  // Calculate offset from the object (to the right of it)
-  const offsetFromObject = 80; // pixels from object center
-  const menuWidth = 280; // approximate width of the left menu
-  const padding = 24;
-
-  let finalX, finalY;
-
-  // Determine if panel should go to the right or left of the object
-  const spaceOnRight = width - objScreenX - offsetFromObject;
-  const spaceOnLeft = objScreenX - offsetFromObject - menuWidth;
-
-  if (spaceOnRight >= panelWidth + padding) {
-    // Place to the right of the object
-    finalX = objScreenX + offsetFromObject;
-  } else if (spaceOnLeft >= panelWidth + padding) {
-    // Place to the left of the object
-    finalX = objScreenX - offsetFromObject - panelWidth;
-  } else {
-    // Fallback: place on the right edge with minimum padding
-    finalX = width - panelWidth - padding;
-  }
-
-  // Vertical: align with object but keep within bounds
-  finalY = objScreenY - panelHeight / 2;
-
-  // Ensure panel stays within viewport bounds
-  finalX = Math.max(menuWidth + padding, Math.min(finalX, width - panelWidth - padding));
-  finalY = Math.max(padding, Math.min(finalY, height - panelHeight - padding));
-
-  // Smooth lerp for responsive positioning
-  const currentX = parseFloat(panel.style.left) || finalX;
-  const currentY = parseFloat(panel.style.top) || finalY;
-  const lerp = 0.12;
-  panel.style.left = currentX + (finalX - currentX) * lerp + "px";
-  panel.style.top = currentY + (finalY - currentY) * lerp + "px";
 }
 
 /* ---------------------------------------------------------------------- */
@@ -548,18 +554,28 @@ function initMenuToggle() {
     return `-${Math.ceil(w)}px`;
   };
 
+  const syncMenuToggleState = (collapsed) => {
+    menuToggleBtn.setAttribute("aria-expanded", String(!collapsed));
+    menuToggleBtn.setAttribute("aria-label", collapsed ? "Open controls" : "Close controls");
+  };
+
+  const applyMenuState = (collapsed, persist = true) => {
+    menuContainer.classList.toggle("collapsed", collapsed);
+    menuContainer.style.transform = collapsed ? `translateX(${getCollapsedX()})` : "translateX(0px)";
+    syncMenuToggleState(collapsed);
+    if (persist) {
+      try {
+        localStorage.setItem("menuCollapsed", String(collapsed));
+      } catch {}
+    }
+  };
+
   // Initial state from localStorage (guarded for privacy-restricted contexts)
   let initiallyCollapsed = false;
   try {
     initiallyCollapsed = localStorage.getItem("menuCollapsed") === "true";
   } catch {}
-  if (initiallyCollapsed) {
-    menuContainer.classList.add("collapsed");
-    // Set initial position without animation using measured width
-    menuContainer.style.transform = `translateX(${getCollapsedX()})`;
-  } else {
-    menuContainer.style.transform = "translateX(0px)";
-  }
+  applyMenuState(initiallyCollapsed, false);
 
   // Click listener (remove old handler if re-init)
   if (menuToggleHandler) {
@@ -567,35 +583,8 @@ function initMenuToggle() {
   }
   menuToggleHandler = () => {
     if (!menuContainer) return;
-
     const isCurrentlyCollapsed = menuContainer.classList.contains("collapsed");
-    const targetTranslateX = isCurrentlyCollapsed ? "0px" : getCollapsedX();
-
-    if (hasAnime()) {
-      stopAnime(menuContainer); // Stop previous animation
-    }
-    runAnime({
-      targets: menuContainer,
-      translateX: targetTranslateX,
-      duration: 60,
-      easing: "easeOutQuad",
-      begin: () => {
-        if (isCurrentlyCollapsed) {
-          // Corrected logic: remove class when expanding
-          menuContainer.classList.remove("collapsed");
-        }
-      },
-      complete: () => {
-        if (!isCurrentlyCollapsed) {
-          // Corrected logic: add class after collapsing
-          menuContainer.classList.add("collapsed");
-        }
-        // Save state after animation completes (guarded)
-        try {
-          localStorage.setItem("menuCollapsed", !isCurrentlyCollapsed);
-        } catch {}
-      },
-    });
+    applyMenuState(!isCurrentlyCollapsed);
   };
   menuToggleBtn.addEventListener("click", menuToggleHandler);
 }
@@ -676,63 +665,55 @@ export function displayObjectInfo(obj) {
   infoTypeBadge.textContent = ud.type || "Unknown";
   infoTypeBadge.className = `info-type-badge ${ud.type}`;
 
-  // Update quick stats
+  const distanceLabel = document.getElementById("info-distance-label");
+  const periodLabel = document.getElementById("info-period-label");
+  const radius = cfg.actualRadius ?? cfg.actualRadiusEarthRadii;
+  infoSize.textContent = formatMeasurement(
+    Number.isFinite(radius) ? radius * CONSTANTS.EARTH_RADIUS_KM : null, "km", 0
+  );
   if (ud.type === "star") {
-    infoDistance.textContent = "Center";
-    infoSize.textContent = cfg.info.Diameter || "--";
-    infoBodyType.textContent = "Star";
-
+    distanceLabel.textContent = "Reference position";
+    infoDistance.textContent = "Sun-centered";
+    periodLabel.textContent = "Rotation period";
+    infoBodyType.textContent = "25–36 days";
     populateStarInfo(cfg);
   } else if (ud.type === "planet") {
-    infoDistance.textContent = `${cfg.orbitRadiusAU} AU`;
-    const actualRadius = Number.isFinite(cfg.actualRadius)
-      ? cfg.actualRadius
-      : Number.isFinite(cfg.actualRadiusEarthRadii)
-        ? cfg.actualRadiusEarthRadii
-        : null;
-    infoSize.textContent = Number.isFinite(actualRadius)
-      ? `${actualRadius.toFixed(2)}× Earth`
-      : "—";
-    infoBodyType.textContent = "Planet";
-
-    populatePlanetInfo(cfg);
+    distanceLabel.textContent = "Current distance from Sun";
+    infoDistance.textContent = formatAstronomicalUnits(getCurrentHeliocentricDistanceAU(obj));
+    periodLabel.textContent = "Kepler year estimate";
+    infoBodyType.textContent = formatMeasurement(cfg.info?.orbitalPeriod, "days");
+    populatePlanetInfo(cfg, obj);
   } else if (ud.type === "moon") {
-    const orbitKm = Number(cfg.orbitRadiusKm);
-    const moonR = Number.isFinite(cfg.actualRadius)
-      ? cfg.actualRadius
-      : Number.isFinite(cfg.actualRadiusEarthRadii)
-        ? cfg.actualRadiusEarthRadii
-        : null;
-    infoDistance.textContent = Number.isFinite(orbitKm)
-      ? `${(orbitKm / 1000).toFixed(0)}k km`
-      : "—";
-    infoSize.textContent = Number.isFinite(moonR)
-      ? `${(moonR * CONSTANTS.EARTH_RADIUS_KM).toFixed(0)} km`
-      : "—";
-    infoBodyType.textContent = "Moon";
-
+    distanceLabel.textContent = `Orbit size from ${ud.parentPlanetName}`;
+    infoDistance.textContent = formatMeasurement(cfg.orbitRadiusKm, "km", 0);
+    periodLabel.textContent = "Orbital period";
+    infoBodyType.textContent = formatMeasurement(Math.abs(cfg.orbitalPeriod), "days");
     populateMoonInfo(ud);
   }
 
-  // Handle cool facts
-  if (cfg.coolFacts && cfg.coolFacts.length > 0) {
-    coolFactsSection.style.display = "block";
-    populateCoolFacts(cfg.coolFacts);
-  } else {
-    coolFactsSection.style.display = "none";
-  }
+  const textureNote = document.getElementById("info-texture-note");
+  textureNote.hidden = !cfg.textureNote;
+  textureNote.textContent = cfg.textureNote ? `Illustrative texture. ${cfg.textureNote}` : "";
+  document.getElementById("info-technical").open = false;
+  document.getElementById("info-more-facts").open = false;
+  const facts = cfg.coolFacts?.length ? cfg.coolFacts : [
+    cfg.info?.composition || cfg.info?.Composition || cfg.composition,
+  ].filter(Boolean);
+  coolFactsSection.style.display = facts.length ? "block" : "none";
+  populateParagraphList(infoCoolFacts, facts.slice(0, 1));
+  document.getElementById("info-more-facts").hidden = facts.length < 2;
+  populateParagraphList(document.getElementById("info-other-facts"), facts.slice(1));
 
   ensureCloseButton();
 
-  // Position panel next to the selected planet (captures layout metrics once)
-  positionInfoPanel(obj);
-
-  // Animate in with modern styling
-  infoPanel.style.display = "block"; // Make it visible first
+  // The shared dock keeps details clear of metadata and tour controls.
+  infoPanel.style.display = "block";
   infoPanel.classList.remove("show");
   if (hasAnime()) {
     stopAnime(infoPanel); // Remove any existing animations on this element
   }
+
+  infoPanel.scrollTop = 0;
 
   // Use CSS transition for smooth animation
   requestAnimationFrame(() => {
@@ -741,74 +722,9 @@ export function displayObjectInfo(obj) {
   });
 }
 
-/**
- * Position the info panel relative to the selected object on screen
- */
-function positionInfoPanel(obj) {
-  if (!obj) return;
-
-  const { width, height } = getViewportSize();
-  if (width <= 768) {
-    infoPanel.style.left = "";
-    infoPanel.style.top = "";
-    return;
-  }
-
-  // Use computed CSS values to avoid hardcoding; provide sensible fallbacks
-  const cs = getComputedStyleSafe(infoPanel);
-  const panelWidth = parseFloat(cs.width) || 480;
-  // max-height is 70vh in CSS; compute a practical height bound
-  const maxH = parseFloat(cs.maxHeight) || height * 0.7;
-  const panelHeight = Math.min(maxH, Math.max(300, infoPanel.scrollHeight || 400));
-
-  // Cache metrics for use during per-frame follow without measuring again
-  infoPanelMetrics.panelWidth = panelWidth;
-  infoPanelMetrics.panelHeight = panelHeight;
-  infoPanelMetrics.vw = width;
-  infoPanelMetrics.vh = height;
-
-  const offsetFromObject = 80;
-  const menuWidth = 280;
-  const padding = 24;
-
-  // Get camera from app state to project object position
-  const camera = getCamera();
-  let finalX, finalY;
-
-  if (camera) {
-    // Project object position to screen coordinates
-    obj.getWorldPosition(infoPanelTempVec);
-    infoPanelTempVec.project(camera);
-
-    const objScreenX = (infoPanelTempVec.x * 0.5 + 0.5) * width;
-    const objScreenY = (infoPanelTempVec.y * -0.5 + 0.5) * height;
-
-    // Determine if panel should go to the right or left of the object
-    const spaceOnRight = width - objScreenX - offsetFromObject;
-    const spaceOnLeft = objScreenX - offsetFromObject - menuWidth;
-
-    if (spaceOnRight >= panelWidth + padding) {
-      finalX = objScreenX + offsetFromObject;
-    } else if (spaceOnLeft >= panelWidth + padding) {
-      finalX = objScreenX - offsetFromObject - panelWidth;
-    } else {
-      finalX = width - panelWidth - padding;
-    }
-
-    finalY = objScreenY - panelHeight / 2;
-  } else {
-    // Fallback: right side positioning
-    finalX = width - panelWidth - padding;
-    finalY = (height - panelHeight) / 2;
-  }
-
-  // Ensure panel stays within viewport bounds
-  finalX = Math.max(menuWidth + padding, Math.min(finalX, width - panelWidth - padding));
-  finalY = Math.max(padding, Math.min(finalY, height - panelHeight - padding));
-
-  // Apply position
-  infoPanel.style.left = finalX + "px";
-  infoPanel.style.top = finalY + "px";
+function formatMeasurement(value, unit, digits = 2) {
+  const text = formatFiniteNumber(value, digits);
+  return text === "—" ? text : `${text} ${unit}`;
 }
 
 function populateStarInfo(cfg) {
@@ -829,14 +745,14 @@ function populateStarInfo(cfg) {
   populateDetailedData(info, { bodyType: "star", config: cfg });
 }
 
-function populatePlanetInfo(cfg) {
+function populatePlanetInfo(cfg, obj) {
   const actualR = Number.isFinite(cfg.actualRadius)
     ? cfg.actualRadius
     : Number.isFinite(cfg.actualRadiusEarthRadii)
       ? cfg.actualRadiusEarthRadii
       : null;
   const diameterKm = Number.isFinite(actualR)
-    ? (actualR * 2 * CONSTANTS.EARTH_RADIUS_KM).toLocaleString()
+    ? Math.round(actualR * 2 * CONSTANTS.EARTH_RADIUS_KM).toLocaleString()
     : null;
   const info = cfg?.info || {};
 
@@ -846,33 +762,53 @@ function populatePlanetInfo(cfg) {
       value: Number.isFinite(actualR) ? `${actualR.toFixed(3)} Earth radii` : "—",
     },
     { label: "Diameter", value: diameterKm ? `${diameterKm} km` : "—" },
-    { label: "Mass", value: info.massEarths !== undefined ? `${info.massEarths}× Earth` : "—" },
-    { label: "Density", value: info.densityGcm3 !== undefined ? `${info.densityGcm3} g/cm³` : "—" },
+    { label: "Mass", value: formatMeasurement(info.massEarths, "× Earth", 3) },
+    { label: "Density", value: formatMeasurement(info.densityGcm3, "g/cm³", 3) },
     {
       label: "Surface Gravity",
-      value: cfg.gravityStrength !== undefined ? `${cfg.gravityStrength}g` : "—",
+      value: formatMeasurement(cfg.gravityStrength, "g", 3),
     },
     {
       label: "Escape Velocity",
-      value: info.escapeVelocityKms !== undefined ? `${info.escapeVelocityKms} km/s` : "—",
+      value: formatMeasurement(info.escapeVelocityKms, "km/s"),
     },
   ]);
 
   renderInfoSection(infoOrbital, [
-    { label: "Distance from Sun", value: `${cfg.orbitRadiusAU} AU` },
     {
-      label: "Sidereal Orbital Period",
-      value: info.orbitalPeriod !== undefined ? `${info.orbitalPeriod} days` : "—",
+      label: "Current Distance from Sun",
+      value: formatAstronomicalUnits(getCurrentHeliocentricDistanceAU(obj)),
+      valueId: "info-current-distance",
+    },
+    { label: "Semi-major Axis", value: formatAstronomicalUnits(cfg.orbitRadiusAU) },
+    {
+      label: "Kepler Period Estimate",
+      value:
+        info.orbitalPeriod !== undefined
+          ? `${formatFiniteNumber(info.orbitalPeriod, 2)} days`
+          : "—",
     },
     {
-      label: "Orbital Speed",
-      value: info.meanOrbitalSpeedKms !== undefined ? `${info.meanOrbitalSpeedKms} km/s` : "—",
+      label: "Mean Orbital Speed",
+      value:
+        info.meanOrbitalSpeedKms !== undefined
+          ? `${formatFiniteNumber(info.meanOrbitalSpeedKms, 2)} km/s`
+          : "—",
     },
-    { label: "Orbital Eccentricity", value: info.orbitalEccentricity },
-    { label: "Axial Tilt", value: cfg.axialTilt !== undefined ? `${cfg.axialTilt}°` : "—" },
+    {
+      label: "Orbital Eccentricity",
+      value: formatFiniteNumber(info.orbitalEccentricity, 4),
+    },
+    {
+      label: "Axial Tilt",
+      value: cfg.axialTilt !== undefined ? `${formatFiniteNumber(cfg.axialTilt, 2)}°` : "—",
+    },
     {
       label: "Sidereal Rotation Period",
-      value: cfg.rotationPeriod !== undefined ? `${cfg.rotationPeriod} days` : "—",
+      value:
+        cfg.rotationPeriod !== undefined
+          ? `${formatFiniteNumber(Math.abs(cfg.rotationPeriod), 2)} days${cfg.retrograde ? " (retrograde)" : ""}`
+          : "—",
     },
   ]);
 
@@ -890,7 +826,7 @@ function populateMoonInfo(ud) {
   ]);
 
   renderInfoSection(infoOrbital, [
-    { label: "Distance", value: displayInfo?.Orbit },
+    { label: `Semi-major axis from ${ud.parentPlanetName}`, value: formatMeasurement(cfg.orbitRadiusKm, "km", 0) },
     { label: "Sidereal Orbital Period", value: displayInfo?.OrbitalPeriod },
     { label: "Sidereal Rotation Period", value: displayInfo?.RotationPeriod },
   ]);
@@ -898,50 +834,29 @@ function populateMoonInfo(ud) {
   populateDetailedData(displayInfo, { bodyType: "moon", config: cfg });
 }
 
-function populateCoolFacts(coolFacts) {
-  populateParagraphList(infoCoolFacts, coolFacts);
-}
-
 function populateDetailedData(dataObj, context = null) {
-  clearElement(infoDetails);
-  if (!dataObj || typeof dataObj !== "object") return;
-  Object.entries(dataObj).forEach(([k, v]) => {
-    // Skip keys that are already shown in other sections
-    if (
-      [
-        "Mass",
-        "Temperature",
-        "Composition",
-        "Type",
-        "Age",
-        "Rotation",
-        "massEarths",
-        "densityGcm3",
-        "escapeVelocityKms",
-        "orbitalPeriod",
-        "meanOrbitalSpeedKms",
-        "orbitalEccentricity",
-        "Size",
-        "ParentPlanet",
-        "Orbit",
-        "OrbitalPeriod",
-        "RotationPeriod",
-      ].includes(k)
-    ) {
-      return;
-    }
-
-    if (k === "moonCount" && context?.bodyType === "planet") {
-      const modeledMoonCount = Array.isArray(context?.config?.moons) ? context.config.moons.length : null;
-      appendInfoRow(infoDetails, "Known Moons", v);
-      if (Number.isFinite(modeledMoonCount) && modeledMoonCount !== v) {
-        appendInfoRow(infoDetails, "Modeled Moons (This Sim)", modeledMoonCount);
-      }
-      return;
-    }
-
-    appendInfoRow(infoDetails, k, v);
-  });
+  const fields = [
+    ["composition", "Composition"],
+    ["surfaceTempMinC", "Minimum temperature", "°C", 0],
+    ["surfaceTempMaxC", "Maximum temperature", "°C", 0],
+    ["orbitalInclinationDeg", "Orbital inclination", "°", 3],
+    ["ringCount", "Ring groups (dataset)", "", 0],
+    ["magnetosphere", "Intrinsic magnetosphere"],
+    ["albedoGeometric", "Geometric albedo", "", 3],
+  ];
+  const rows = [];
+  for (const [key, label, unit, digits] of fields) {
+    const value = dataObj?.[key];
+    if (value === null || value === undefined) continue;
+    rows.push({ label, value: typeof value === "boolean" ? (value ? "Yes" : "No")
+      : typeof value === "number" ? formatMeasurement(value, unit, digits).trim() : value });
+  }
+  if (context?.bodyType === "planet" && Number.isFinite(dataObj?.moonCount)) {
+    rows.push({ label: "Known moons (dataset)", value: formatFiniteNumber(dataObj.moonCount, 0) });
+    rows.push({ label: "Moons shown here", value: context.config.moons.length });
+  }
+  renderInfoSection(infoDetails, rows);
+  document.getElementById("info-additional-section").hidden = rows.length === 0;
 }
 
 function ensureCloseButton() {
@@ -952,22 +867,6 @@ function ensureCloseButton() {
   btn.className = "info-close-btn";
   btn.setAttribute("aria-label", "Close body details");
   btn.title = "Close";
-  Object.assign(btn.style, {
-    position: "absolute",
-    top: "5px",
-    right: "5px",
-    background: "rgba(80,80,100,.5)",
-    border: "none",
-    color: "#fff",
-    borderRadius: "50%",
-    width: "24px",
-    height: "24px",
-    cursor: "pointer",
-    fontSize: "16px",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-  });
   btn.addEventListener("click", deselectObject);
   infoPanel.appendChild(btn);
 }
@@ -1032,6 +931,11 @@ export function selectObject(obj, follow = true) {
   }
 
   displayObjectInfo(obj);
+  window.dispatchEvent(new CustomEvent("solar-system:selection-changed", { detail: {
+    name: obj.userData.name,
+    type: obj.userData.type,
+    parentPlanetName: obj.userData.parentPlanetName,
+  } }));
   return { cameraTarget: follow ? obj : null };
 }
 
@@ -1072,6 +976,7 @@ export function deselectObject() {
   selectedObject = null;
   setSelectedObjectState(null);
   stopCameraFollow();
+  window.dispatchEvent(new CustomEvent("solar-system:selection-changed", { detail: { name: null } }));
 }
 
 /* ---------------------------------------------------------------------- */
@@ -1105,51 +1010,20 @@ export function updateDebugInfo(msg) {
 /*                     Day counter & speed read‑out                       */
 /* ---------------------------------------------------------------------- */
 export function updateDayCounter(days) {
-  if (!dayCounter) return;
-  if (simulationEpochMs !== null) {
-    const simMs = simulationEpochMs + days * 86400000;
-    const d = new Date(simMs);
-    const mon = d.toLocaleString("en-US", { month: "short", timeZone: "UTC" });
-    dayCounter.textContent = `${d.getUTCDate()} ${mon} ${d.getUTCFullYear()}`;
-  } else {
-    dayCounter.textContent = `Day ${Math.floor(days)}`;
-  }
+  const day = Math.floor(days);
+  if (!dayCounter || day === lastDisplayedDay) return;
+  lastDisplayedDay = day;
+  dayCounter.textContent = simulationEpochMs !== null
+    ? dateFormatter.format(new Date(simulationEpochMs + day * 86400000))
+    : `Day ${day}`;
+  updatePropagationMode(days);
 }
 
 export function updateUIDisplay(simSpeed) {
-  if (speedSpan) speedSpan.textContent = `${simSpeed.toFixed(1)}x`;
-
-  const currentSelected = getUIReferences().selectedObject; // Get current selection state
-
-  // Stop animations for outlines that are no longer selected or have been removed
-  outlineMeshes.forEach((outline, obj) => {
-    if (obj !== currentSelected && outline?.userData?.isAnimating) {
-      if (hasAnime()) stopAnime(outline.scale);
-      outline.userData.isAnimating = false;
-      // Optional: Reset scale if needed, though removal in deselectObject should handle this
-      // outline.scale.setScalar(CONSTANTS.OUTLINE_SCALE);
-    }
-  });
-
-  // Start or continue animation for the currently selected object
-  if (currentSelected) {
-    const outline = outlineMeshes.get(currentSelected);
-    // Ensure outline exists and is not already animating
-    if (outline && !outline.userData.isAnimating) {
-      outline.userData.isAnimating = true;
-      const baseScale = outline.userData.baseScale ?? CONSTANTS.OUTLINE_SCALE;
-      runAnime({
-        targets: outline.scale,
-        x: [baseScale * 0.98, baseScale * 1.02],
-        y: [baseScale * 0.98, baseScale * 1.02],
-        z: [baseScale * 0.98, baseScale * 1.02],
-        duration: 1000,
-        easing: "easeInOutSine",
-        direction: "alternate",
-        loop: true,
-      });
-    }
-  }
+  if (simSpeed === lastDisplayedSpeed) return;
+  lastDisplayedSpeed = simSpeed;
+  if (speedSpan) speedSpan.textContent = `${simSpeed.toFixed(1)}×`;
+  if (speedRate) speedRate.textContent = CONSTANTS.formatSimulationRate(simSpeed);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -1273,6 +1147,7 @@ export function cleanupUI() {
     }
   });
   planetLabels.clear();
+  occluderBounds.clear();
 
   // Clear planet label lines
   planetLabelLines.forEach((line) => {
@@ -1297,6 +1172,15 @@ export function cleanupUI() {
   }
   debugToggleBtn = null;
   frameLabel = null;
+  propagationMode = null;
+  ephemerisSource = null;
+  ephemerisRange = null;
+  speedRate = null;
+  ephemerisMinJD = null;
+  ephemerisMaxJD = null;
+  simulationEpochMs = null;
+  lastDisplayedDay = null;
+  lastDisplayedSpeed = null;
 
   // Reset selected object
   selectedObject = null;

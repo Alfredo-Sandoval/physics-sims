@@ -22,6 +22,8 @@ const state = {
   simulatedDays: 0,
   followTarget: null,
   followDistance: 50,
+  followRequestId: 0,
+  frameRequested: false,
   selectedObject: null,
 };
 
@@ -97,6 +99,8 @@ export const setSimulatedDays = (days) => {
 
 export const updateFollowTarget = (target, distance) => {
   state.followTarget = target ?? null;
+  state.followRequestId += 1;
+  state.frameRequested = Boolean(target);
 
   const sel = target ?? state.selectedObject;
   let radius = 0;
@@ -110,7 +114,7 @@ export const updateFollowTarget = (target, distance) => {
     const sx = Math.abs(mesh?.scale?.x ?? 1);
     const sy = Math.abs(mesh?.scale?.y ?? sx);
     const sz = Math.abs(mesh?.scale?.z ?? sx);
-    const scale = Math.max(sx, sy, sz, 1);
+    const scale = Math.max(sx, sy, sz);
     radius = baseRadius * scale;
   }
 
@@ -127,6 +131,12 @@ export const updateFollowTarget = (target, distance) => {
     state.followDistance = distance;
   }
 
+  // Keep even the smallest relative-size moons in front of the near plane.
+  if (state.camera && radius > 0) {
+    state.camera.near = Math.min(0.1, radius / 20);
+    state.camera.updateProjectionMatrix();
+  }
+
   // Adjust OrbitControls minDistance once, based on the newly selected body.
   // This avoids per-frame clamping that can fight the user’s scroll wheel.
   const controls = state.controls;
@@ -141,6 +151,7 @@ export const updateFollowTarget = (target, distance) => {
 
 export const stopCameraFollow = () => {
   state.followTarget = null;
+  state.frameRequested = false;
 
   if (!state.selectedObject && state.controls) {
     state.controls.minDistance = Math.max(
@@ -148,6 +159,10 @@ export const stopCameraFollow = () => {
       SUN_RADIUS * ZOOM.NEAR_SUN_FACTOR
     );
   }
+};
+
+export const cancelCameraFraming = () => {
+  state.frameRequested = false;
 };
 
 export const setSelectedObject = (obj) => {
@@ -169,5 +184,7 @@ export const resetState = () => {
   state.simulatedDays = 0;
   state.followTarget = null;
   state.followDistance = 50;
+  state.followRequestId = 0;
+  state.frameRequested = false;
   state.selectedObject = null;
 };
