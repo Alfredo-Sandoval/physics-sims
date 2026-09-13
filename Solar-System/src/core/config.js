@@ -187,8 +187,9 @@ export const MAX_TEXTURE_SIZE = 1024; // Preserve more detail when zooming in
 
 /* Star‑field ----------------------------------------------------------- */
 export const STARFIELD_RADIUS = 5000;
-export const STAR_COUNT = 8000; // Reduced from 20000 to prevent OOM
-export const STAR_BASE_SIZE = 2.0;
+export const STAR_COUNT = 1200;
+export const STAR_BASE_SIZE = 1.6;
+export const STARFIELD_SKY_COLOR = 0x252a33;
 export const STAR_MIN_SIZE_FACTOR = 0.5;
 export const STAR_MAX_SIZE_FACTOR = 1.5;
 export const STARFIELD_TINT_COLOR = 0xbfd3ff;
@@ -199,7 +200,7 @@ export const STARFIELD_LAYER_CONFIGS = Object.freeze([
     minRadiusFactor: 0.9,
     maxRadiusFactor: 1.0,
     sizeFactor: 0.75,
-    opacity: 0.4,
+    opacity: 0.16,
     saturation: 0.2,
     lightnessMin: 0.58,
     lightnessMax: 0.88,
@@ -209,7 +210,7 @@ export const STARFIELD_LAYER_CONFIGS = Object.freeze([
     minRadiusFactor: 0.75,
     maxRadiusFactor: 0.9,
     sizeFactor: 1.1,
-    opacity: 0.58,
+    opacity: 0.28,
     saturation: 0.24,
     lightnessMin: 0.62,
     lightnessMax: 0.94,
@@ -219,7 +220,7 @@ export const STARFIELD_LAYER_CONFIGS = Object.freeze([
     minRadiusFactor: 0.56,
     maxRadiusFactor: 0.75,
     sizeFactor: 1.45,
-    opacity: 0.8,
+    opacity: 0.48,
     saturation: 0.3,
     lightnessMin: 0.66,
     lightnessMax: 0.98,
@@ -228,8 +229,8 @@ export const STARFIELD_LAYER_CONFIGS = Object.freeze([
 
 /* Orbit visual hierarchy ---------------------------------------------- */
 export const ORBIT_MAX_VISUAL_DISTANCE_AU = 30.5;
-export const ORBIT_OPACITY_NEAR = 0.78;
-export const ORBIT_OPACITY_FAR = 0.22;
+export const ORBIT_OPACITY_NEAR = 0.52;
+export const ORBIT_OPACITY_FAR = 0.12;
 export const ORBIT_DISTANCE_COLOR_BLEND = 0.62;
 export const ORBIT_INNER_TINT = 0xffd59a;
 export const ORBIT_GAS_GIANT_TINT = 0xf5ddac;
@@ -265,7 +266,7 @@ export const DIR_LIGHT_INTENSITY = 0.5;
 export const HEMI_LIGHT_INTENSITY = 0.06;
 export const HEMI_LIGHT_SKY_COLOR = 0x0d1f33;
 export const HEMI_LIGHT_GROUND_COLOR = 0x030303;
-export const SUN_EMISSIVE_INTENSITY = 1.5;
+export const SUN_EMISSIVE_INTENSITY = 1.2;
 
 export const PLANET_ENV_INTENSITY = 0.18;
 export const MOON_ENV_INTENSITY = 0.55;
@@ -278,7 +279,7 @@ export const TONE_MAPPING_EXPOSURE_MAX = 1.6;
 /* Visual flair --------------------------------------------------------- */
 // Keep a soft corona around the Sun so it reads like a star, not a matte sphere
 export const SUN_GLOW_ENABLED = true;
-export const SUN_GLOW_SPRITE_SCALE = 200; // used only if enabled
+export const SUN_GLOW_SPRITE_SCALE = 120; // restrained corona around the 50-unit diameter
 export const SHOW_LABELS = true; // UI/HTML labels (managed by ui.js)
 export const SHOW_SPRITE_LABELS = false; // 3D sprite labels (disable to avoid doubles)
 

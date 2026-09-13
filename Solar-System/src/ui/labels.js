@@ -42,6 +42,7 @@ export function createPlanetLabel(celestialBody) {
   label.className = "planet-label";
   label.dataset.planet = celestialBody.userData.name;
   label.setAttribute("aria-label", `Focus ${celestialBody.userData.name}`);
+  label.setAttribute("aria-pressed", "false");
 
   const labelText = document.createElement("span");
   labelText.textContent = celestialBody.userData.name;
@@ -256,6 +257,8 @@ export function updatePlanetLabels(camera, celestialBodies) {
     if (!body?.userData?.name) continue;
     const label = planetLabels.get(body);
     if (!label) continue;
+    const selected = String(body === getSelectedObject());
+    if (label.getAttribute("aria-pressed") !== selected) label.setAttribute("aria-pressed", selected);
 
     const isMoon = body.userData?.type === "moon";
     const visible = isMoon ? moonLabelsVisible : planetLabelsVisible;

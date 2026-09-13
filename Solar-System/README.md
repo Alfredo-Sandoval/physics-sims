@@ -35,6 +35,8 @@ first time, while Three.js loads.
 - **Information panel** — three quick measurements, one observation, visible
   texture disclosures, and expandable facts in a fixed dock
 - **Toggleable labels** — planet and moon labels for spatial navigation
+- **Quiet overview** — a sparse, dim starfield, compact controls, neutral labels
+  with selection emphasis, and moon paths shown only for the selected system
 - **Repeatable time** — planet positions, moon phases, and spins derive from
   the date; illustrative moon phases and belt layouts are seeded consistently
 - **Readable surface rotation** — planet spins run 120× slower than orbital

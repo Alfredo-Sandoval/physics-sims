@@ -8,6 +8,7 @@ import { findCelestialBodyByName } from "../core/state.js";
 import { getSelectedObject, getCamera, getControls, getRenderer, updateFollowTarget,
   stopCameraFollow, setSelectedObject } from "../core/state.js";
 import { initPlaybackControls, cleanupPlaybackControls } from "./playback.js";
+import { getInnerSystemCameraPosition } from "../rendering/scene.js";
 
 let navigationSubscriptions = [];
 let orbitLinesVisible = true;
@@ -107,6 +108,18 @@ export function setupUIControls(planetConfigs, selectable, scene) {
   panelListeners?.abort();
   panelListeners = new AbortController();
   initPlaybackControls();
+  const orbitLines = [];
+  scene?.traverse((object) => { if (object.userData?.isOrbitLine) orbitLines.push(object); });
+  const syncOrbitLines = () => {
+    const selected = getSelectedObject();
+    const planetName = selected?.userData.type === "moon"
+      ? selected.userData.parentPlanetName : selected?.userData.name;
+    for (const line of orbitLines) {
+      line.visible = orbitLinesVisible && (!line.userData.isMoonOrbit || line.userData.parentPlanetName === planetName);
+    }
+  };
+  listen(window, "solar-system:selection-changed", syncOrbitLines);
+  syncOrbitLines();
   const back = document.getElementById("backViewBtn");
   const follow = document.getElementById("trackBodyBtn");
   const syncNavigation = () => {
@@ -242,7 +255,8 @@ export function setupUIControls(planetConfigs, selectable, scene) {
   };
 
   listen(document.getElementById("resetCameraBtn"), "click", () => {
-    setCameraView(new THREE.Vector3(200, 150, 200), new THREE.Vector3(0, 1, 0));
+    const camera = getCamera();
+    if (camera) setCameraView(getInnerSystemCameraPosition(camera), new THREE.Vector3(0, 1, 0));
   });
   listen(document.getElementById("wholeSystemBtn"), "click", () => {
     const camera = getCamera();
@@ -267,9 +281,7 @@ export function setupUIControls(planetConfigs, selectable, scene) {
     toggleOrbitsBtn.textContent = orbitLinesVisible ? "Hide Orbits" : "Show Orbits";
     listen(toggleOrbitsBtn, "click", () => {
       orbitLinesVisible = !orbitLinesVisible;
-      scene.traverse((o) => {
-        if (o.userData?.isOrbitLine) o.visible = orbitLinesVisible;
-      });
+      syncOrbitLines();
       toggleOrbitsBtn.textContent = orbitLinesVisible ? "Hide Orbits" : "Show Orbits";
     });
   }

@@ -42,7 +42,7 @@ function createSkybox(texture) {
   const mat = new THREE.MeshBasicMaterial({
     map: texture ?? null,
     side: THREE.BackSide,
-    color: 0xa7acb6,
+    color: CONSTANTS.STARFIELD_SKY_COLOR,
     fog: false,
     depthWrite: false,
     toneMapped: false,

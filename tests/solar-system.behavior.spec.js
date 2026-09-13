@@ -104,8 +104,22 @@ export async function runBehaviorChecks(win, { assert, wait, waitFor }) {
     "belt positions return to the earlier date");
   belts.unregisterWorkerBelt(testBeltId);
 
+  const moonPaths = [];
+  state.scene.traverse((object) => { if (object.userData.isMoonOrbit) moonPaths.push(object); });
   ui.selectObject(earth);
   await waitFor(() => !state.frameRequested, "Earth framing settles");
+  assert(moonPaths.some((path) => path.visible) && moonPaths.every((path) =>
+    path.visible === (path.userData.parentPlanetName === "Earth")), "selecting Earth shows only Earth's moon paths");
+  assert(doc.querySelector('.planet-label[data-planet="Earth"]').getAttribute("aria-pressed") === "true",
+    "the selected body's label exposes its selected state");
+  doc.getElementById("toggleOrbitsBtn").click();
+  ui.selectObject(moon);
+  assert(moonPaths.every((path) => !path.visible), "hidden orbits stay hidden when selecting a moon");
+  doc.getElementById("toggleOrbitsBtn").click();
+  assert(moonPaths.some((path) => path.visible) && moonPaths.every((path) =>
+    path.visible === (path.userData.parentPlanetName === "Earth")), "selecting a moon retains its planet's orbit context");
+  ui.selectObject(earth);
+  await waitFor(() => !state.frameRequested, "Earth framing settles again");
   state.camera.position.lerp(state.controls.target, 0.6);
   state.controls.update();
   await waitFor(() => earth.userData.planetMesh.userData.detailLevel === "high", "zooming in increases geometry detail");
@@ -130,6 +144,7 @@ export async function runBehaviorChecks(win, { assert, wait, waitFor }) {
   doc.getElementById("wholeSystemBtn").click();
   await waitFor(() => earth.userData.planetMesh.userData.detailLevel === "low", "distant Earth uses reduced geometry");
   assert(true, "zooming out reduces geometry detail");
+  assert(moonPaths.every((path) => !path.visible), "the system overview hides moon paths");
 
   await wait(900);
   const idleStart = renderer.userData.drawState.frames;

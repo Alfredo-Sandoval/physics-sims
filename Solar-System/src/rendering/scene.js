@@ -35,15 +35,21 @@ export function getRecommendedPixelRatio() {
 }
 
 /* Camera --------------------------------------------------------------- */
+export function getInnerSystemCameraPosition(camera) {
+  // A higher oblique view separates inner orbits; portrait screens need more room.
+  const distance = 280 * Math.max(1, 1.2 / camera.aspect);
+  return new THREE.Vector3(1, 1.6, 1).normalize().multiplyScalar(distance);
+}
+
 export function setupCamera() {
   const { width, height } = getViewportSize();
   const camera = new THREE.PerspectiveCamera(
-    75,
+    60,
     width / height,
     0.1,
     CONSTANTS.STARFIELD_RADIUS * 3 // far plane covers stars
   );
-  camera.position.set(200, 150, 200); // Start at reasonable distance
+  camera.position.copy(getInnerSystemCameraPosition(camera));
   return camera;
 }
 

@@ -38,7 +38,7 @@ function createSunGlowSprite() {
     map: createSunGlowTexture(),
     color: 0xffd38a,
     transparent: true,
-    opacity: 0.9,
+    opacity: 0.45,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
     toneMapped: false,
@@ -703,15 +703,16 @@ function createMoonSystem(planetCfg, planetGroup, planetRadius, loader) {
       moonOrbitPoints.push(getMoonLocalPosition(Mk, orbitSpec, planetAxialTiltRad));
     }
     const moonOrbitGeom = new THREE.BufferGeometry().setFromPoints(moonOrbitPoints);
-    // Use the same colour as planet orbits but keep moons easy to spot
+    // Moon paths are contextual guides, shown when their planet is selected.
     const moonOrbitMat = new THREE.LineBasicMaterial({
       color: CONSTANTS.ORBIT_LINE_COLOR, // Match planet orbit styling
       transparent: true,
-      opacity: 0.85,
+      opacity: 0.3,
       depthWrite: false,
       toneMapped: false,
     });
     const moonOrbitLine = new THREE.LineLoop(moonOrbitGeom, moonOrbitMat);
+    moonOrbitLine.visible = false;
     moonOrbitLine.renderOrder = 1; // Draw above the planet mesh for clarity
     moonOrbitLine.userData = {
       isOrbitLine: true,

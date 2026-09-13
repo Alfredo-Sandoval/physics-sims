@@ -39,3 +39,7 @@ The Solar-System test command was invoked from the collection root, which has no
 ## 2026-09-13T20:29:53.873Z — gpt-6 — Alfredo Sandoval
 
 Synthetic pointer events in the picking test triggered OrbitControls' native pointer-capture check because no real pointer was active. Isolate the custom picking handler by disabling OrbitControls during those synthetic events.
+
+## 2026-09-13T20:36:28.937Z — gpt-6 — Alfredo Sandoval
+
+While reviewing the Solar System visual styles, a batched source read exceeded the combined tool output limit and hid relevant CSS. Keep follow-up reads to targeted sections and cap the total batch output.
