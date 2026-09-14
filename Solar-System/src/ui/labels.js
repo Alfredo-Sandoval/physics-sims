@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { getSelectedObject } from "../core/state.js";
+import { OUTLINE_SCALE } from "../core/config.js";
 import { getViewportSize } from "../core/viewport.js";
 import { formatMeasurement } from "./dom.js";
 
@@ -151,6 +152,7 @@ const occlusionDirection = new THREE.Vector3();
 const occluderBounds = new Map();
 const occlusionToOther = new THREE.Vector3();
 const occlusionScale = new THREE.Vector3();
+const labelViewPosition = new THREE.Vector3();
 
 function getOcclusionMesh(body) {
   if (!body) return null;
@@ -291,10 +293,15 @@ export function updatePlanetLabels(camera, celestialBodies) {
     const y = (labelTempVector.y * -0.5 + 0.5) * height;
 
     const size = measureLabel(label);
+    labelViewPosition.copy(occlusionTargetPos).applyMatrix4(camera.matrixWorldInverse);
+    const radius = getWorldRadius(getOcclusionMesh(body)) ?? 0;
+    const screenRadius = radius * height /
+      (2 * Math.tan(camera.fov * Math.PI / 360) * Math.max(radius, -labelViewPosition.z));
+    const clearance = Math.max(18, screenRadius * OUTLINE_SCALE + 10);
     const candidates = [
-      [x + 18, y - size.height - 8], [x - size.width - 18, y - size.height - 8],
-      [x + 18, y + 10], [x - size.width - 18, y + 10],
-      [x - size.width / 2, y + 24], [x - size.width / 2, y - size.height - 24],
+      [x + clearance, y - size.height / 2], [x - size.width - clearance, y - size.height / 2],
+      [x - size.width / 2, y + clearance], [x - size.width / 2, y - size.height - clearance],
+      [x + clearance, y - size.height - 8], [x - size.width - clearance, y - size.height - 8],
     ];
     let placement;
     for (const [left, top] of candidates) {
@@ -308,7 +315,9 @@ export function updatePlanetLabels(camera, celestialBodies) {
     label.style.translate = `${placement.left.toFixed(1)}px ${placement.top.toFixed(1)}px`;
     label.style.display = "block";
     label.style.opacity = 1;
-    updateLabelConnector(body, x, y, placement.left + size.width / 2, placement.top + size.height / 2);
+    const labelX = placement.left + size.width / 2, labelY = placement.top + size.height / 2;
+    const lineStart = Math.min(1, screenRadius * OUTLINE_SCALE / Math.hypot(labelX - x, labelY - y));
+    updateLabelConnector(body, x + (labelX - x) * lineStart, y + (labelY - y) * lineStart, labelX, labelY);
   }
 }
 function setupLabelToggles() {

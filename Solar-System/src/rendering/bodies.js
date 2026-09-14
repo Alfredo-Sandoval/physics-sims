@@ -160,13 +160,15 @@ export async function createPlanetsAndOrbits(scene, loader, configs) {
     const shouldHaveShadows = dispR > CONSTANTS.MIN_PLANET_RADIUS * 2;
     mesh.castShadow = shouldHaveShadows;
     mesh.receiveShadow = true; // All planets receive shadows
-    mesh.rotation.order = "YXZ";
-    mesh.rotation.z = group.userData.axialTilt;
+    // A fixed pole owns the tilt; only the surface rotates within that frame.
+    const spinFrame = new THREE.Group();
+    spinFrame.rotation.z = group.userData.axialTilt;
+    group.add(spinFrame);
     // Set up click target to point to the selectable parent group
     mesh.userData.clickTarget = group;
     applyScaleModeProfile(mesh, planetScaleProfile);
     group.userData.planetMesh = mesh;
-    group.add(mesh);
+    spinFrame.add(mesh);
     mesh.name = cfg.name + "_mesh";
 
     // Optional sprite name label (disabled by default to avoid duplicates with UI labels)
@@ -207,7 +209,7 @@ export async function createPlanetsAndOrbits(scene, loader, configs) {
       clouds.raycast = () => {};
       applyScaleModeProfile(clouds, planetScaleProfile);
       mesh.userData.cloudMesh = clouds;
-      group.add(clouds);
+      spinFrame.add(clouds);
     }
 
     /* Atmosphere shell ------------------------------------------------ */
@@ -215,7 +217,7 @@ export async function createPlanetsAndOrbits(scene, loader, configs) {
     if (atmosphereShell) {
       applyScaleModeProfile(atmosphereShell, planetScaleProfile);
       mesh.userData.atmosphereMesh = atmosphereShell;
-      group.add(atmosphereShell);
+      spinFrame.add(atmosphereShell);
     }
 
     /* Rings ----------------------------------------------------------- */
@@ -388,7 +390,8 @@ async function createRings(cfg, planetR, group, loader, scaleProfile = null) {
   mat.alphaTest = visual.alphaTest;
 
   const ring = new THREE.Mesh(geom, mat);
-  ring.rotation.x = Math.PI / 2;
+  ring.rotation.order = "ZXY";
+  ring.rotation.x = -Math.PI / 2;
   ring.rotation.z = visual.tiltRad;
   ring.raycast = () => {};
   ring.userData = { isRing: true, bodyName: cfg?.name };

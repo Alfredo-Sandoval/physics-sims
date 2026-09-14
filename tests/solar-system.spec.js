@@ -1,4 +1,5 @@
 import { runBehaviorChecks } from "./solar-system.behavior.spec.js";
+import { checkMenu } from "./solar-system.regressions.js";
 const logEl = document.getElementById("testLog");
 const lines = [];
 
@@ -64,6 +65,7 @@ async function runSolarSystemSmoke() {
   assert(moonNav, "moon dropdown exists");
   assert(menuToggle?.getAttribute("aria-controls") === "controlSurface", "menu toggle names its controlled surface");
   assert(menuToggle?.getAttribute("aria-expanded") === "true", "desktop menu exposes its expanded state");
+  await checkMenu(win, { assert, waitFor });
   assert([...planetNav.options].some((option) => option.value === "Earth"), "planet dropdown includes Earth");
   assert(![...planetNav.options].some((option) => option.value === "Moon"), "planet dropdown does not mix moon entries");
 
@@ -201,6 +203,7 @@ async function runSolarSystemSmoke() {
 
   await runBehaviorChecks(win, { assert, wait, waitFor });
 
+  localStorage.removeItem("menuCollapsed");
   const mobileFrame = document.createElement("iframe");
   mobileFrame.title = "Solar System mobile app under test";
   mobileFrame.src = "../Solar-System/?worker=off";
@@ -285,6 +288,8 @@ async function runSolarSystemSmoke() {
 
 }
 
+const savedMenuPreference = localStorage.getItem("menuCollapsed");
+localStorage.removeItem("menuCollapsed");
 runSolarSystemSmoke()
   .then(() => {
     log("DONE all browser checks passed");
@@ -294,4 +299,8 @@ runSolarSystemSmoke()
     log(`FAIL ${error.stack || error.message}`);
     document.body.dataset.testStatus = "failed";
     throw error;
+  })
+  .finally(() => {
+    if (savedMenuPreference === null) localStorage.removeItem("menuCollapsed");
+    else localStorage.setItem("menuCollapsed", savedMenuPreference);
   });

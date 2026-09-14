@@ -3,6 +3,6 @@
   "private": true,
   "scripts": {
     "check": "node scripts/smoke.mjs",
-    "test": "node scripts/smoke.mjs"
+    "test": "node scripts/smoke.mjs && node scripts/ephemeris.test.mjs"
   }
 }

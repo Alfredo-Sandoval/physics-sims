@@ -19,17 +19,6 @@
     />
 
     <link rel="stylesheet" href="./src/ui/styles.css" />
-    <script>
-      // Default to collapsed menu on small screens (only if not set by user)
-      (function() {
-        try {
-          var preferCollapsed = window.matchMedia('(max-width: 768px)').matches;
-          if (preferCollapsed && localStorage.getItem('menuCollapsed') === null) {
-            localStorage.setItem('menuCollapsed', 'true');
-          }
-        } catch (e) {}
-      })();
-    </script>
     <link rel="stylesheet" href="./src/ui/learningTools.css" />
   </head>
   <body>
@@ -214,7 +203,8 @@
             <li><strong>Distances:</strong> Planetary orbits share an AU scale, separate from body sizes. Moon orbits are spread out for visibility. Neither mode shows body sizes and orbital distances on one physical scale.</li>
             <li><strong>Inventory:</strong> Moons, belts, and rings are illustrative selections. Body cards identify reused textures.</li>
             <li><strong>Rate:</strong> At 1×, one Earth year passes in 60 real seconds.</li>
-            <li><strong>Surface rotation:</strong> Planet spins are slowed 120× relative to orbital time for readability: Earth turns about once every 20 seconds at 1×. Surface orientations are illustrative.</li>
+            <li><strong>Surface rotation:</strong> Illustrative spins make each planet's surface readable. Earth turns about once every 20 seconds at 1×; Mercury and Venus turn once per minute. Surface orientations do not represent the displayed date's physical rotation.</li>
+            <li><strong>Inspection lighting:</strong> A soft view light reveals the selected body's surface, including its night side.</li>
             <li><strong>Source:</strong> <span id="ephemerisSource">NASA/JPL Horizons</span> state vectors,
               <span id="ephemerisRange">valid range loading…</span>. Outside this interval, the app uses a two-body Kepler approximation. Moon paths and epoch phases are illustrative and repeatable; they are not measured lunar ephemerides.</li>
           </ul>

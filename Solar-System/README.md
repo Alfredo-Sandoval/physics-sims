@@ -39,9 +39,11 @@ first time, while Three.js loads.
   with selection emphasis, and moon paths shown only for the selected system
 - **Repeatable time** — planet positions, moon phases, and spins derive from
   the date; illustrative moon phases and belt layouts are seeded consistently
-- **Readable surface rotation** — planet spins run 120× slower than orbital
-  time (Earth turns about once every 20 seconds at 1×); surface orientations
-  are illustrative. Moon rotation remains tied to its orbital clock.
+- **Readable surface rotation** — fixed poles with illustrative surface spin:
+  Earth turns about once every 20 seconds at 1×, and Mercury and Venus once
+  per minute. Moon rotation remains tied to its orbital clock.
+- **Inspection lighting** — a soft light from the viewing direction reveals
+  the selected body's surface; labels sit outside the visible globe.
 - **Adaptive detail** — distant bodies use simpler geometry; close inspection
   uses finer geometry and up to 2048px textures when the source supports it
 - **Idle rendering** — paused scenes redraw for changes, then stop drawing
@@ -108,8 +110,9 @@ adding to a shared utility file. All paths work directly over HTTP; no build ste
 
 ## Tests
 
-Run `npm test` inside `Solar-System/` for data, assets, module paths, and
-dependency-cycle checks.
+Run `npm test` inside `Solar-System/` for data, assets, module paths,
+dependency-cycle checks, and position comparisons against the bundled Horizons
+samples across all eight planets.
 
 A browser smoke test for this app lives in the repo's [tests/](../tests/)
 directory. Serve the repo root and open
@@ -117,6 +120,27 @@ directory. Serve the repo root and open
 checks rendering, labels, navigation, relative sizes, camera tracking, readouts,
 desktop/mobile layout, worker agreement, repeatable date changes, reverse time,
 Back/Follow navigation, adaptive detail, idle drawing, and cleanup/restart.
+Regression checks cover fixed spin axes, readable rotation, direct worker
+comparison against Horizons, labels outside the globe, keyboard access, and
+drawer resizing. The runner isolates and restores the saved drawer preference.
+
+From the repository root, run `python3.12 tests/test_ephemeris_properties.py`
+with Hypothesis installed (or `uv run --python 3.12 --with hypothesis
+tests/test_ephemeris_properties.py`). These generated JSON tests exercise the
+JavaScript parser's sample round trip and rejection of missing coordinates.
+
+## Display policy
+
+Planet poles remain fixed while surfaces turn around their local axes. Surface
+spin is illustrative: physical periods are slowed 120× relative to orbital
+time, with a maximum displayed period of 60 seconds at 1×. A uniform slowdown
+without that limit was rejected because Mercury and Venus appeared stationary
+for normal viewing sessions. Increasing the entire simulation speed was also
+rejected because it makes orbital navigation harder. Date seeking and reverse
+playback apply to the same deterministic surface clock.
+
+Selection adds a white inspection light so albedo detail remains visible on
+the night side. This is an educational viewing aid, not simulated solar lighting.
 
 ## Future improvements
 

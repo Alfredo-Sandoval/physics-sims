@@ -10,21 +10,16 @@ export function initMenuToggle() {
     return;
   }
 
-  // Helper to compute collapsed translateX from actual menu width
-  const getCollapsedX = () => {
-    if (!menuContainer) return "-246px"; // fallback
-    const w = menuContainer.getBoundingClientRect().width || menuContainer.offsetWidth || 246;
-    return `-${Math.ceil(w)}px`;
-  };
-
   const syncMenuToggleState = (collapsed) => {
     menuToggleBtn.setAttribute("aria-expanded", String(!collapsed));
     menuToggleBtn.setAttribute("aria-label", collapsed ? "Open controls" : "Close controls");
   };
 
   const applyMenuState = (collapsed, persist = true) => {
+    const surface = document.getElementById("controlSurface");
+    if (collapsed && surface.contains(document.activeElement)) menuToggleBtn.focus();
+    surface.inert = collapsed;
     menuContainer.classList.toggle("collapsed", collapsed);
-    menuContainer.style.transform = collapsed ? `translateX(${getCollapsedX()})` : "translateX(0px)";
     syncMenuToggleState(collapsed);
     if (persist) {
       try {
@@ -34,9 +29,10 @@ export function initMenuToggle() {
   };
 
   // Initial state from localStorage (guarded for privacy-restricted contexts)
-  let initiallyCollapsed = false;
+  let initiallyCollapsed = window.matchMedia("(max-width: 768px)").matches;
   try {
-    initiallyCollapsed = localStorage.getItem("menuCollapsed") === "true";
+    const saved = localStorage.getItem("menuCollapsed");
+    if (saved !== null) initiallyCollapsed = saved === "true";
   } catch {}
   applyMenuState(initiallyCollapsed, false);
 

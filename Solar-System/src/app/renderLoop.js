@@ -57,7 +57,7 @@ export function startAnimationLoop({ scene, camera, renderer, controls, clock, p
     cameraFollow.update(getState(), Math.max(delta, 1 / 120), reducedMotion.matches);
     const cameraChanged = controls.update();
     camera.updateMatrixWorld();
-    SceneSetup.updateBounceLight(camera);
+    SceneSetup.updateBounceLight(camera, getState().selectedObject);
     detail.update(camera);
     UI.updateOutlines();
     UI.updateDayCounter(days);

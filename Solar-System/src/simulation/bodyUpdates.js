@@ -14,13 +14,16 @@ export function updatePositions(planets, days = getSimulatedDays()) {
 }
 
 export function updateRotations(planets, days = getSimulatedDays()) {
-  const surfaceDays = days / CONSTANTS.PLANET_SPIN_SLOWDOWN;
   for (const group of planets) {
     const ud = group.userData;
     const mesh = ud.planetMesh;
-    mesh.rotation.y = angleAtDays(surfaceDays, ud.config.rotationPeriod, ud.rotationDirection);
+    const surfacePeriod = Math.min(
+      Math.abs(ud.config.rotationPeriod) * CONSTANTS.PLANET_SPIN_SLOWDOWN,
+      CONSTANTS.MAX_PLANET_SPIN_SECONDS_AT_1X * CONSTANTS.DAYS_PER_SIM_SECOND_AT_1X
+    );
+    mesh.rotation.y = angleAtDays(days, surfacePeriod, ud.rotationDirection);
     const clouds = mesh.userData.cloudMesh;
-    if (clouds) clouds.rotation.y = angleAtDays(surfaceDays, ud.config.rotationPeriod / CONSTANTS.CLOUD_ROTATION_SPEED_MULTIPLIER, ud.rotationDirection);
+    if (clouds) clouds.rotation.y = angleAtDays(days, surfacePeriod / CONSTANTS.CLOUD_ROTATION_SPEED_MULTIPLIER, ud.rotationDirection);
     if (!ud.__moonMeshes) {
       ud.__moonMeshes = [];
       group.traverse((child) => { if (child.isMesh && child.userData.type === "moon") ud.__moonMeshes.push(child); });

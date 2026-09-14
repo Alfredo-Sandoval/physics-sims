@@ -1,3 +1,5 @@
+import { checkRotation, checkInspectionLabel } from "./solar-system.regressions.js";
+
 export async function runBehaviorChecks(win, { assert, wait, waitFor }) {
   const doc = win.document;
   const app = await win.eval('import("/Solar-System/src/core/state.js")');
@@ -24,14 +26,7 @@ export async function runBehaviorChecks(win, { assert, wait, waitFor }) {
     .flatMap((body) => [...body.position.toArray(), ...(body.userData.planetMesh ?? body).quaternion.toArray()]);
 
   playback.applySimulationSpeed(0);
-  // Exercise the rendered surface at the orbital clock's actual 1× rate.
-  await nextDraw(() => app.seekToDays(0));
-  for (const seconds of [0.1, 1]) {
-    await nextDraw(() => app.seekToDays(seconds * config.DAYS_PER_SIM_SECOND_AT_1X));
-    const angle = earth.userData.planetMesh.rotation.y;
-    assert(angle > seconds * 2 * Math.PI / 21 && angle < seconds * 2 * Math.PI / 19,
-      `Earth's displayed spin takes about 20 seconds per turn at 1× (${seconds}s sample)`);
-  }
+  await checkRotation(win, { assert, nextDraw, app, state, config });
   await nextDraw(() => { setDate("2025-03-15"); setDate("2026-06-20"); });
   const expectedDays = (Date.parse("2026-06-20T12:00:00Z") - epoch) / 86400000;
   assert(Math.abs(app.getSimulatedDays() - expectedDays) < 1e-9, "rapid date changes keep the latest target");
@@ -70,15 +65,18 @@ export async function runBehaviorChecks(win, { assert, wait, waitFor }) {
   let response = receive();
   worker.postMessage({ type: "INIT", data: { planets: [earth.userData.config] } });
   await response;
-  for (const days of [expectedDays, -50000]) {
+  const referenceSample = earth.userData.config.ephemeris.samples[620];
+  const referenceDays = referenceSample.jd - earth.userData.config.kepler.epochJD;
+  for (const days of [referenceDays, -50000]) {
     response = receive();
     const outBuffer = new win.ArrayBuffer(24);
     worker.postMessage({ type: "UPDATE_POSITIONS_BUFFER", data: { simulatedDays: days, revision: 0, orbitScaleFactor: 100, outBuffer } }, [outBuffer]);
     const data = (await response).data;
     const actual = new win.Float64Array(data.outBuffer);
-    const expected = solver.getPlanetPositionAU(earth.userData.config, days);
+    const expected = days === referenceDays ? referenceSample : solver.getPlanetPositionAU(earth.userData.config, days);
     assert(Math.max(Math.abs(actual[0] - expected.x * 100), Math.abs(actual[1] - expected.z * 100), Math.abs(actual[2] - expected.y * 100)) < 1e-9,
-      `worker and main-thread positions agree at day ${days}`);
+      days === referenceDays ? "worker returns the recorded Horizons sample inside coverage" :
+        "worker transfers the Kepler position correctly outside ephemeris coverage");
   }
   worker.terminate();
 
@@ -124,6 +122,7 @@ export async function runBehaviorChecks(win, { assert, wait, waitFor }) {
   state.controls.update();
   await waitFor(() => earth.userData.planetMesh.userData.detailLevel === "high", "zooming in increases geometry detail");
   assert(true, "close inspection uses detailed geometry");
+  await checkInspectionLabel(win, earth, state, { assert, waitFor });
   if (earth.userData.planetMesh.material.map.userData.originalSize > 1024) {
     await waitFor(() => earth.userData.planetMesh.material.map.userData.maxSize === 2048,
       "close inspection promotes the texture");

@@ -8,6 +8,8 @@ const SUPPORTED_PRECESSION_J2 = Object.freeze({
 });
 
 function toFiniteNumber(value) {
+  if (value === null || (typeof value !== "number" && typeof value !== "string")) return null;
+  if (typeof value === "string" && value.trim() === "") return null;
   const numeric = Number(value);
   return Number.isFinite(numeric) ? numeric : null;
 }

@@ -53,6 +53,7 @@ export const CLOUD_OPACITY = 0.7;
 export const CLOUD_ROTATION_SPEED_MULTIPLIER = 1.1;
 // Slow illustrative surface rotation relative to orbital time: Earth takes ~20 s at 1×.
 export const PLANET_SPIN_SLOWDOWN = 120;
+export const MAX_PLANET_SPIN_SECONDS_AT_1X = 60;
 
 /* Planetary rings (visual only) --------------------------------------- */
 export const SATURN_RING_INNER_RADIUS_FACTOR = 1.15;
@@ -271,6 +272,7 @@ export const SUN_EMISSIVE_INTENSITY = 1.2;
 export const PLANET_ENV_INTENSITY = 0.18;
 export const MOON_ENV_INTENSITY = 0.55;
 export const BOUNCE_LIGHT_INTENSITY = 0.08;
+export const INSPECTION_LIGHT_INTENSITY = 1.8;
 
 /* Tone mapping --------------------------------------------------------- */
 export const TONE_MAPPING_EXPOSURE_MIN = 0.7;

@@ -168,8 +168,18 @@ export function setupLighting(scene) {
   // Removed separate glow light to keep the sun less glaring
 }
 
-export function updateBounceLight(camera) {
+export function updateBounceLight(camera, selectedBody) {
   if (!bounceFillLight || !camera) return;
+  if (selectedBody && selectedBody.userData.type !== "star") {
+    bounceFillLight.intensity = CONSTANTS.INSPECTION_LIGHT_INTENSITY;
+    bounceFillLight.color.setHex(0xffffff);
+    bounceFillLight.position.copy(camera.position);
+    selectedBody.getWorldPosition(bounceFillLight.target.position);
+    bounceFillLight.target.updateMatrixWorld();
+    return;
+  }
+  bounceFillLight.intensity = CONSTANTS.BOUNCE_LIGHT_INTENSITY;
+  bounceFillLight.color.setHex(0x152233);
   const dir = bounceFillLight.position.copy(camera.position).normalize();
   if (!Number.isFinite(dir.x) || !Number.isFinite(dir.y) || !Number.isFinite(dir.z)) {
     return;
