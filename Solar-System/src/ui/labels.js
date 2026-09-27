@@ -63,8 +63,8 @@ export function createPlanetLabel(celestialBody) {
 
   // Add basic info to extended panel
   const config = celestialBody.userData.config;
+  let hasLine = false;
   if (config?.info) {
-    let hasLine = false;
     const addLine = (label, value) => {
       if (value === undefined || value === null || value === "") return;
       if (hasLine) extendedInfo.appendChild(document.createElement("br"));
@@ -75,9 +75,13 @@ export function createPlanetLabel(celestialBody) {
     if (config.info.orbitalPeriod !== undefined)
       addLine("Orbit", formatMeasurement(config.info.orbitalPeriod, "days"));
     if (config.info.composition) addLine("Type", config.info.composition.split(" ")[0]);
+    // The Sun's card uses display-ready fields instead.
+    addLine("Mass", config.info.Mass);
+    addLine("Type", config.info.Type);
   }
 
-  label.appendChild(extendedInfo);
+  // An empty card would hover as a blank black box.
+  if (hasLine) label.appendChild(extendedInfo);
 
   const connectorLine = document.createElementNS(SVG_NS, "line");
   connectorLine.classList.add("planet-label-line");

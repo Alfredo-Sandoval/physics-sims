@@ -2,22 +2,6 @@ import * as THREE from "three";
 import * as CONSTANTS from "../core/config.js";
 import { loadTexture } from "./textures.js";
 
-/* Procedural star sprite ---------------------------------------------- */
-export function createStarTexture() {
-  const canvas = document.createElement("canvas");
-  canvas.width = canvas.height = 64;
-  const ctx = canvas.getContext("2d");
-  const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
-  g.addColorStop(0, "rgba(255,255,255,1)");
-  g.addColorStop(0.2, "rgba(255,255,255,0.9)");
-  g.addColorStop(0.35, "rgba(255,255,255,0.5)");
-  g.addColorStop(0.65, "rgba(255,255,255,0.1)");
-  g.addColorStop(1, "rgba(255,255,255,0)");
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, 64, 64);
-  return new THREE.CanvasTexture(canvas);
-}
-
 /* Text label sprite --------------------------------------------------- */
 export function createTextSprite(text, options = {}) {
   const { font = "12px sans-serif", padding = 4, bg = "rgba(0,0,0,0.4)", fg = "#fff" } = options;

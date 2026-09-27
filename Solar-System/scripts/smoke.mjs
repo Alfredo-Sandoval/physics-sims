@@ -1,6 +1,7 @@
 import { readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { execFileSync } from "node:child_process";
 
 const solarDir = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
 const texturesDir = path.join(solarDir, "textures");
@@ -214,8 +215,19 @@ function addTextureRef(refs, owner, textureUrl, textureNote, allowReuseWithoutNo
   });
 }
 
+// *.jpg is git-ignored repo-wide, so a texture can exist locally yet never be committed.
+function listTrackedTextures() {
+  try {
+    const output = execFileSync("git", ["ls-files", "-z", "--", "."], { cwd: texturesDir, encoding: "utf8" });
+    return new Set(output.split("\0").filter(Boolean));
+  } catch {
+    return null; // Not a git checkout; skip the tracking check.
+  }
+}
+
 async function validateTextures(textureRefs) {
   const bodyTextureGroups = new Map();
+  const tracked = listTrackedTextures();
 
   for (const ref of textureRefs) {
     const normalized = normalizeTextureUrl(ref.textureUrl);
@@ -230,6 +242,8 @@ async function validateTextures(textureRefs) {
     const absoluteTexturePath = path.join(texturesDir, normalized);
     const exists = await fileExists(absoluteTexturePath);
     check(exists || hasNote, `${ref.owner} texture '${normalized}' is missing and needs textureNote`);
+    check(!exists || !tracked || tracked.has(normalized),
+      `${ref.owner} texture '${normalized}' exists locally but is not tracked by git (use git add -f)`);
 
     if (!ref.allowReuseWithoutNote) {
       const group = bodyTextureGroups.get(normalized) ?? [];
@@ -364,6 +378,9 @@ async function main() {
       }
     }
   }
+
+  // The sky map is referenced from src/rendering/starfield.js, not the data file.
+  addTextureRef(textureRefs, "Sky", "starmap_2020_4k.jpg", null, true);
 
   if (Array.isArray(planets) && planets.length > 0) {
     const { getEphemerisRangeJD, getInterpolatedEphemerisPositionAU } = await import(

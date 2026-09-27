@@ -177,6 +177,8 @@ the night side. This is an educational viewing aid, not simulated solar lighting
 - Earth's Moon texture is the LRO LROC color mosaic from the NASA SVS CGI Moon
   Kit (public domain)
 - Named asteroid orbits use JPL Small-Body Database elements
+- The sky is NASA SVS Deep Star Maps 2020 (public domain), oriented to the J2000
+  sky and toned toward naked-eye brightness: faint colour, a dim grey Milky Way
 - [Three.js](https://threejs.org/) for the rendering engine
 - Developed by Alif
 

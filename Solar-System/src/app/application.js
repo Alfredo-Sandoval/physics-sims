@@ -150,7 +150,7 @@ export async function init() {
     showLoadingScreen(true, "Loading textures…");
 
     /* Starfield and Sun (Pass pre-loaded env map texture) */
-    createStarfield(scene, environmentTexture);
+    createStarfield(scene);
     const sunData = createSun(scene, textureLoader);
     sunMesh = sunData.mesh;
     celestialBodies.push(sunMesh);

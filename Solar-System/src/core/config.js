@@ -199,45 +199,9 @@ export const MAX_TEXTURE_SIZE = 1024; // Preserve more detail when zooming in
 
 /* Star‑field ----------------------------------------------------------- */
 export const STARFIELD_RADIUS = 5000;
-export const STAR_COUNT = 1200;
-export const STAR_BASE_SIZE = 1.6;
-export const STARFIELD_SKY_COLOR = 0x252a33;
-export const STAR_MIN_SIZE_FACTOR = 0.5;
-export const STAR_MAX_SIZE_FACTOR = 1.5;
-export const STARFIELD_TINT_COLOR = 0xbfd3ff;
-export const STARFIELD_TINT_STRENGTH = 0.2;
-export const STARFIELD_LAYER_CONFIGS = Object.freeze([
-  Object.freeze({
-    share: 0.62,
-    minRadiusFactor: 0.9,
-    maxRadiusFactor: 1.0,
-    sizeFactor: 0.75,
-    opacity: 0.16,
-    saturation: 0.2,
-    lightnessMin: 0.58,
-    lightnessMax: 0.88,
-  }),
-  Object.freeze({
-    share: 0.28,
-    minRadiusFactor: 0.75,
-    maxRadiusFactor: 0.9,
-    sizeFactor: 1.1,
-    opacity: 0.28,
-    saturation: 0.24,
-    lightnessMin: 0.62,
-    lightnessMax: 0.94,
-  }),
-  Object.freeze({
-    share: 0.1,
-    minRadiusFactor: 0.56,
-    maxRadiusFactor: 0.75,
-    sizeFactor: 1.45,
-    opacity: 0.48,
-    saturation: 0.3,
-    lightnessMin: 0.66,
-    lightnessMax: 0.98,
-  }),
-]);
+// Multiplies the sky map toward naked-eye brightness: a black sky, a faint grey
+// Milky Way, and stars as points.
+export const STARFIELD_SKY_COLOR = 0x808080;
 
 /* Orbit visual hierarchy ---------------------------------------------- */
 export const ORBIT_MAX_VISUAL_DISTANCE_AU = 30.5;

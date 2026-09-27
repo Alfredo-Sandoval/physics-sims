@@ -193,6 +193,20 @@ export async function checkRendering(win, { assert, waitFor, nextDraw, app, play
   await nextDraw(() => state.controls.dispatchEvent({ type: "change" }));
   const sky = state.scene.getObjectByName("starfield");
   assert(sky.position.distanceTo(state.camera.position) < 1e-9, "the sky stays centred on the camera");
+  // The equatorial sky map must sit on the real sky: the galactic centre (RA 266.4°,
+  // Dec −28.9°) lies 5.5° south of the ecliptic, and the map's pole is Earth's pole.
+  const skyMesh = sky.children.find((child) => child.userData.isSky);
+  const THREE = await win.eval('import("three")');
+  const fromEquatorial = (raDeg, decDeg) => {
+    const ra = raDeg * Math.PI / 180, dec = decDeg * Math.PI / 180;
+    const eq = [Math.cos(dec) * Math.cos(ra), Math.cos(dec) * Math.sin(ra), Math.sin(dec)];
+    return new THREE.Vector3(eq[0], eq[2], eq[1]).applyMatrix4(skyMesh.matrix).normalize();
+  };
+  const earthPole = new THREE.Vector3(0, 1, 0).applyQuaternion(
+    state.planets.find((body) => body.userData.name === "Earth").userData.spinFrameQuaternion);
+  assert(fromEquatorial(0, 90).angleTo(earthPole) < 1e-6, "the sky map's celestial pole matches Earth's pole");
+  const galacticLatitude = Math.asin(fromEquatorial(266.4, -28.94).y) * 180 / Math.PI;
+  assert(Math.abs(galacticLatitude + 5.5) < 0.3, `the galactic centre sits 5.5° south of the ecliptic (${galacticLatitude.toFixed(2)}°)`);
   assert(state.controls.maxDistance + 50 * config.ORBIT_SCALE_FACTOR <= state.camera.far,
     "the farthest zoom keeps the Kuiper belt inside the far plane");
 
