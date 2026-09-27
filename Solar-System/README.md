@@ -29,8 +29,10 @@ first time, while Three.js loads.
 - **Time navigation** — jump immediately to a UTC date, step by one day, return
   to today, or reverse playback; date changes preserve pause/play state
 - **Scale modes** — *Enhanced Visibility* enlarges bodies independently;
-  *Relative Sizes* uses one common radius scale for the Sun, planets, and moons.
-  Orbital spacing still uses a separate scale.
+  *Planets to Scale* keeps planets and moons at true relative sizes (Jupiter at
+  13.4 units, Earth 1.2, the Moon 0.33); the Sun, which would be about 130 units,
+  keeps its Enhanced size and is marked not to scale. Orbital spacing still uses a
+  separate scale.
 - **Focus mode** — dim the rest of the scene to highlight a selected body
 - **Information panel** — three quick measurements, one observation, visible
   texture disclosures, and expandable facts in a fixed dock
@@ -157,7 +159,7 @@ ones. Earth's Moon is slower than the threshold, so it stays on the real date.
 Enhanced Visibility sizes planets as 4 × √(radius in Earth radii): Jupiter is
 13.4 units, Saturn 12.3, Uranus 8.0, Earth 4.0, and Mercury 2.5. The Sun would be
 42 units under the same rule and swallow Mercury's orbit, so it is capped at 19.1,
-still the largest body. Relative mode uses one true-size scale anchored to the Sun.
+still the largest body. Planets to Scale mode keeps that Sun size.
 
 Selection adds a white inspection light so albedo detail remains visible on
 the night side. This is an educational viewing aid, not simulated solar lighting.

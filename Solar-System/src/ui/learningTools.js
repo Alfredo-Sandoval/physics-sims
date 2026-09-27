@@ -58,7 +58,7 @@ const TOUR_STOPS = [
   },
   {
     title: "Scale lesson",
-    body: "Relative mode uses one body-size scale, from the Sun to the smallest moon. Earth becomes tiny beside the Sun. Select any body to inspect it; orbital spacing still uses a separate scale.",
+    body: "Planets-to-scale mode keeps every planet and moon at its true size relative to the others: Jupiter is eleven Earths across, and the Moon a quarter of one. The Sun would be ten Jupiters across, so it is drawn smaller and not to scale. Orbital spacing uses a separate scale.",
     selectPlanet: "Earth",
     focusSelector: "#toggleScaleModeBtn",
     setRelativeScale: true,

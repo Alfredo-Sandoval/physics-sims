@@ -64,9 +64,9 @@ function applyScaleModeToScene(scene, mode) {
 function applyScaleMode(scaleModeBtn, scaleIndicator, scene, mode) {
   const activeMode = mode === SCALE_MODE_RELATIVE ? SCALE_MODE_RELATIVE : SCALE_MODE_ENHANCED;
   const isRelativeMode = activeMode === SCALE_MODE_RELATIVE;
-  const modeLabel = isRelativeMode ? "Relative Size" : "Enhanced";
+  const modeLabel = isRelativeMode ? "Planets to Scale" : "Enhanced";
   const indicatorText = isRelativeMode
-    ? "Scale Mode: Relative Sizes"
+    ? "Scale Mode: Planets to Scale (Sun not to scale)"
     : "Scale Mode: Enhanced Visibility";
 
   document.body.dataset.scaleMode = activeMode;

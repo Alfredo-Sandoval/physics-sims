@@ -43,10 +43,11 @@ export function createSun(scene, loader) {
     },
     clickTarget: null,
     displayRadiusEnhanced: CONSTANTS.SUN_RADIUS * CONSTANTS.SUN_ENHANCED_SCALE,
-    displayRadiusRelative: CONSTANTS.SUN_RADIUS,
+    // Not to scale in either mode; see RELATIVE_SCALE_EARTH_RADIUS.
+    displayRadiusRelative: CONSTANTS.SUN_RADIUS * CONSTANTS.SUN_ENHANCED_SCALE,
   };
   sun.userData.displayRadius = sun.userData.displayRadiusEnhanced;
-  applyScaleModeProfile(sun, { enhanced: CONSTANTS.SUN_ENHANCED_SCALE, relative: 1 });
+  applyScaleModeProfile(sun, { enhanced: CONSTANTS.SUN_ENHANCED_SCALE, relative: CONSTANTS.SUN_ENHANCED_SCALE });
   sun.scale.setScalar(CONSTANTS.SUN_ENHANCED_SCALE);
   sun.userData.clickTarget = sun;
   scene.add(sun);

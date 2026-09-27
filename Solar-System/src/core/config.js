@@ -28,7 +28,7 @@ export const SUN_RADIUS = 25; // render‑unit radius of Sun
 // Enhanced mode sizes planets as 4 × √(radius in Earth radii) (the data's scaledRadius
 // values), so the giants stay prominent. The same rule would make the Sun 42 units and
 // swallow Mercury's orbit, so it is capped at 19.1: still larger than Jupiter (13.4)
-// and clear of Mercury's perihelion (30.7 units). Relative mode is true size.
+// and clear of Mercury's perihelion (30.7 units). Relative mode keeps this Sun size.
 export const SUN_ENHANCED_SCALE = 19.1 / SUN_RADIUS;
 export const SUN_RADIUS_KM = 695700; // Matches the mean diameter in the Sun's data card
 export const EARTH_RADIUS_KM = 6378.1366; // JPL equatorial radius (km) for info display
@@ -50,8 +50,10 @@ export const MOON_DISPLAY_SCALE_FACTOR = 1.5; // Moon scaling relative to planet
 export const MIN_PLANET_RADIUS = 1.0; // Minimum visual size for planets
 export const MIN_MOON_RADIUS = 0.15; // Minimum visual size for moons
 export const MAX_MOON_RADIUS = 2; // Maximum visual size for moons
-// One common body-size scale, anchored to the Sun. Orbital spacing is separate.
-export const RELATIVE_SCALE_EARTH_RADIUS = SUN_RADIUS * EARTH_RADIUS_KM / SUN_RADIUS_KM;
+// Relative mode keeps planets and moons to scale with each other, with Jupiter
+// (71,492 km) at its Enhanced size of 13.4. The Sun would be about 130 units on this
+// scale, so it keeps its Enhanced size and the UI says it is not to scale.
+export const RELATIVE_SCALE_EARTH_RADIUS = 13.4 * EARTH_RADIUS_KM / 71492;
 
 export const CLOUD_SCALE_FACTOR = 1.02;
 export const CLOUD_OPACITY = 0.7;

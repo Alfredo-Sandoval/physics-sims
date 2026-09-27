@@ -157,11 +157,15 @@ async function runSolarSystemSmoke() {
   const jupiter = state.celestialBodies.find((body) => body.userData.name === "Jupiter");
   const moon = state.celestialBodies.find((body) => body.userData.name === "Moon");
   const sun = state.sun;
-  for (const body of [sun, jupiter, moon]) {
+  for (const body of [jupiter, moon]) {
     assert(Math.abs(bodyRadius(body) / bodyRadius(earth) - body.userData.config.actualRadius) < 1e-6,
       `${body.userData.name} shares Earth's relative body-size scale`);
   }
-  assert(bodyRadius(sun) > bodyRadius(jupiter), "Sun remains larger than Jupiter in relative mode");
+  assert(bodyRadius(earth) > 1 && Math.abs(bodyRadius(jupiter) - 13.4) < 0.01,
+    "planets-to-scale mode draws Earth at a readable size, with Jupiter at its enhanced size");
+  assert(bodyRadius(sun) > bodyRadius(jupiter) &&
+    doc.getElementById("scaleIndicator").textContent.includes("Sun not to scale"),
+    "the Sun stays the largest body and is labelled not to scale");
   planetLabel.click();
   assert(planetNav.value === "Earth" && !moonNav.disabled, "label navigation synchronizes both dropdowns");
   await waitFor(() => !state.frameRequested, "camera finishes framing relative-size Earth");
