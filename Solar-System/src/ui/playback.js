@@ -49,6 +49,20 @@ export function applySimulationSpeed(speed) {
   syncPlaybackUi(normalized);
 }
 
+// Change the rate's size but keep its direction; a paused simulation stays paused.
+export function scaleSimulationSpeed(factor) {
+  const speed = getSimulationSpeed();
+  const paused = isPausedSpeed(speed);
+  const base = paused ? getResumeSpeed() : speed;
+  const next = Math.sign(base) * Math.max(0.1, Math.min(5, Math.abs(base) * factor));
+  if (paused) {
+    lastActiveSimulationSpeed = next;
+    syncPlaybackUi(0);
+  } else {
+    applySimulationSpeed(next);
+  }
+}
+
 export function initPlaybackControls() {
   cleanupPlaybackControls();
   listeners = new AbortController();

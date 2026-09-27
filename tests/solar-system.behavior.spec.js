@@ -1,4 +1,4 @@
-import { checkRotation, checkOrientation, checkInspectionLabel } from "./solar-system.regressions.js";
+import { checkRotation, checkOrientation, checkKeyboard, checkInspectionLabel } from "./solar-system.regressions.js";
 
 export async function runBehaviorChecks(win, { assert, wait, waitFor }) {
   const doc = win.document;
@@ -45,6 +45,8 @@ export async function runBehaviorChecks(win, { assert, wait, waitFor }) {
   assert(moon.position.distanceTo(moonBefore) < 1e-8, "backward day stepping restores the Moon");
   await nextDraw(() => app.seekToDays((Date.parse("2026-06-20T02:00:00Z") - epoch) / 86400000));
   assert(doc.getElementById("dayCounter").textContent === "20 Jun 2026", "live date follows UTC midnight rather than the epoch's time of day");
+  await nextDraw(() => app.seekToDays((Date.parse("2027-01-05T12:00:00Z") - epoch) / 86400000));
+  assert(input.value === "2027-01-05", "the date picker follows the simulated date");
   await nextDraw(() => doc.getElementById("todayBtn").click());
   assert(Math.abs(app.getSimulatedDays() - (Date.now() - epoch) / 86400000) < 0.0001 && app.getSimulationSpeed() === 0,
     "Today returns to the current time without resuming playback");
@@ -59,6 +61,7 @@ export async function runBehaviorChecks(win, { assert, wait, waitFor }) {
   doc.getElementById("togglePlaybackBtn").click();
   assert(app.getSimulationSpeed() < 0, "resume retains reverse direction");
   playback.applySimulationSpeed(0);
+  await checkKeyboard(win, { assert, waitFor, app, playback, state });
 
   // Compare actual worker output with the same main-thread solver, including outside ephemeris coverage.
   const worker = new win.Worker("/Solar-System/src/simulation/workers/orbitWorker.js", { type: "module" });

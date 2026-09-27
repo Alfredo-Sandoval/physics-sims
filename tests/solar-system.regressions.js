@@ -93,6 +93,42 @@ export async function checkOrientation(win, { assert, nextDraw, app, state }) {
   assert(Math.abs(trojans - 60) < 10, `the L4 Trojans lead Jupiter by about 60° (${trojans.toFixed(1)}°)`);
 }
 
+export async function checkKeyboard(win, { assert, waitFor, app, playback, state }) {
+  const doc = win.document;
+  const press = (key, target = doc.body) =>
+    target.dispatchEvent(new win.KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
+  const selectedName = () => app.getSelectedObject()?.userData.name ?? null;
+
+  playback.applySimulationSpeed(-1);
+  press("-");
+  assert(app.getSimulationSpeed() === -0.5, "slowing reverse playback keeps it in reverse");
+  playback.applySimulationSpeed(0);
+  press("+");
+  assert(app.getSimulationSpeed() === 0 && playback.getResumeSpeed() === -1,
+    "speeding up while paused stays paused and keeps the direction");
+
+  const pause = doc.getElementById("togglePlaybackBtn");
+  pause.focus();
+  press("3", pause);
+  assert(selectedName() === "Earth", "number shortcuts work while a button has focus");
+  const heading = doc.getElementById("controls-view-heading");
+  heading.focus();
+  press(" ", heading);
+  assert(app.getSimulationSpeed() === 0, "Space on a focused section heading leaves playback alone");
+
+  press("Escape");
+  assert(selectedName() === null, "Escape deselects the selected body");
+
+  pause.focus();
+  press("/", pause);
+  await waitFor(() => doc.activeElement?.closest("[role='dialog']"), "search palette opens");
+  press("Enter", doc.activeElement);
+  assert(selectedName() === "Sun", "the search palette's first result is a body, not a placeholder");
+  assert(doc.activeElement === pause, "the search palette returns focus where it opened");
+  press("Escape");
+  assert(selectedName() === null && state.planets.length > 0, "Escape still deselects after using the palette");
+}
+
 export async function checkMenu(win, { assert, waitFor }) {
   const doc = win.document;
   const toggle = doc.getElementById("menuToggle");

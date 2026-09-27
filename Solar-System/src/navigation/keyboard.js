@@ -2,16 +2,20 @@ import { selectObject, deselectObject } from "../ui/index.js";
 import { findCelestialBodyByName } from "../core/state.js";
 import { getSelectedObject, getCelestialBodies, getSimulationSpeed,
   updateFollowTarget, stopCameraFollow, setSelectedObject } from "../core/state.js";
-import { applySimulationSpeed, getResumeSpeed, isPausedSpeed } from "../ui/playback.js";
+import { applySimulationSpeed, getResumeSpeed, isPausedSpeed, scaleSimulationSpeed } from "../ui/playback.js";
+import { targetOwnsKey } from "./shortcutTargets.js";
 
 const PLANET_KEYS = ["Sun", "Mercury", "Venus", "Earth", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune"];
 let keyboardShortcutHandler = null;
 let shortcutsHelpVisible = false;
 
+// A dialog inside a hidden wrapper keeps its own display, so check the rendered result.
 function isElementVisible(element) {
-  if (!element || element.hidden) return false;
-  const style = window.getComputedStyle(element);
-  return style.display !== "none" && style.visibility !== "hidden";
+  if (!element || element.closest("[hidden]")) return false;
+  if (typeof element.checkVisibility === "function") {
+    return element.checkVisibility({ visibilityProperty: true });
+  }
+  return element.getClientRects().length > 0;
 }
 
 function hasOpenModalOrDialog() {
@@ -49,23 +53,8 @@ function handleEscapeKeyAction() {
 }
 
 function shouldIgnoreShortcutEvent(event) {
-  if (event.altKey || event.ctrlKey || event.metaKey) return true;
-  const target = event.target;
-  if (!(target instanceof Element)) return false;
-  if (target.isContentEditable) return true;
-
-  const interactiveSelector = [
-    "input",
-    "textarea",
-    "select",
-    "button",
-    "a[href]",
-    "[contenteditable='true']",
-    "[contenteditable='']",
-    "[role='button']",
-    "[role='textbox']",
-  ].join(",");
-  return Boolean(target.closest(interactiveSelector));
+  if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return true;
+  return targetOwnsKey(event);
 }
 
 export function setupKeyboardShortcuts(scene) {
@@ -98,12 +87,12 @@ export function setupKeyboardShortcuts(scene) {
       case "+":
       case "=":
         e.preventDefault();
-        applySimulationSpeed(Math.min(5.0, (getSimulationSpeed() || 1) * 2));
+        scaleSimulationSpeed(2);
         break;
       case "-":
       case "_":
         e.preventDefault();
-        applySimulationSpeed(Math.max(0.1, (getSimulationSpeed() || 1) / 2));
+        scaleSimulationSpeed(0.5);
         break;
       case "0":
         goToBody("Sun");
@@ -198,6 +187,7 @@ function toggleShortcutsHelp() {
       ["O", "Toggle orbits"],
       ["R", "Reset camera"],
       ["Esc", "Deselect / Close"],
+      ["/  or  Ctrl+K", "Search bodies"],
       ["?  /  H", "This help"],
     ];
     const title = document.createElement("h4");

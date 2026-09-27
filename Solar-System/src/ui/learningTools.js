@@ -1,3 +1,5 @@
+import { isTextEntryTarget } from "../navigation/shortcutTargets.js";
+
 const INSTANCE_KEY = "__solarSystemLearningTools";
 
 const PLANET_FALLBACKS = [
@@ -115,10 +117,8 @@ function getSelectableOptions(select, kind) {
   if (!select) return [];
 
   return Array.from(select.options)
-    .filter((option) => {
-      const value = option.value || option.textContent || "";
-      return normalizeText(value) !== "";
-    })
+    // Placeholder rows ("Select Body...") have empty values and are not destinations.
+    .filter((option) => normalizeText(option.value) !== "" && !option.disabled)
     .map((option) => {
       const optgroup = option.closest("optgroup");
       const labelText = getLabelTextForControl(select);
@@ -164,9 +164,6 @@ function dispatchSelect(select, name) {
 
   select.value = option.value;
   select.dispatchEvent(new Event("change", { bubbles: true }));
-  if (typeof select.focus === "function") {
-    select.focus({ preventScroll: true });
-  }
   return true;
 }
 
@@ -327,12 +324,6 @@ function choosePaletteResult(state, index = state.selectedIndex) {
     state.api.closeCommandPalette();
   }
   return selected;
-}
-
-function isEditableShortcutTarget(target) {
-  if (!(target instanceof Element)) return false;
-  if (target.isContentEditable) return true;
-  return Boolean(target.closest("input, textarea, select, button, a[href], [role='textbox']"));
 }
 
 function buildTourPanel(api) {
@@ -524,6 +515,8 @@ function initNow(options = {}) {
       state.input.setAttribute("aria-expanded", "true");
       state.selectedIndex = 0;
       renderPaletteResults(state);
+      const active = getDocument()?.activeElement;
+      state.returnFocus = active && !state.overlay.contains(active) ? active : null;
       state.input.focus();
       return true;
     },
@@ -531,8 +524,15 @@ function initNow(options = {}) {
     closeCommandPalette() {
       const state = instance.commandPalette;
       if (!state) return false;
+      const hadFocus = state.overlay.contains(getDocument()?.activeElement);
       state.overlay.hidden = true;
       state.input.setAttribute("aria-expanded", "false");
+      // Hand focus back so shortcuts resume where the palette was opened.
+      if (hadFocus) {
+        if (state.returnFocus?.isConnected) state.returnFocus.focus({ preventScroll: true });
+        else state.input.blur();
+      }
+      state.returnFocus = null;
       return true;
     },
 
@@ -634,7 +634,7 @@ function initNow(options = {}) {
       return;
     }
 
-    if (!shortcutPressed || isEditableShortcutTarget(event.target)) return;
+    if (!shortcutPressed || isTextEntryTarget(event.target)) return;
     event.preventDefault();
     api.openCommandPalette();
   });

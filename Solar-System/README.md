@@ -68,8 +68,12 @@ first time, while Three.js loads.
 - **Inner system / Whole system** — return to the inner planets or fit all eight
   planetary orbits in view
 - **Top-Down (Ecliptic)** — look from ecliptic north (prograde = CCW)
-- **Keyboard** — Space pauses/resumes, 0–8 selects a body, R restores the inner
-  view, and / or Ctrl/Cmd+K searches bodies and controls
+- **Keyboard** — Space pauses/resumes; + and − change speed without changing
+  direction or unpausing; 0–8 selects a body; Esc deselects; R restores the
+  inner view; O, L, and M toggle orbits, planet labels, and moon labels; S and V
+  switch scale and focus modes; F toggles fullscreen; ? or H lists shortcuts;
+  / or Ctrl/Cmd+K searches bodies. Shortcuts work after clicking a button;
+  only text fields and dropdowns keep keys to themselves
 
 ## Technical details
 

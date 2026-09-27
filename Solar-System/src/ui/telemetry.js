@@ -1,5 +1,5 @@
 import * as CONSTANTS from "../core/config.js";
-let speedSpan, speedRate, dayCounter, epochLabel, frameLabel;
+let speedSpan, speedRate, dayCounter, datePicker, epochLabel, frameLabel;
 let propagationMode, ephemerisSource, ephemerisRange;
 let lastDisplayedDay = null;
 let lastDisplayedSpeed = null;
@@ -12,6 +12,7 @@ export function initTelemetry() {
   speedSpan = document.getElementById("speedValue");
   speedRate = document.getElementById("speedRate");
   dayCounter = document.getElementById("dayCounter");
+  datePicker = document.getElementById("datePicker");
   epochLabel = document.getElementById("epochLabel");
   frameLabel = document.getElementById("frameLabel");
   propagationMode = document.getElementById("propagationMode");
@@ -86,6 +87,10 @@ export function updateDayCounter(days) {
   dayCounter.textContent = simulationEpochMs !== null
     ? dateFormatter.format(new Date(timestamp))
     : `Day ${day}`;
+  // Keep the picker on the simulated date so choosing any other date always jumps.
+  if (datePicker && simulationEpochMs !== null && document.activeElement !== datePicker) {
+    datePicker.value = new Date(timestamp).toISOString().slice(0, 10);
+  }
 }
 
 export function updateUIDisplay(simSpeed) {
@@ -96,7 +101,7 @@ export function updateUIDisplay(simSpeed) {
 }
 
 export function cleanupTelemetry() {
-  speedSpan = speedRate = dayCounter = epochLabel = frameLabel = null;
+  speedSpan = speedRate = dayCounter = datePicker = epochLabel = frameLabel = null;
   propagationMode = ephemerisSource = ephemerisRange = null;
   ephemerisMinJD = ephemerisMaxJD = simulationEpochMs = null;
   lastDisplayedDay = lastDisplayedSpeed = null;
