@@ -113,6 +113,16 @@ export async function init() {
     renderer = rendererChoice.renderer;
     const rendererKind = rendererChoice.type;
     logInfo("Renderer", `Using ${rendererKind.toUpperCase()} renderer`);
+    // A lost GPU context (driver reset, backgrounded mobile tab) otherwise leaves a
+    // frozen black canvas; say so, and redraw once three.js restores it.
+    renderer.domElement.addEventListener("webglcontextlost", (event) => {
+      event.preventDefault();
+      showErrorMessage("The graphics context was lost. Waiting for it to restore; reload the page if it does not.");
+    });
+    renderer.domElement.addEventListener("webglcontextrestored", () => {
+      clearErrorMessage();
+      emit("render");
+    });
     controls = SceneSetup.setupControls(camera, renderer);
 
     setScene(scene);

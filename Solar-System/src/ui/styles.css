@@ -797,9 +797,9 @@ body.focus-mode #info {
   body.focus-mode .planet-label {
     opacity: 0.86;
   }
-  #menuContainer:not(.collapsed) ~ .planet-label,
-  #menuContainer:not(.collapsed) ~ .planet-label-extended,
-  #menuContainer:not(.collapsed) ~ .planet-label-layer {
+  body.menu-open .planet-label,
+  body.menu-open .planet-label-extended,
+  body.menu-open .planet-label-layer {
     opacity: 0;
     pointer-events: none;
   }

@@ -19,14 +19,17 @@ export function createDetailController(bodies, renderer) {
   let activeMaterial = null;
   let baseTexture = null;
   let generation = 0;
+  let inspectedMesh = null;
   function restoreTexture() {
     generation++;
     if (activeMaterial) { activeMaterial.map = baseTexture; activeMaterial.emissiveMap = baseTexture; activeMaterial.needsUpdate = true; }
     releaseTexture(detailTexture);
     detailTexture = activeMaterial = baseTexture = null;
   }
+  // Runs every frame; only a change of inspected body restores or loads textures.
   function sharpen(mesh) {
-    if (activeMaterial === mesh?.material) return;
+    if (mesh === inspectedMesh) return;
+    inspectedMesh = mesh;
     restoreTexture();
     const base = mesh?.material?.map;
     if (!base?.userData.filename || base.userData.originalSize <= 1024) return;
@@ -71,6 +74,7 @@ export function createDetailController(bodies, renderer) {
       sharpen(inspectMesh);
     },
     dispose() {
+      inspectedMesh = null;
       restoreTexture();
       for (const { mesh, original, cache } of meshes) {
         mesh.geometry = original;

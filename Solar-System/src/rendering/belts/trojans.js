@@ -101,8 +101,11 @@ export function createJupiterTrojans(scene, planets, planetConfigs) {
 }
 
 // Update Jupiter Trojans to co-orbit with Jupiter (called per-frame)
+let cachedTrojans = null;
 export function updateJupiterTrojans(scene, planets) {
-  const trojansGroup = scene.getObjectByName("JupiterTrojans");
+  // Called every frame; look the group up only when the scene changes.
+  if (cachedTrojans?.parent !== scene) cachedTrojans = scene.getObjectByName("JupiterTrojans") ?? null;
+  const trojansGroup = cachedTrojans;
   if (!trojansGroup) return;
 
   const jupiter = trojansGroup.userData.jupiterPlanet;

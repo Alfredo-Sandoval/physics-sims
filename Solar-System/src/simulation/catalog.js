@@ -112,6 +112,7 @@ export async function loadPlanetData() {
 
         const Rm = Math.abs(m.rotationPeriod || 0);
         const isTidallyLocked = Pm > 0 && Rm > 0 && Math.abs(Pm - Rm) < 1e-6;
+        m.tidallyLocked = isTidallyLocked;
         if (typeof m.spinRetrograde === "boolean") {
           m.rotationDirection = m.spinRetrograde ? -1 : 1;
         } else if (isTidallyLocked) {

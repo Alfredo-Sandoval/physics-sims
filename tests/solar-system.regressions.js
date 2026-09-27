@@ -23,7 +23,7 @@ export async function checkRotation(win, { assert, nextDraw, app, state, config 
 }
 
 // Checks orbits and spins against each other, so a mirrored scene or a mis-aimed pole fails.
-export async function checkOrientation(win, { assert, nextDraw, app, state }) {
+export async function checkOrientation(win, { assert, nextDraw, app, state, config }) {
   const THREE = await win.eval('import("three")');
   const epoch = Date.parse(state.planets[0].userData.config.kepler.epochDateUtc);
   const daysAt = (iso) => (Date.parse(iso) - epoch) / 86400000;
@@ -89,6 +89,25 @@ export async function checkOrientation(win, { assert, nextDraw, app, state }) {
     const miss = Math.abs(THREE.MathUtils.euclideanModulo(elongation - expected + 180, 360) - 180);
     assert(miss < 10, `the Moon is ${phase} on its ${iso.slice(0, 10)} lunation (off by ${miss.toFixed(1)}°)`);
   }
+
+  // Precessing moon paths rotate with their elements, so the Moon stays on its drawn path.
+  const offPath = async (days) => sample(days, () => {
+    const line = moon.userData.orbitLine;
+    const normal = new THREE.Vector3(0, 1, 0).applyQuaternion(line.quaternion);
+    return Math.abs(moon.position.clone().normalize().dot(normal));
+  });
+  assert(await offPath(start) < 1e-6 && await offPath(start + 3650) < 1e-6,
+    "the Moon stays on its drawn path as its orbit precesses over a decade");
+  const nearSide = await sample(start, () => new THREE.Vector3(1, 0, 0).applyQuaternion(turn(moon))
+    .angleTo(world(earth).sub(world(moon))) * 180 / Math.PI);
+  assert(nearSide < 10, `the Moon's near side faces Earth (${nearSide.toFixed(1)}°)`);
+
+  // Fast moons run on a compressed display clock; none laps its planet in under a second at 1×.
+  const io = state.moons.find((body) => body.userData.name === "Io");
+  const ioTurn = async (days) => sample(days, () => io.userData.currentMeanAnomaly);
+  const perSecond = config.DAYS_PER_SIM_SECOND_AT_1X;
+  const advance = THREE.MathUtils.euclideanModulo(await ioTurn(start + perSecond) - await ioTurn(start), 2 * Math.PI);
+  assert(advance < Math.PI, `Io takes over two seconds per orbit at 1× (${(advance * 180 / Math.PI).toFixed(0)}° per second)`);
 
   const trojans = await sample(start, () => {
     const jupiter = state.planets.find((body) => body.userData.name === "Jupiter");
@@ -162,6 +181,10 @@ export async function checkRendering(win, { assert, waitFor, nextDraw, app, play
   assert(light.shadow.camera.far > neptune.position.length(), "point-light shadows reach Neptune");
 
   const sun = state.scene.children.find((child) => child.userData?.name === "Sun");
+  const sizes = [sun, ...["Jupiter", "Saturn", "Uranus", "Earth", "Mars", "Mercury"]
+    .map((name) => state.planets.find((body) => body.userData.name === name))].map((body) => body.userData.displayRadius);
+  assert(sizes.every((size, i) => i === 0 || size < sizes[i - 1]),
+    `enhanced sizes keep true order, Sun first (${sizes.map((size) => size.toFixed(1)).join(" > ")})`);
   const mercury = state.planets.find((body) => body.userData.name === "Mercury");
   const perihelion = mercury.userData.config.orbitRadiusAU * (1 - mercury.userData.config.info.orbitalEccentricity) *
     config.ORBIT_SCALE_FACTOR;

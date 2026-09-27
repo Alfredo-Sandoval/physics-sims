@@ -11,6 +11,7 @@ import {
 } from "../../simulation/beltWorkerClient.js";
 
 const TWO_PI = Math.PI * 2;
+const DEG2RAD = Math.PI / 180;
 
 function normalizeAngle(angleRadians) {
   const wrapped = angleRadians % TWO_PI;
@@ -438,12 +439,12 @@ export function createAsteroidBelt(scene, loader) {
 function createNamedAsteroids(scene, belt) {
   const namedAsteroids = [];
 
-  // Data: name, semi-major axis (AU), size multiplier, color
+  // JPL SBDB osculating elements (J2000 ecliptic), mean anomaly at the simulation epoch
   const majorAsteroids = [
-    { name: "Ceres", a: 2.77, size: 0.8, color: 0x4a4a4a, e: 0.076, i: 0.186 }, // Dwarf planet
-    { name: "Vesta", a: 2.36, size: 0.45, color: 0x9d8b6c, e: 0.089, i: 0.123 },
-    { name: "Pallas", a: 2.77, size: 0.44, color: 0x5a5a5a, e: 0.231, i: 0.597 },
-    { name: "Hygiea", a: 3.14, size: 0.37, color: 0x3f3f3f, e: 0.117, i: 0.067 },
+    { name: "Ceres", size: 0.8, color: 0x4a4a4a, a: 2.76555, e: 0.07969, iDeg: 10.588, nodeDeg: 80.2486, periDeg: 73.2942, meanAnomalyDeg: 260.3805, periodDays: 1679.85 }, // Dwarf planet
+    { name: "Vesta", size: 0.45, color: 0x9d8b6c, a: 2.36137, e: 0.0902, iDeg: 7.1439, nodeDeg: 103.7013, periDeg: 151.4686, meanAnomalyDeg: 63.3967, periodDays: 1325.39 },
+    { name: "Pallas", size: 0.44, color: 0x5a5a5a, a: 2.76956, e: 0.2307, iDeg: 34.9328, nodeDeg: 172.8866, periDeg: 310.9699, meanAnomalyDeg: 240.2412, periodDays: 1683.5 },
+    { name: "Hygiea", size: 0.37, color: 0x3f3f3f, a: 3.15097, e: 0.10671, iDeg: 3.8295, nodeDeg: 283.1199, periDeg: 312.4242, meanAnomalyDeg: 240.4909, periodDays: 2042.99 },
   ];
 
   majorAsteroids.forEach((data) => {
@@ -491,11 +492,11 @@ function createNamedAsteroids(scene, belt) {
     const orbitalParams = {
       a: data.a,
       e: data.e,
-      i: data.i,
-      Omega: random() * Math.PI * 2,
-      omega: random() * Math.PI * 2,
-      M0: random() * Math.PI * 2,
-      T: Math.sqrt(data.a * data.a * data.a) * 365.25,
+      i: data.iDeg * DEG2RAD,
+      Omega: data.nodeDeg * DEG2RAD,
+      omega: data.periDeg * DEG2RAD,
+      M0: data.meanAnomalyDeg * DEG2RAD,
+      T: data.periodDays,
     };
 
     mesh.userData.orbitalParams = orbitalParams;

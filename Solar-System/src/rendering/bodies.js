@@ -5,7 +5,7 @@ import * as CONSTANTS from "../core/config.js";
 import { createPlanetMaterial, createTextSprite } from "./materials.js";
 import { createOrbitLine } from "./orbitLines.js";
 import { loadTexture } from "./textures.js";
-import { getMoonLocalPosition, getMoonOrbitFrameQuaternion } from "../simulation/moonPosition.js";
+import { getMoonLocalPosition, getMoonOrbitFrameQuaternion, getMoonOrbitLineQuaternion } from "../simulation/moonPosition.js";
 import { getSpinFrameQuaternion } from "../simulation/frames.js";
 import { eccentricAnomaly, trueAnomaly, radius } from "../simulation/kepler.js";
 import { debug as logDebug, warn as logWarn } from "../core/logger.js";
@@ -13,45 +13,6 @@ import { debug as logDebug, warn as logWarn } from "../core/logger.js";
 /* ---------------------------------------------------------------------- */
 /*                               Sun                                      */
 /* ---------------------------------------------------------------------- */
-function createSunGlowTexture() {
-  const canvas = document.createElement("canvas");
-  canvas.width = 256;
-  canvas.height = 256;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return new THREE.Texture();
-
-  const gradient = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
-  gradient.addColorStop(0, "rgba(255, 248, 220, 0.95)");
-  gradient.addColorStop(0.22, "rgba(255, 214, 132, 0.78)");
-  gradient.addColorStop(0.52, "rgba(255, 154, 64, 0.32)");
-  gradient.addColorStop(1, "rgba(255, 120, 0, 0)");
-
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  return texture;
-}
-
-function createSunGlowSprite() {
-  const material = new THREE.SpriteMaterial({
-    map: createSunGlowTexture(),
-    color: 0xffd38a,
-    transparent: true,
-    opacity: 0.45,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false,
-    toneMapped: false,
-  });
-  const sprite = new THREE.Sprite(material);
-  sprite.scale.setScalar(CONSTANTS.SUN_GLOW_SPRITE_SCALE);
-  sprite.renderOrder = 1;
-  sprite.frustumCulled = false;
-  sprite.userData = { isSunGlow: true };
-  return sprite;
-}
-
 export function createSun(scene, loader) {
   const tex = loadTexture("sun.jpg", loader);
   const geom = new THREE.SphereGeometry(CONSTANTS.SUN_RADIUS, 64, 32);
@@ -62,11 +23,6 @@ export function createSun(scene, loader) {
     emissiveMap: tex,
   });
   const sun = new THREE.Mesh(geom, mat);
-  if (CONSTANTS.SUN_GLOW_ENABLED) {
-    const glowSprite = createSunGlowSprite();
-    sun.add(glowSprite);
-    sun.userData = { ...(sun.userData || {}), glowSprite };
-  }
   sun.userData = {
     ...(sun.userData || {}),
     isSelectable: true,
@@ -378,7 +334,8 @@ async function createRings(cfg, planetR, group, loader, scaleProfile = null) {
   let texture = null;
   if (visual.textureUrl) {
     texture = loadTexture(visual.textureUrl, loader);
-    texture.wrapS = THREE.RepeatWrapping;
+    // U runs inner→outer edge once; repeating it would blend the two edges into a seam.
+    texture.wrapS = THREE.ClampToEdgeWrapping;
     texture.wrapT = THREE.ClampToEdgeWrapping;
   }
 
@@ -702,10 +659,13 @@ function createMoonSystem(planetCfg, planetGroup, planetRadius, loader) {
     moonBodies.push(moon);
 
     /* Moon orbit line -------------------------------------------------- */
+    // Drawn flat in the perifocal plane and oriented each update as the orbit precesses.
+    const perifocalSpec = { ...orbitSpec, orbitInclinationRad: 0, orbitAscendingNodeRad: 0,
+      orbitArgPeriapsisRad: 0, orbitReference: "ecliptic" };
     const moonOrbitPoints = [];
     for (let k = 0; k < CONSTANTS.MOON_ORBIT_SEGMENTS; k++) {
       const Mk = (k / CONSTANTS.MOON_ORBIT_SEGMENTS) * 2 * Math.PI;
-      moonOrbitPoints.push(getMoonLocalPosition(Mk, orbitSpec, planetSpinFrame));
+      moonOrbitPoints.push(getMoonLocalPosition(Mk, perifocalSpec));
     }
     const moonOrbitGeom = new THREE.BufferGeometry().setFromPoints(moonOrbitPoints);
     // Moon paths are contextual guides, shown when their planet is selected.
@@ -724,6 +684,8 @@ function createMoonSystem(planetCfg, planetGroup, planetRadius, loader) {
       isMoonOrbit: true,
       parentPlanetName: planetCfg.name,
     };
+    getMoonOrbitLineQuaternion(orbitSpec, planetSpinFrame, moonOrbitLine.quaternion);
+    moon.userData.orbitLine = moonOrbitLine;
     moonGroup.add(moonOrbitLine);
 
     moonGroup.add(moon);

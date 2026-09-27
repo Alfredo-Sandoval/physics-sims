@@ -2,7 +2,7 @@
   {
     "name": "Mercury",
     "actualRadius": 0.38264,
-    "scaledRadius": 1.5,
+    "scaledRadius": 2.9,
     "orbitRadiusAU": 0.3870988335796698,
     "baseOrbitSpeedFactor": 4.152016,
     "gravityStrength": 0.3776,
@@ -6652,7 +6652,7 @@
   {
     "name": "Venus",
     "actualRadius": 0.948835,
-    "scaledRadius": 3.8,
+    "scaledRadius": 3.9,
     "orbitRadiusAU": 0.7233283864713498,
     "baseOrbitSpeedFactor": 1.625508,
     "gravityStrength": 0.9051,
@@ -13305,7 +13305,7 @@
   {
     "name": "Earth",
     "actualRadius": 1,
-    "scaledRadius": 4,
+    "scaledRadius": 4.0,
     "orbitRadiusAU": 1.0000040855851953,
     "baseOrbitSpeedFactor": 1.001165,
     "gravityStrength": 1,
@@ -13345,8 +13345,7 @@
         "periapsisPrecessionDegPerDay": 0.1643573,
         "elementsNote": "Mean elements at the simulation epoch (Meeus), J2000 ecliptic; the Sun drives the node and perigee rates",
         "orbitReference": "ecliptic",
-        "textureUrl": "Moon_JPG_Collection/callisto.jpg",
-        "textureNote": "Placeholder texture reused from Callisto until a Moon texture is added."
+        "textureUrl": "Moon_JPG_Collection/moon.jpg"
       }
     ],
     "kepler": {
@@ -19981,7 +19980,7 @@
   {
     "name": "Mars",
     "actualRadius": 0.532474,
-    "scaledRadius": 2,
+    "scaledRadius": 3.2,
     "orbitRadiusAU": 1.523654830761891,
     "baseOrbitSpeedFactor": 0.531694,
     "gravityStrength": 0.3786,
@@ -26659,7 +26658,7 @@
   {
     "name": "Jupiter",
     "actualRadius": 11.208916,
-    "scaledRadius": 20,
+    "scaledRadius": 9.0,
     "orbitRadiusAU": 5.203689415726723,
     "baseOrbitSpeedFactor": 0.084281,
     "gravityStrength": 2.5296,
@@ -33368,7 +33367,7 @@
   {
     "name": "Saturn",
     "actualRadius": 9.449155,
-    "scaledRadius": 17,
+    "scaledRadius": 8.5,
     "orbitRadiusAU": 9.542658747527422,
     "baseOrbitSpeedFactor": 0.033927,
     "gravityStrength": 1.0653,
@@ -40112,7 +40111,7 @@
   {
     "name": "Uranus",
     "actualRadius": 4.007283,
-    "scaledRadius": 10,
+    "scaledRadius": 6.4,
     "orbitRadiusAU": 19.27781758670753,
     "baseOrbitSpeedFactor": 0.011814,
     "gravityStrength": 0.9051,
@@ -46829,7 +46828,7 @@
   {
     "name": "Neptune",
     "actualRadius": 3.882639,
-    "scaledRadius": 10,
+    "scaledRadius": 6.3,
     "orbitRadiusAU": 30.09084712214014,
     "baseOrbitSpeedFactor": 0.006058,
     "gravityStrength": 1.1378,

@@ -2,13 +2,23 @@ import * as THREE from "three";
 import * as CONSTANTS from "../core/config.js";
 import { getSimulatedDays } from "../core/state.js";
 import { getPlanetPositionAU, angleAtDays } from "./positions.js";
-import { getMoonLocalPosition, getMoonOrbitFrameQuaternion } from "./moonPosition.js";
+import { getMoonLocalPosition, getMoonOrbitFrameQuaternion, getMoonOrbitLineQuaternion } from "./moonPosition.js";
 import { eclipticToScene } from "./frames.js";
 import { applyMoonJ2PrecessionAtTime, getPlanetRadiusForMoonPrecession } from "./orbitalRuntime.js";
 
 const moonPosition = new THREE.Vector3();
 const moonOrbitFrame = new THREE.Quaternion();
 const SPIN_AXIS = new THREE.Vector3(0, 1, 0);
+
+// Short periods map to minPeriod·(P/minPeriod)^k: continuous at the threshold and
+// order-preserving, so inner moons still outpace outer ones. Spin uses the same map,
+// keeping tidally locked moons locked.
+function displayedMoonPeriod(periodDays) {
+  const minPeriod = CONSTANTS.MIN_MOON_ORBIT_SECONDS_AT_1X * CONSTANTS.DAYS_PER_SIM_SECOND_AT_1X;
+  const period = Math.abs(periodDays);
+  if (!Number.isFinite(period) || period === 0 || period >= minPeriod) return periodDays;
+  return Math.sign(periodDays) * minPeriod * (period / minPeriod) ** CONSTANTS.MOON_PERIOD_COMPRESSION;
+}
 export function updatePositions(planets, days = getSimulatedDays()) {
   for (const group of planets) {
     const position = getPlanetPositionAU(group.userData.config, days);
@@ -34,14 +44,20 @@ export function updateRotations(planets, days = getSimulatedDays()) {
     for (const moon of ud.__moonMeshes) {
       const mu = moon.userData;
       // Mean anomaly runs at the anomalistic rate when the perigee itself moves.
-      mu.currentMeanAnomaly = angleAtDays(days, mu.config.anomalisticPeriodDays ?? mu.config.orbitalPeriod,
+      mu.currentMeanAnomaly = angleAtDays(days,
+        displayedMoonPeriod(mu.config.anomalisticPeriodDays ?? mu.config.orbitalPeriod),
         mu.orbitDirection, mu.initialMeanAnomaly);
       mu.currentAngle = mu.currentMeanAnomaly;
       applyMoonJ2PrecessionAtTime(mu, ud.name, getPlanetRadiusForMoonPrecession(ud), days);
       moon.position.copy(getMoonLocalPosition(mu.currentMeanAnomaly, mu, ud.spinFrameQuaternion, moonPosition));
       getMoonOrbitFrameQuaternion(mu, ud.spinFrameQuaternion, moonOrbitFrame);
-      moon.quaternion.setFromAxisAngle(SPIN_AXIS,
-        angleAtDays(days, mu.config.rotationPeriod, mu.rotationDirection, mu.initialMeanAnomaly)).premultiply(moonOrbitFrame);
+      if (mu.orbitLine) getMoonOrbitLineQuaternion(mu, ud.spinFrameQuaternion, mu.orbitLine.quaternion);
+      // Locked moons turn with their mean orbital position, keeping the map's centre
+      // (local +X, longitude 0) toward the planet up to libration.
+      const spin = mu.config.tidallyLocked
+        ? mu.currentMeanAnomaly + (mu.orbitArgPeriapsisRad || 0) + Math.PI
+        : angleAtDays(days, displayedMoonPeriod(mu.config.rotationPeriod), mu.rotationDirection, mu.initialMeanAnomaly);
+      moon.quaternion.setFromAxisAngle(SPIN_AXIS, spin).premultiply(moonOrbitFrame);
     }
   }
 }

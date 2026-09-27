@@ -25,9 +25,11 @@ export const CAMERA_FOLLOW_LERP_FACTOR = 10; // higher = snappier
 
 /* Basic sizes ---------------------------------------------------------- */
 export const SUN_RADIUS = 25; // render‑unit radius of Sun
-// Relative mode keeps the true-size anchor; enhanced mode shrinks the Sun so
-// Mercury's perihelion (30.7 units) clears its disk.
-export const SUN_ENHANCED_SCALE = 0.6;
+// Enhanced mode sizes every body as 4 × (radius in Earth radii)^(1/3), so order is
+// kept (Sun > Jupiter > … > Mercury) while small worlds stay visible; the data's
+// scaledRadius values follow the same rule. The Sun is 4 × 109.2^(1/3) ≈ 19.1 units,
+// which leaves Mercury's perihelion (30.7 units) clear. Relative mode is true size.
+export const SUN_ENHANCED_SCALE = 19.1 / SUN_RADIUS;
 export const SUN_RADIUS_KM = 695700; // Matches the mean diameter in the Sun's data card
 export const EARTH_RADIUS_KM = 6378.1366; // JPL equatorial radius (km) for info display
 
@@ -57,6 +59,11 @@ export const CLOUD_ROTATION_SPEED_MULTIPLIER = 1.1;
 // Slow illustrative surface rotation relative to orbital time: Earth takes ~20 s at 1×.
 export const PLANET_SPIN_SLOWDOWN = 120;
 export const MAX_PLANET_SPIN_SECONDS_AT_1X = 60;
+// Moons faster than this per orbit at 1× (about 24 days; Io would otherwise lap
+// Jupiter three times a second) run on a compressed clock that keeps their order.
+// Earth's Moon is slower, so it stays on the real date.
+export const MIN_MOON_ORBIT_SECONDS_AT_1X = 4;
+export const MOON_PERIOD_COMPRESSION = 0.2;
 
 /* Planetary rings (visual only) --------------------------------------- */
 export const SATURN_RING_INNER_RADIUS_FACTOR = 1.15;
@@ -281,10 +288,6 @@ export const TONE_MAPPING_EXPOSURE_MIN = 0.7;
 export const TONE_MAPPING_EXPOSURE_MAX = 1.6;
 
 /* Visual flair --------------------------------------------------------- */
-// Keep a soft corona around the Sun so it reads like a star, not a matte sphere
-export const SUN_GLOW_ENABLED = true;
-export const SUN_GLOW_SPRITE_SCALE = 120; // restrained corona around the 50-unit diameter
-export const SHOW_LABELS = true; // UI/HTML labels (managed by ui.js)
 export const SHOW_SPRITE_LABELS = false; // 3D sprite labels (disable to avoid doubles)
 
 /* Feature flags -------------------------------------------------------- */

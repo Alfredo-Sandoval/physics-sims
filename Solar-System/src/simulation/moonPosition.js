@@ -90,3 +90,13 @@ export function getMoonOrbitFrameQuaternion(orbit, planetSpinFrame = null, out =
   if (usesEquatorialFrame(orbit, planetSpinFrame)) out.premultiply(planetSpinFrame);
   return out;
 }
+
+const SPIN_AXIS = new THREE.Vector3(0, 1, 0);
+const periapsisTurn = new THREE.Quaternion();
+
+// Orientation for an orbit path drawn in its own perifocal plane (periapsis on +X),
+// so precessing nodes and periapses only rotate the line instead of rebuilding it.
+export function getMoonOrbitLineQuaternion(orbit, planetSpinFrame = null, out = new THREE.Quaternion()) {
+  getMoonOrbitFrameQuaternion(orbit, planetSpinFrame, out);
+  return out.multiply(periapsisTurn.setFromAxisAngle(SPIN_AXIS, Number(orbit?.orbitArgPeriapsisRad) || 0));
+}

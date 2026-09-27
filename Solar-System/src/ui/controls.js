@@ -410,18 +410,6 @@ export function setupUIControls(planetConfigs, selectable, scene) {
   }
 
   /* Labels toggle ------------------------------------------------------ */
-  const labelsCheckbox = document.getElementById("labelsCheckbox");
-  if (labelsCheckbox && scene) {
-    labelsCheckbox.checked = !!CONSTANTS.SHOW_LABELS;
-    const setLabels = (vis) => {
-      scene.traverse((o) => {
-        if (o.userData?.isLabel) o.visible = vis;
-      });
-    };
-    setLabels(labelsCheckbox.checked);
-    listen(labelsCheckbox, "change", () => setLabels(labelsCheckbox.checked));
-  }
-
   /* Orbital planes toggle --------------------------------------------- */
   const setPlanes = (vis) => {
     if (!scene) return;

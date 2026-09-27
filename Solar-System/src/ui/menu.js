@@ -20,6 +20,8 @@ export function initMenuToggle() {
     if (collapsed && surface.contains(document.activeElement)) menuToggleBtn.focus();
     surface.inert = collapsed;
     menuContainer.classList.toggle("collapsed", collapsed);
+    // Labels live on <body>, outside the menu, so they read this class to hide behind the drawer.
+    document.body.classList.toggle("menu-open", !collapsed);
     syncMenuToggleState(collapsed);
     if (persist) {
       try {
@@ -28,11 +30,13 @@ export function initMenuToggle() {
     }
   };
 
-  // Initial state from localStorage (guarded for privacy-restricted contexts)
-  let initiallyCollapsed = window.matchMedia("(max-width: 768px)").matches;
+  // Phones always start collapsed so the drawer never covers the scene at load;
+  // wider screens restore the saved preference (guarded for privacy-restricted contexts).
+  const isPhone = window.matchMedia("(max-width: 768px)").matches;
+  let initiallyCollapsed = isPhone;
   try {
     const saved = localStorage.getItem("menuCollapsed");
-    if (saved !== null) initiallyCollapsed = saved === "true";
+    if (saved !== null && !isPhone) initiallyCollapsed = saved === "true";
   } catch {}
   applyMenuState(initiallyCollapsed, false);
 

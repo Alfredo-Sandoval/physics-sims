@@ -113,7 +113,7 @@ async function runSolarSystemSmoke() {
   assert(doc.getElementById("info-distance").textContent === "384,400 km", "Moon orbit size survives live readout updates");
   assert(doc.getElementById("info-distance-label").textContent.includes("Earth"), "moon distance identifies its reference body");
   assert(doc.getElementById("info-orbital").textContent.includes("Semi-major axis"), "moon orbit size is identified as a parameter");
-  assert(!doc.getElementById("info-texture-note").hidden && doc.getElementById("info-texture-note").textContent.includes("Callisto"), "Moon texture disclosure appears on the body card");
+  assert(doc.getElementById("info-texture-note").hidden, "the Moon's own texture carries no placeholder disclosure");
 
   const planetLabel = await waitFor(
     () => doc.querySelector('.planet-label[data-planet="Earth"]'),
@@ -201,7 +201,7 @@ async function runSolarSystemSmoke() {
       });
       return notes;
     });
-  assert(missingTextureNotes.some((note) => note.startsWith("Moon:")), "placeholder texture note exists for Moon");
+  assert(!missingTextureNotes.some((note) => note.startsWith("Moon:")), "the Moon uses its own texture, not a placeholder");
   assert(missingTextureNotes.some((note) => note.startsWith("Titan:")), "placeholder texture note exists for Titan");
   assert(missingTextureNotes.some((note) => note.startsWith("Triton:")), "placeholder texture note exists for Triton");
 

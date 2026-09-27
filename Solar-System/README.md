@@ -149,6 +149,16 @@ for normal viewing sessions. Increasing the entire simulation speed was also
 rejected because it makes orbital navigation harder. Date seeking and reverse
 playback apply to the same deterministic surface clock.
 
+Moons that would orbit in under 4 seconds at 1× (periods below about 24 days,
+such as Io or Phobos) run on a compressed clock, P′ = Pmin·(P/Pmin)^0.2, so the
+fastest takes about 1.7 seconds per orbit and inner moons still outpace outer
+ones. Earth's Moon is slower than the threshold, so it stays on the real date.
+
+Enhanced Visibility sizes every body as 4 × (radius in Earth radii)^(1/3): the
+Sun is 19.1 units, Jupiter 9.0, Earth 4.0, and Mercury 2.9. This keeps true size
+order while small worlds stay visible, and leaves Mercury's orbit clear of the
+Sun. Relative mode uses one true-size scale anchored to the Sun.
+
 Selection adds a white inspection light so albedo detail remains visible on
 the night side. This is an educational viewing aid, not simulated solar lighting.
 
@@ -162,6 +172,9 @@ the night side. This is an educational viewing aid, not simulated solar lighting
 
 - Texture assets are included in the repo; some moon entries intentionally reuse
   placeholder textures until exact assets are added
+- Earth's Moon texture is the LRO LROC color mosaic from the NASA SVS CGI Moon
+  Kit (public domain)
+- Named asteroid orbits use JPL Small-Body Database elements
 - [Three.js](https://threejs.org/) for the rendering engine
 - Developed by Alif
 

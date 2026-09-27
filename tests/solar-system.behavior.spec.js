@@ -27,7 +27,7 @@ export async function runBehaviorChecks(win, { assert, wait, waitFor }) {
 
   playback.applySimulationSpeed(0);
   await checkRotation(win, { assert, nextDraw, app, state, config });
-  await checkOrientation(win, { assert, nextDraw, app, state });
+  await checkOrientation(win, { assert, nextDraw, app, state, config });
   await nextDraw(() => { setDate("2025-03-15"); setDate("2026-06-20"); });
   const expectedDays = (Date.parse("2026-06-20T12:00:00Z") - epoch) / 86400000;
   assert(Math.abs(app.getSimulatedDays() - expectedDays) < 1e-9, "rapid date changes keep the latest target");

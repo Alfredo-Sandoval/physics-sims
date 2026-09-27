@@ -196,7 +196,9 @@ function isBodyOccluded(targetBody, targetPos, camera, bodies) {
     const t = occlusionToOther.dot(occlusionDirection);
     if (t <= 0 || t >= targetDistance) continue;
     const d2 = occlusionToOther.lengthSq() - t * t;
-    const effectiveRadius = radius + targetRadiusPad;
+    // A small body behind a larger one hides on any overlap; a large target such as
+    // the Sun only hides when the occluder covers its centre.
+    const effectiveRadius = radius + (targetRadiusPad < radius ? targetRadiusPad : 0);
     if (d2 <= effectiveRadius * effectiveRadius) return true;
   }
 
@@ -280,10 +282,8 @@ export function updatePlanetLabels(camera, celestialBodies) {
       continue;
     }
 
-    if (
-      body.userData?.type === "planet" &&
-      isBodyOccluded(body, occlusionTargetPos, camera, celestialBodies)
-    ) {
+    // Moons and the Sun hide behind nearer bodies too, not just planets.
+    if (isBodyOccluded(body, occlusionTargetPos, camera, celestialBodies)) {
       label.style.display = "none";
       hideLabelConnector(body);
       continue;

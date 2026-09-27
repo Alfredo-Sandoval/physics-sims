@@ -64,6 +64,8 @@ export function setupKeyboardShortcuts(scene) {
 
   keyboardShortcutHandler = (e) => {
     if (shouldIgnoreShortcutEvent(e)) return;
+    // Holding a toggle key would flicker it; only speed changes may auto-repeat.
+    if (e.repeat && !["+", "=", "-", "_"].includes(e.key)) return;
 
     const selectable = getCelestialBodies() ?? [];
 
@@ -111,9 +113,9 @@ export function setupKeyboardShortcuts(scene) {
       case "F":
         e.preventDefault();
         if (!document.fullscreenElement) {
-          document.documentElement.requestFullscreen?.();
+          document.documentElement.requestFullscreen?.()?.catch?.(() => {});
         } else {
-          document.exitFullscreen?.();
+          document.exitFullscreen?.()?.catch?.(() => {});
         }
         break;
       case "s":
