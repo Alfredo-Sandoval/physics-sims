@@ -1,25 +1,66 @@
 import * as THREE from "three";
 
-import { vertexShader, fragmentShader } from "./shaders.mjs";
+import { vertexShader, fragmentShader, displayFragmentShader, bloomDownsampleShader } from "./shaders.mjs";
 import { createStarfieldTexture } from "./starfield.mjs";
 
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-const DEFAULTS = {
-    cameraDistance: 18.0,
-    cameraAngle: 82.0,
+// The default view recreates the Gargantua shot from Interstellar, using the
+// geometry published by the film's effects team (James et al. 2015, CQG 32
+// 065001, figures 15a and 16): camera at 74.1 M = 37.05 rs and 86.56 degrees,
+// spin 0.6, and a uniform 4500 K disk with no Doppler or gravitational shift.
+// The disk radii are fitted by eye to those figures.
+const FILM_LOOK = {
+    cameraDistance: 37.05,
+    cameraAngle: 86.56,
     cameraPhi: 0.0,
-    diskInner: 3.8,
-    diskOuter: 10.5,
-    spin: 0.55,
+    diskInner: 2.2,
+    diskOuter: 13.5,
+    spin: 0.6,
+    realism: 0.0,
+    diskTemperature: 4500,
+    fieldOfView: 19,
+    glow: 0.85,
+    cinema: true,
+};
+const DEFAULTS = {
+    ...FILM_LOOK,
     animationEnabled: !prefersReducedMotion.matches,
 };
 const LIMITS = {
-    cameraDistanceMin: 8.0,
-    cameraDistanceMax: 32.0,
-    cameraAngleMin: 20.0,
-    cameraAngleMax: 90.0,
-    cameraPhiMin: -72.0,
-    cameraPhiMax: 72.0,
+    cameraDistanceMin: 5.0,
+    cameraDistanceMax: 250.0,
+    cameraAngleMin: 3.0,
+    cameraAngleMax: 177.0,
+    diskInnerMin: 0.6,
+    diskInnerMax: 6.0,
+    diskOuterMin: 6.0,
+    diskOuterMax: 25.0,
+    diskGapMin: 1.0,
+};
+const RENDER = {
+    // Supersampling below 1.5x device pixels costs a lot and shows little.
+    maxPixelRatio: 1.5,
+    // Jittered samples averaged while the view is still.
+    maxSamples: 24,
+    // How long after the last input the view counts as settled.
+    settleMs: 180,
+    minMotionScale: 0.35,
+    // Frame times that make the motion resolution step down or back up.
+    slowFrameMs: 26,
+    fastFrameMs: 18,
+    scaleAdjustMs: 450,
+    // While the disk animates, each new jittered frame is blended into the
+    // last ones with at least this weight: anti-aliasing plus a little motion
+    // blur along the orbit.
+    motionBlend: 0.3,
+    // Glow is built from this many successively halved copies of the frame,
+    // starting at a quarter of the trace resolution.
+    bloomLevels: 7,
+    bloomThreshold: 0.2,
+    // Letterbox ratio of the film's widescreen frames, used on screens at
+    // least this wide.
+    cinemaAspect: 2.39,
+    cinemaMinScreenAspect: 1.3,
 };
 
 const state = { ...DEFAULTS };
@@ -34,6 +75,10 @@ const ui = {
         rin: document.getElementById("rin"),
         rout: document.getElementById("rout"),
         spin: document.getElementById("spin"),
+        realism: document.getElementById("realism"),
+        temp: document.getElementById("temp"),
+        fov: document.getElementById("fov"),
+        glow: document.getElementById("glow"),
     },
     values: {
         distance: document.getElementById("distVal"),
@@ -42,11 +87,17 @@ const ui = {
         rin: document.getElementById("rinVal"),
         rout: document.getElementById("routVal"),
         spin: document.getElementById("spinVal"),
+        realism: document.getElementById("realismVal"),
+        temp: document.getElementById("tempVal"),
+        fov: document.getElementById("fovVal"),
+        glow: document.getElementById("glowVal"),
     },
-    viewPresets: Array.from(document.querySelectorAll("[data-view]")),
+    readout: document.getElementById("readout"),
+    viewPresets: Array.from(document.querySelectorAll("[data-incl]")),
     hudToggle: document.getElementById("hudToggle"),
     hudClose: document.getElementById("hudClose"),
     toggleMotion: document.getElementById("toggleMotion"),
+    toggleCinema: document.getElementById("toggleCinema"),
     resetView: document.getElementById("resetView"),
 };
 
@@ -55,11 +106,26 @@ function getHudFocusables() {
 }
 
 let renderer;
-let scene;
 let camera;
-let material;
+let traceScene;
+let traceMaterial;
+let displayScene;
+let displayMaterial;
+let targets = [];
+let bloomTargets = [];
+let bloomScene;
+let bloomMaterial;
+let currentTarget = 0;
+let sampleCount = 0;
+let maxSamples = RENDER.maxSamples;
+let motionScale = 0.75;
+let activeScale = 0;
+let frameTimeAverage = 0;
+let lastScaleAdjust = 0;
+let lastInteraction = 0;
 let frameHandle = 0;
 let lastFrameTime = 0;
+const traceSize = new THREE.Vector2();
 const drawSize = new THREE.Vector2();
 const activePointers = new Map();
 const DRAG_THRESHOLD_PX = 6;
@@ -68,6 +134,23 @@ let hudOpen = false;
 
 function clamp(value, min, max) {
     return Math.min(max, Math.max(min, value));
+}
+
+function wrapDegrees(value) {
+    return ((value + 180) % 360 + 360) % 360 - 180;
+}
+
+// Radius of the innermost stable circular orbit for a prograde Kerr disk
+// (Bardeen, Press & Teukolsky 1972), in Schwarzschild radii.
+function iscoRadius(spin) {
+    const cbrt = Math.cbrt;
+    const z1 = 1 + cbrt(1 - spin * spin) * (cbrt(1 + spin) + cbrt(1 - spin));
+    const z2 = Math.sqrt(3 * spin * spin + z1 * z1);
+    return 0.5 * (3 + z2 - Math.sqrt((3 - z1) * (3 + z1 + 2 * z2)));
+}
+
+function horizonRadius(spin) {
+    return 0.5 * (1 + Math.sqrt(1 - spin * spin));
 }
 
 function formatOrbitOffset(value) {
@@ -85,9 +168,10 @@ function syncHud() {
     ui.hudToggle.dataset.open = String(hudOpen);
     ui.hudToggle.setAttribute("aria-expanded", String(hudOpen));
     ui.hudToggle.setAttribute("aria-label", hudOpen ? "Hide controls" : "Show controls");
-    ui.hudToggle.textContent = hudOpen ? "\u2715" : "\u2699";
+    ui.hudToggle.textContent = hudOpen ? "✕" : "⚙";
 
     if (hudOpen) {
+        syncReadout();
         const [firstFocusable] = getHudFocusables();
         window.requestAnimationFrame(() => {
             firstFocusable?.focus();
@@ -113,28 +197,36 @@ function syncDistanceControl() {
 function syncAngleControl() {
     ui.ranges.angle.value = String(state.cameraAngle);
     ui.values.angle.textContent = `${state.cameraAngle.toFixed(1)}°`;
+
+    ui.viewPresets.forEach((button) => {
+        const target = parseFloat(button.dataset.incl);
+        const isActive = Math.abs(state.cameraAngle - target) < 0.75;
+        button.dataset.active = String(isActive);
+        button.setAttribute("aria-pressed", String(isActive));
+    });
 }
 
 function syncOrbitControl() {
     ui.ranges.phi.value = String(state.cameraPhi);
     ui.values.phi.textContent = formatOrbitOffset(state.cameraPhi);
-
-    ui.viewPresets.forEach((button) => {
-        const target = parseFloat(button.dataset.view);
-        const isActive = Math.abs(state.cameraPhi - target) < 1.5;
-        button.dataset.active = String(isActive);
-        button.setAttribute("aria-pressed", String(isActive));
-    });
 }
 
 function syncDiskControls() {
     ui.ranges.rin.value = String(state.diskInner);
     ui.ranges.rout.value = String(state.diskOuter);
     ui.ranges.spin.value = String(state.spin);
+    ui.ranges.realism.value = String(state.realism);
+    ui.ranges.temp.value = String(state.diskTemperature);
+    ui.ranges.fov.value = String(state.fieldOfView);
+    ui.ranges.glow.value = String(state.glow);
 
-    ui.values.rin.textContent = state.diskInner.toFixed(1);
+    ui.values.rin.textContent = state.diskInner.toFixed(2);
     ui.values.rout.textContent = state.diskOuter.toFixed(1);
     ui.values.spin.textContent = state.spin.toFixed(2);
+    ui.values.realism.textContent = state.realism.toFixed(2);
+    ui.values.temp.textContent = `${Math.round(state.diskTemperature)}K`;
+    ui.values.fov.textContent = `${Math.round(state.fieldOfView)}°`;
+    ui.values.glow.textContent = state.glow.toFixed(2);
 }
 
 function syncMotionControl() {
@@ -143,55 +235,127 @@ function syncMotionControl() {
     ui.toggleMotion.textContent = state.animationEnabled ? "Pause" : "Play";
 }
 
+function syncReadout() {
+    if (!hudOpen) {
+        return;
+    }
+    const isco = iscoRadius(state.spin);
+    const horizon = horizonRadius(state.spin);
+    const resolution = Math.round(activeScale * 100);
+    ui.readout.textContent =
+        `horizon ${horizon.toFixed(2)} · isco ${isco.toFixed(2)} rs\n` +
+        `render ${resolution}% · ${Math.min(sampleCount, maxSamples)}/${maxSamples} samples`;
+}
+
+function syncCinemaControl() {
+    ui.toggleCinema.dataset.active = String(state.cinema);
+    ui.toggleCinema.setAttribute("aria-pressed", String(state.cinema));
+}
+
+// Letterboxing only makes sense on landscape screens; on a phone held upright
+// the 2.39:1 strip would be a sliver.
+function updateFrameAspect() {
+    const screenAspect = window.innerWidth / Math.max(window.innerHeight, 1);
+    const aspect = state.cinema && screenAspect >= RENDER.cinemaMinScreenAspect ? RENDER.cinemaAspect : 0;
+    traceMaterial.uniforms.frameAspect.value = aspect;
+    displayMaterial.uniforms.frameAspect.value = aspect;
+}
+
 function syncControls() {
     syncDistanceControl();
     syncAngleControl();
     syncOrbitControl();
     syncDiskControls();
     syncMotionControl();
+    syncCinemaControl();
+    syncReadout();
 }
 
+// The disk cannot extend inside the ISCO, and must stay wider than a sliver.
 function sanitizeDiskRadii(changedKey) {
-    if (state.diskInner > state.diskOuter - 0.5) {
-        if (changedKey === "diskInner") {
-            state.diskOuter = clamp(state.diskInner + 0.5, 8.0, 25.0);
+    const innerMin = Math.max(LIMITS.diskInnerMin, iscoRadius(state.spin));
+    state.diskInner = clamp(state.diskInner, innerMin, LIMITS.diskInnerMax);
+    if (state.diskInner > state.diskOuter - LIMITS.diskGapMin) {
+        if (changedKey === "diskOuter") {
+            state.diskInner = clamp(state.diskOuter - LIMITS.diskGapMin, innerMin, LIMITS.diskInnerMax);
         } else {
-            state.diskInner = clamp(state.diskOuter - 0.5, 1.5, 6.0);
+            state.diskOuter = clamp(state.diskInner + LIMITS.diskGapMin, LIMITS.diskOuterMin, LIMITS.diskOuterMax);
         }
     }
 }
 
-function updatePixelRatio() {
-    const deviceRatio = window.devicePixelRatio || 1;
-    const cap = state.animationEnabled ? 1.35 : 1.65;
-    renderer.setPixelRatio(Math.min(deviceRatio, cap));
+function createTarget(type) {
+    return new THREE.WebGLRenderTarget(1, 1, {
+        type,
+        depthBuffer: false,
+        stencilBuffer: false,
+        minFilter: THREE.LinearFilter,
+        magFilter: THREE.LinearFilter,
+    });
 }
 
-function updateResolution() {
+// Sizes the ray-traced buffers to a fraction of the canvas. Returns true when
+// the size changed, which discards any accumulated samples.
+function resizeTargets(scale) {
+    const ratio = Math.min(window.devicePixelRatio || 1, RENDER.maxPixelRatio) * scale;
+    const width = Math.max(1, Math.round(window.innerWidth * ratio));
+    const height = Math.max(1, Math.round(window.innerHeight * ratio));
+    if (width === traceSize.x && height === traceSize.y) {
+        return false;
+    }
+    traceSize.set(width, height);
+    targets.forEach((target) => target.setSize(width, height));
+    traceMaterial.uniforms.resolution.value.copy(traceSize);
+
+    const displayUniforms = displayMaterial.uniforms;
+    bloomTargets.forEach((target, level) => {
+        const divisor = 4 * 2 ** level;
+        const levelWidth = Math.max(1, Math.round(width / divisor));
+        const levelHeight = Math.max(1, Math.round(height / divisor));
+        target.setSize(levelWidth, levelHeight);
+        displayUniforms[`bloom${level}`].value = target.texture;
+        displayUniforms[`bloomTexel${level}`].value.set(1 / levelWidth, 1 / levelHeight);
+    });
+    return true;
+}
+
+function updateDisplaySize() {
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.getDrawingBufferSize(drawSize);
-    material.uniforms.resolution.value.copy(drawSize);
+    displayMaterial.uniforms.resolution.value.copy(drawSize);
 }
 
 function updateUniforms() {
-    material.uniforms.cameraDistance.value = state.cameraDistance;
-    material.uniforms.cameraAngle.value = state.cameraAngle;
-    material.uniforms.cameraPhi.value = state.cameraPhi;
-    material.uniforms.diskInner.value = state.diskInner;
-    material.uniforms.diskOuter.value = state.diskOuter;
-    material.uniforms.spin.value = state.spin;
+    const uniforms = traceMaterial.uniforms;
+    uniforms.cameraDistance.value = state.cameraDistance;
+    uniforms.cameraAngle.value = state.cameraAngle;
+    uniforms.cameraPhi.value = state.cameraPhi;
+    uniforms.diskInner.value = state.diskInner;
+    uniforms.diskOuter.value = state.diskOuter;
+    uniforms.spin.value = state.spin;
+    uniforms.realism.value = state.realism;
+    uniforms.diskTemperature.value = state.diskTemperature;
+    uniforms.fieldOfView.value = state.fieldOfView;
+    displayMaterial.uniforms.bloomStrength.value = state.glow;
+    updateFrameAspect();
+    invalidate();
+}
+
+// Any change to the view restarts accumulation and drops to the motion
+// resolution until input settles.
+function invalidate() {
+    sampleCount = 0;
+    lastInteraction = performance.now();
     scheduleRender();
 }
 
 function rotateBy(deltaX, deltaY) {
     const width = Math.max(window.innerWidth, 1);
     const height = Math.max(window.innerHeight, 1);
-    state.cameraPhi = clamp(
-        state.cameraPhi + (deltaX / width) * 84.0,
-        LIMITS.cameraPhiMin,
-        LIMITS.cameraPhiMax,
-    );
+    state.cameraPhi = wrapDegrees(state.cameraPhi - (deltaX / width) * 180.0);
     state.cameraAngle = clamp(
-        state.cameraAngle - (deltaY / height) * 70.0,
+        state.cameraAngle - (deltaY / height) * 90.0,
         LIMITS.cameraAngleMin,
         LIMITS.cameraAngleMax,
     );
@@ -219,45 +383,129 @@ function scheduleRender() {
     frameHandle = window.requestAnimationFrame(renderFrame);
 }
 
+// Low-discrepancy subpixel offsets for the accumulated samples.
+function halton(index, base) {
+    let result = 0;
+    let fraction = 1 / base;
+    let i = index;
+    while (i > 0) {
+        result += fraction * (i % base);
+        i = Math.floor(i / base);
+        fraction /= base;
+    }
+    return result;
+}
+
+// Steps the motion resolution toward a steady frame rate. Only frames that
+// follow directly on another frame are timed.
+function adaptMotionScale(frameMs, timestamp) {
+    if (frameMs <= 0 || frameMs > 100) {
+        return;
+    }
+    frameTimeAverage = frameTimeAverage === 0 ? frameMs : frameTimeAverage * 0.85 + frameMs * 0.15;
+    if (timestamp - lastScaleAdjust < RENDER.scaleAdjustMs) {
+        return;
+    }
+    let nextScale = motionScale;
+    if (frameTimeAverage > RENDER.slowFrameMs) {
+        nextScale = Math.max(RENDER.minMotionScale, motionScale * 0.85);
+    } else if (frameTimeAverage < RENDER.fastFrameMs) {
+        nextScale = Math.min(1, motionScale * 1.1);
+    }
+    nextScale = Math.round(nextScale * 20) / 20;
+    if (nextScale !== motionScale) {
+        motionScale = nextScale;
+        lastScaleAdjust = timestamp;
+    }
+}
+
 function renderFrame(timestamp) {
     frameHandle = 0;
-    if (!renderer || !material) {
+    if (!renderer || !traceMaterial) {
         return;
     }
 
-    if (lastFrameTime === 0) {
-        lastFrameTime = timestamp;
-    }
-
-    const delta = Math.min((timestamp - lastFrameTime) / 1000, 0.05);
+    const frameMs = lastFrameTime === 0 ? 0 : timestamp - lastFrameTime;
     lastFrameTime = timestamp;
 
-    if (state.animationEnabled && !document.hidden) {
-        material.uniforms.time.value += delta;
+    const animating = state.animationEnabled && !document.hidden;
+    if (animating) {
+        traceMaterial.uniforms.time.value += Math.min(frameMs / 1000, 0.05);
+        displayMaterial.uniforms.grainSeed.value = (displayMaterial.uniforms.grainSeed.value + 17.3) % 1024;
     }
 
-    renderer.render(scene, camera);
+    const moving = animating || performance.now() - lastInteraction < RENDER.settleMs;
+    if (moving) {
+        adaptMotionScale(frameMs, timestamp);
+    }
+    activeScale = moving ? motionScale : 1;
+    if (resizeTargets(activeScale)) {
+        sampleCount = 0;
+    }
 
-    if (state.animationEnabled && !document.hidden) {
+    const uniforms = traceMaterial.uniforms;
+    const jitterIndex = sampleCount % 32;
+    if (jitterIndex === 0) {
+        uniforms.jitter.value.set(0, 0);
+    } else {
+        uniforms.jitter.value.set(halton(jitterIndex, 2) - 0.5, halton(jitterIndex, 3) - 0.5);
+    }
+    uniforms.blendWeight.value = animating
+        ? Math.max(1 / (sampleCount + 1), RENDER.motionBlend)
+        : 1 / (sampleCount + 1);
+    uniforms.previousFrame.value = targets[1 - currentTarget].texture;
+
+    renderer.setRenderTarget(targets[currentTarget]);
+    renderer.render(traceScene, camera);
+    if (state.glow > 0) {
+        renderBloom(targets[currentTarget]);
+    }
+    renderer.setRenderTarget(null);
+    displayMaterial.uniforms.frame.value = targets[currentTarget].texture;
+    renderer.render(displayScene, camera);
+
+    currentTarget = 1 - currentTarget;
+    sampleCount += 1;
+    syncReadout();
+
+    if (moving || sampleCount < maxSamples) {
         scheduleRender();
+    } else {
+        lastFrameTime = 0;
     }
+}
+
+// Downsamples the frame through the bloom chain, keeping only bright pixels
+// at the first level.
+function renderBloom(frameTarget) {
+    const uniforms = bloomMaterial.uniforms;
+    let source = frameTarget;
+    bloomTargets.forEach((target, level) => {
+        uniforms.source.value = source.texture;
+        uniforms.sourceTexel.value.set(1 / source.width, 1 / source.height);
+        uniforms.resolution.value.set(target.width, target.height);
+        uniforms.threshold.value = level === 0 ? RENDER.bloomThreshold : 0;
+        renderer.setRenderTarget(target);
+        renderer.render(bloomScene, camera);
+        source = target;
+    });
+}
+
+function toggleCinema() {
+    state.cinema = !state.cinema;
+    syncCinemaControl();
+    updateUniforms();
 }
 
 function toggleMotion(forceState) {
     state.animationEnabled = typeof forceState === "boolean" ? forceState : !state.animationEnabled;
-    updatePixelRatio();
     syncControls();
     lastFrameTime = 0;
-    scheduleRender();
+    invalidate();
 }
 
 function resetView() {
-    state.cameraDistance = DEFAULTS.cameraDistance;
-    state.cameraAngle = DEFAULTS.cameraAngle;
-    state.cameraPhi = DEFAULTS.cameraPhi;
-    state.diskInner = DEFAULTS.diskInner;
-    state.diskOuter = DEFAULTS.diskOuter;
-    state.spin = DEFAULTS.spin;
+    Object.assign(state, FILM_LOOK);
     pinchDistance = null;
     activePointers.clear();
     renderer.domElement.style.cursor = "grab";
@@ -265,59 +513,55 @@ function resetView() {
     updateUniforms();
 }
 
+function bindRange(range, apply) {
+    range.addEventListener("input", (event) => {
+        apply(parseFloat(event.target.value));
+        syncControls();
+        updateUniforms();
+    });
+}
+
 function bindControls() {
-    ui.ranges.distance.addEventListener("input", (event) => {
-        state.cameraDistance = clamp(
-            parseFloat(event.target.value),
-            LIMITS.cameraDistanceMin,
-            LIMITS.cameraDistanceMax,
-        );
-        syncControls();
-        updateUniforms();
+    bindRange(ui.ranges.distance, (value) => {
+        state.cameraDistance = clamp(value, LIMITS.cameraDistanceMin, LIMITS.cameraDistanceMax);
     });
-
-    ui.ranges.angle.addEventListener("input", (event) => {
-        state.cameraAngle = clamp(
-            parseFloat(event.target.value),
-            LIMITS.cameraAngleMin,
-            LIMITS.cameraAngleMax,
-        );
-        syncControls();
-        updateUniforms();
+    bindRange(ui.ranges.angle, (value) => {
+        state.cameraAngle = clamp(value, LIMITS.cameraAngleMin, LIMITS.cameraAngleMax);
     });
-
-    ui.ranges.phi.addEventListener("input", (event) => {
-        state.cameraPhi = clamp(
-            parseFloat(event.target.value),
-            LIMITS.cameraPhiMin,
-            LIMITS.cameraPhiMax,
-        );
-        syncControls();
-        updateUniforms();
+    bindRange(ui.ranges.phi, (value) => {
+        state.cameraPhi = wrapDegrees(value);
     });
-
-    ui.ranges.rin.addEventListener("input", (event) => {
-        state.diskInner = parseFloat(event.target.value);
+    bindRange(ui.ranges.rin, (value) => {
+        state.diskInner = value;
         sanitizeDiskRadii("diskInner");
-        syncControls();
-        updateUniforms();
     });
-
-    ui.ranges.rout.addEventListener("input", (event) => {
-        state.diskOuter = parseFloat(event.target.value);
+    bindRange(ui.ranges.rout, (value) => {
+        state.diskOuter = value;
         sanitizeDiskRadii("diskOuter");
-        syncControls();
-        updateUniforms();
     });
-
-    ui.ranges.spin.addEventListener("input", (event) => {
-        state.spin = parseFloat(event.target.value);
-        syncControls();
-        updateUniforms();
+    bindRange(ui.ranges.spin, (value) => {
+        state.spin = clamp(value, 0, 0.998);
+        sanitizeDiskRadii("spin");
+    });
+    bindRange(ui.ranges.realism, (value) => {
+        state.realism = clamp(value, 0, 1);
+    });
+    bindRange(ui.ranges.temp, (value) => {
+        state.diskTemperature = value;
+    });
+    bindRange(ui.ranges.fov, (value) => {
+        state.fieldOfView = clamp(value, 10, 90);
+    });
+    bindRange(ui.ranges.glow, (value) => {
+        state.glow = clamp(value, 0, 2);
     });
 
     ui.toggleMotion.addEventListener("click", () => {
         toggleMotion();
+    });
+
+    ui.toggleCinema.addEventListener("click", () => {
+        toggleCinema();
     });
 
     ui.resetView.addEventListener("click", () => {
@@ -334,12 +578,16 @@ function bindControls() {
 
     ui.viewPresets.forEach((button) => {
         button.addEventListener("click", () => {
-            state.cameraPhi = clamp(
-                parseFloat(button.dataset.view),
-                LIMITS.cameraPhiMin,
-                LIMITS.cameraPhiMax,
+            if (button.dataset.look === "film") {
+                resetView();
+                return;
+            }
+            state.cameraAngle = clamp(
+                parseFloat(button.dataset.incl),
+                LIMITS.cameraAngleMin,
+                LIMITS.cameraAngleMax,
             );
-            syncOrbitControl();
+            syncAngleControl();
             updateUniforms();
         });
     });
@@ -473,10 +721,9 @@ function bindViewportInteractions() {
 
 function bindGlobalEvents() {
     window.addEventListener("resize", () => {
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        updatePixelRatio();
-        updateResolution();
-        scheduleRender();
+        updateDisplaySize();
+        updateFrameAspect();
+        invalidate();
     });
 
     document.addEventListener("visibilitychange", () => {
@@ -504,6 +751,11 @@ function bindGlobalEvents() {
             resetView();
         }
 
+        if (event.key === "c" || event.key === "C") {
+            event.preventDefault();
+            toggleCinema();
+        }
+
         if (event.key === "h" || event.key === "H") {
             event.preventDefault();
             toggleHud();
@@ -528,37 +780,89 @@ async function init() {
     ui.loadingMessage.textContent = "Initializing renderer.";
 
     renderer = new THREE.WebGLRenderer({
-        antialias: true,
+        antialias: false,
         alpha: false,
         powerPreference: "high-performance",
     });
     renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    updatePixelRatio();
     document.getElementById("viewport").appendChild(renderer.domElement);
 
-    scene = new THREE.Scene();
-    camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    // Averaging many samples in 8 bits bands visibly, so fall back to a
+    // short accumulation when float color buffers are unavailable.
+    const floatTargets = renderer.extensions.has("EXT_color_buffer_float") ||
+        renderer.extensions.has("EXT_color_buffer_half_float");
+    maxSamples = floatTargets ? RENDER.maxSamples : 6;
+    const targetType = floatTargets ? THREE.HalfFloatType : THREE.UnsignedByteType;
+    targets = [createTarget(targetType), createTarget(targetType)];
+    bloomTargets = Array.from({ length: RENDER.bloomLevels }, () => createTarget(targetType));
 
+    camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
     const geometry = new THREE.PlaneGeometry(2, 2);
-    material = new THREE.ShaderMaterial({
+
+    traceMaterial = new THREE.ShaderMaterial({
         vertexShader,
         fragmentShader,
         uniforms: {
             time: { value: 0 },
-            resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+            resolution: { value: new THREE.Vector2(1, 1) },
+            jitter: { value: new THREE.Vector2() },
+            frameAspect: { value: 0 },
             cameraDistance: { value: state.cameraDistance },
             cameraAngle: { value: state.cameraAngle },
             cameraPhi: { value: state.cameraPhi },
             diskInner: { value: state.diskInner },
             diskOuter: { value: state.diskOuter },
             spin: { value: state.spin },
+            realism: { value: state.realism },
+            diskTemperature: { value: state.diskTemperature },
+            fieldOfView: { value: state.fieldOfView },
             starfield: { value: createStarfieldTexture() },
+            previousFrame: { value: null },
+            blendWeight: { value: 1 },
         },
+        depthTest: false,
+        depthWrite: false,
     });
+    traceScene = new THREE.Scene();
+    traceScene.add(new THREE.Mesh(geometry, traceMaterial));
 
-    scene.add(new THREE.Mesh(geometry, material));
-    updateResolution();
+    displayMaterial = new THREE.ShaderMaterial({
+        vertexShader,
+        fragmentShader: displayFragmentShader,
+        uniforms: {
+            frame: { value: null },
+            resolution: { value: new THREE.Vector2(1, 1) },
+            bloomStrength: { value: state.glow },
+            frameAspect: { value: 0 },
+            grainSeed: { value: 0 },
+            ...Object.fromEntries(Array.from({ length: RENDER.bloomLevels }, (_, level) => [
+                [`bloom${level}`, { value: null }],
+                [`bloomTexel${level}`, { value: new THREE.Vector2(1, 1) }],
+            ]).flat()),
+        },
+        depthTest: false,
+        depthWrite: false,
+    });
+    displayScene = new THREE.Scene();
+    displayScene.add(new THREE.Mesh(geometry, displayMaterial));
+
+    bloomMaterial = new THREE.ShaderMaterial({
+        vertexShader,
+        fragmentShader: bloomDownsampleShader,
+        uniforms: {
+            source: { value: null },
+            sourceTexel: { value: new THREE.Vector2(1, 1) },
+            resolution: { value: new THREE.Vector2(1, 1) },
+            threshold: { value: RENDER.bloomThreshold },
+        },
+        depthTest: false,
+        depthWrite: false,
+    });
+    bloomScene = new THREE.Scene();
+    bloomScene.add(new THREE.Mesh(geometry, bloomMaterial));
+
+    updateDisplaySize();
+    updateFrameAspect();
     bindControls();
     bindViewportInteractions();
     bindGlobalEvents();
@@ -566,7 +870,7 @@ async function init() {
     syncHud();
 
     ui.loading.style.display = "none";
-    scheduleRender();
+    invalidate();
 }
 
 init().catch((error) => {

@@ -67,13 +67,15 @@ control reference and a note on what the model simplifies.
 
 ### 3. Gargantua Black Hole (`gargantua/`)
 
-A stylized realtime black hole renderer inspired by _Interstellar_, built as a
-small npm + Vite app. It also runs straight from the static server above, since
+A realtime black hole ray tracer inspired by _Interstellar_, built as a small
+npm + Vite app. It also runs straight from the static server above, since
 it resolves Three.js through the same CDN import map.
 
-- Fullscreen ray-marched shader with cinematic accretion-disk styling
-- Procedural starfield generated in the browser (no external image assets)
-- HUD for camera distance, elevation, orbit, disk radii, and spin
+- Per-pixel geodesic ray tracing: lensed disk, photon ring, and warped starfield
+- Spin-dependent frame dragging, ISCO, and Doppler/gravitational shifts
+- Opens on the film's Gargantua shot, matched to the effects team's published renders
+- Adaptive resolution while moving, progressive anti-aliasing when still
+- HUD for camera, lens, disk, spin, realism, temperature, glow, and Cinema mode
 
 Run it with Vite for live reload and a production build:
 

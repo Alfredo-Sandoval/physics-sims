@@ -326,6 +326,16 @@ button.secondary { color: var(--muted); }
     flex-shrink: 0;
 }
 
+.readout {
+    margin-left: auto;
+    color: var(--muted);
+    font-family: "SF Mono", "Menlo", "Consolas", monospace;
+    font-size: 10px;
+    line-height: 1.5;
+    text-align: right;
+    white-space: pre-line;
+}
+
 @media (max-width: 720px), (max-height: 520px) {
     body { font-size: 13px; }
     .hud__inner {
@@ -371,6 +381,10 @@ button.secondary { color: var(--muted); }
         width: 100%;
     }
     .ctrl input[type="range"] { width: 100%; }
+    .readout {
+        margin-left: 0;
+        text-align: left;
+    }
     .view-presets button,
     .hud__group > button {
         flex: 1 1 0;
