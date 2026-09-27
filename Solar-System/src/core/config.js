@@ -25,10 +25,10 @@ export const CAMERA_FOLLOW_LERP_FACTOR = 10; // higher = snappier
 
 /* Basic sizes ---------------------------------------------------------- */
 export const SUN_RADIUS = 25; // render‑unit radius of Sun
-// Enhanced mode sizes every body as 4 × (radius in Earth radii)^(1/3), so order is
-// kept (Sun > Jupiter > … > Mercury) while small worlds stay visible; the data's
-// scaledRadius values follow the same rule. The Sun is 4 × 109.2^(1/3) ≈ 19.1 units,
-// which leaves Mercury's perihelion (30.7 units) clear. Relative mode is true size.
+// Enhanced mode sizes planets as 4 × √(radius in Earth radii) (the data's scaledRadius
+// values), so the giants stay prominent. The same rule would make the Sun 42 units and
+// swallow Mercury's orbit, so it is capped at 19.1: still larger than Jupiter (13.4)
+// and clear of Mercury's perihelion (30.7 units). Relative mode is true size.
 export const SUN_ENHANCED_SCALE = 19.1 / SUN_RADIUS;
 export const SUN_RADIUS_KM = 695700; // Matches the mean diameter in the Sun's data card
 export const EARTH_RADIUS_KM = 6378.1366; // JPL equatorial radius (km) for info display

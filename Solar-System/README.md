@@ -154,10 +154,10 @@ such as Io or Phobos) run on a compressed clock, P′ = Pmin·(P/Pmin)^0.2, so t
 fastest takes about 1.7 seconds per orbit and inner moons still outpace outer
 ones. Earth's Moon is slower than the threshold, so it stays on the real date.
 
-Enhanced Visibility sizes every body as 4 × (radius in Earth radii)^(1/3): the
-Sun is 19.1 units, Jupiter 9.0, Earth 4.0, and Mercury 2.9. This keeps true size
-order while small worlds stay visible, and leaves Mercury's orbit clear of the
-Sun. Relative mode uses one true-size scale anchored to the Sun.
+Enhanced Visibility sizes planets as 4 × √(radius in Earth radii): Jupiter is
+13.4 units, Saturn 12.3, Uranus 8.0, Earth 4.0, and Mercury 2.5. The Sun would be
+42 units under the same rule and swallow Mercury's orbit, so it is capped at 19.1,
+still the largest body. Relative mode uses one true-size scale anchored to the Sun.
 
 Selection adds a white inspection light so albedo detail remains visible on
 the night side. This is an educational viewing aid, not simulated solar lighting.

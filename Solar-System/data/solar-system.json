@@ -2,7 +2,7 @@
   {
     "name": "Mercury",
     "actualRadius": 0.38264,
-    "scaledRadius": 2.9,
+    "scaledRadius": 2.5,
     "orbitRadiusAU": 0.3870988335796698,
     "baseOrbitSpeedFactor": 4.152016,
     "gravityStrength": 0.3776,
@@ -19980,7 +19980,7 @@
   {
     "name": "Mars",
     "actualRadius": 0.532474,
-    "scaledRadius": 3.2,
+    "scaledRadius": 2.9,
     "orbitRadiusAU": 1.523654830761891,
     "baseOrbitSpeedFactor": 0.531694,
     "gravityStrength": 0.3786,
@@ -26658,7 +26658,7 @@
   {
     "name": "Jupiter",
     "actualRadius": 11.208916,
-    "scaledRadius": 9.0,
+    "scaledRadius": 13.4,
     "orbitRadiusAU": 5.203689415726723,
     "baseOrbitSpeedFactor": 0.084281,
     "gravityStrength": 2.5296,
@@ -33367,7 +33367,7 @@
   {
     "name": "Saturn",
     "actualRadius": 9.449155,
-    "scaledRadius": 8.5,
+    "scaledRadius": 12.3,
     "orbitRadiusAU": 9.542658747527422,
     "baseOrbitSpeedFactor": 0.033927,
     "gravityStrength": 1.0653,
@@ -40111,7 +40111,7 @@
   {
     "name": "Uranus",
     "actualRadius": 4.007283,
-    "scaledRadius": 6.4,
+    "scaledRadius": 8.0,
     "orbitRadiusAU": 19.27781758670753,
     "baseOrbitSpeedFactor": 0.011814,
     "gravityStrength": 0.9051,
@@ -46828,7 +46828,7 @@
   {
     "name": "Neptune",
     "actualRadius": 3.882639,
-    "scaledRadius": 6.3,
+    "scaledRadius": 7.9,
     "orbitRadiusAU": 30.09084712214014,
     "baseOrbitSpeedFactor": 0.006058,
     "gravityStrength": 1.1378,
