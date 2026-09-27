@@ -67,10 +67,11 @@ export function createJupiterTrojans(scene, planets, planetConfigs) {
       const angle = centerAngle + angleSpread;
       const distance = jupiterScalePos + distanceSpread * CONSTANTS.ORBIT_SCALE_FACTOR;
 
+      // Ecliptic longitude offset from Jupiter, mapped to the scene as (x, z, −y).
       pos.set(
         distance * Math.cos(angle),
         distance * Math.sin(inclination) * 0.1,
-        distance * Math.sin(angle)
+        -distance * Math.sin(angle)
       );
 
       const size = random.range(
@@ -107,11 +108,9 @@ export function updateJupiterTrojans(scene, planets) {
   const jupiter = trojansGroup.userData.jupiterPlanet;
   if (!jupiter) return;
 
-  // Compute Jupiter's current orbital angle from its position in the XZ plane
-  const jx = jupiter.position.x;
-  const jz = jupiter.position.z;
-  const jupiterAngle = Math.atan2(jz, jx);
+  // Jupiter's ecliptic longitude; scene z is −ecliptic y.
+  const jupiterLongitude = Math.atan2(-jupiter.position.z, jupiter.position.x);
 
-  // Rotate the entire Trojan group to match Jupiter's angular position
-  trojansGroup.rotation.y = -jupiterAngle;
+  // A +Y rotation advances ecliptic longitude, so L4 stays 60° ahead.
+  trojansGroup.rotation.y = jupiterLongitude;
 }

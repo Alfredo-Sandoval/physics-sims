@@ -2,14 +2,17 @@ import * as THREE from "three";
 import * as CONSTANTS from "../core/config.js";
 import { getSimulatedDays } from "../core/state.js";
 import { getPlanetPositionAU, angleAtDays } from "./positions.js";
-import { getMoonLocalPosition } from "./moonPosition.js";
+import { getMoonLocalPosition, getMoonOrbitFrameQuaternion } from "./moonPosition.js";
+import { eclipticToScene } from "./frames.js";
 import { applyMoonJ2PrecessionAtTime, getPlanetRadiusForMoonPrecession } from "./orbitalRuntime.js";
 
 const moonPosition = new THREE.Vector3();
+const moonOrbitFrame = new THREE.Quaternion();
+const SPIN_AXIS = new THREE.Vector3(0, 1, 0);
 export function updatePositions(planets, days = getSimulatedDays()) {
   for (const group of planets) {
     const position = getPlanetPositionAU(group.userData.config, days);
-    group.position.set(position.x, position.z, position.y).multiplyScalar(CONSTANTS.ORBIT_SCALE_FACTOR);
+    eclipticToScene(position.x, position.y, position.z, group.position).multiplyScalar(CONSTANTS.ORBIT_SCALE_FACTOR);
   }
 }
 
@@ -33,8 +36,10 @@ export function updateRotations(planets, days = getSimulatedDays()) {
       mu.currentMeanAnomaly = angleAtDays(days, mu.config.orbitalPeriod, mu.orbitDirection, mu.initialMeanAnomaly);
       mu.currentAngle = mu.currentMeanAnomaly;
       applyMoonJ2PrecessionAtTime(mu, ud.name, getPlanetRadiusForMoonPrecession(ud), days);
-      moon.position.copy(getMoonLocalPosition(mu.currentMeanAnomaly, mu, ud.axialTilt, moonPosition));
-      moon.rotation.y = angleAtDays(days, mu.config.rotationPeriod, mu.rotationDirection, mu.initialMeanAnomaly);
+      moon.position.copy(getMoonLocalPosition(mu.currentMeanAnomaly, mu, ud.spinFrameQuaternion, moonPosition));
+      getMoonOrbitFrameQuaternion(mu, ud.spinFrameQuaternion, moonOrbitFrame);
+      moon.quaternion.setFromAxisAngle(SPIN_AXIS,
+        angleAtDays(days, mu.config.rotationPeriod, mu.rotationDirection, mu.initialMeanAnomaly)).premultiply(moonOrbitFrame);
     }
   }
 }

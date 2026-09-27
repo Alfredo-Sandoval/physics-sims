@@ -9,7 +9,8 @@ self.onmessage = ({ data: message }) => {
     const positions = new Float64Array(outBuffer);
     for (let i = 0; i < planets.length; i++) {
       const p = getPlanetPositionAU(planets[i], simulatedDays);
-      positions.set([p.x * orbitScaleFactor, p.z * orbitScaleFactor, p.y * orbitScaleFactor], i * 3);
+      // Same ecliptic → scene mapping as frames.js: (x, y, z) → (x, z, −y).
+      positions.set([p.x * orbitScaleFactor, p.z * orbitScaleFactor, -p.y * orbitScaleFactor], i * 3);
     }
     self.postMessage({ type: "POSITIONS_UPDATED_BUFFER", data: { outBuffer, simulatedDays, revision } }, [outBuffer]);
   }

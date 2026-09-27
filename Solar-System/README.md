@@ -83,6 +83,10 @@ first time, while Three.js loads.
 - Orbit and belt updates use separate Web Workers under `src/simulation/workers/`
 - Coordinate frame: J2000 ecliptic with +Y as north; prograde orbits appear
   counterclockwise when viewed from +Y
+- Planet poles use IAU pole directions, so seasons fall on the right dates;
+  rings and equatorial moon orbits follow each planet's equator
+- Earth's fallback orbit outside the sampled window uses Earth–Moon barycenter
+  mean elements, so it joins the Horizons samples without a visible jump
 
 ## Project structure
 

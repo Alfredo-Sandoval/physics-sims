@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import * as CONSTANTS from "../core/config.js";
 import { eccentricAnomaly, trueAnomaly, radius } from "../simulation/kepler.js";
+import { eclipticToScene } from "../simulation/frames.js";
 import { warn as logWarn } from "../core/logger.js";
 
 /* Orbit line generator ------------------------------------------------- */
@@ -96,7 +97,7 @@ function buildOrbitPoints(elements, segmentCount, scale, bodyName) {
       logWarn("OrbitLine", `Skipping for ${bodyName}: non-finite orbit vertex`);
       return null;
     }
-    points.push(new THREE.Vector3(x, z, y));
+    points.push(eclipticToScene(x, y, z, new THREE.Vector3()));
   }
   return points;
 }

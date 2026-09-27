@@ -10,6 +10,12 @@
     "rotationPeriod": 58.6462,
     "retrograde": false,
     "axialTilt": 0.03,
+    "pole": {
+      "raDeg": 281.0103,
+      "decDeg": 61.4155,
+      "frame": "ICRF J2000 north pole",
+      "source": "IAU WGCCRE"
+    },
     "atmosphere": {
       "exists": false
     },
@@ -6654,6 +6660,12 @@
     "rotationPeriod": -243.018,
     "retrograde": true,
     "axialTilt": 177.3,
+    "pole": {
+      "raDeg": 272.76,
+      "decDeg": 67.16,
+      "frame": "ICRF J2000 north pole",
+      "source": "IAU WGCCRE"
+    },
     "textureUrl": "venus.jpg",
     "atmosphere": {
       "exists": true,
@@ -13294,13 +13306,19 @@
     "name": "Earth",
     "actualRadius": 1,
     "scaledRadius": 4,
-    "orbitRadiusAU": 0.9992127576906509,
+    "orbitRadiusAU": 1.0000040855851953,
     "baseOrbitSpeedFactor": 1.001165,
     "gravityStrength": 1,
     "initialAngle": 1.5707963267948966,
     "rotationPeriod": 0.99726968,
     "retrograde": false,
     "axialTilt": 23.44,
+    "pole": {
+      "raDeg": 0,
+      "decDeg": 90,
+      "frame": "ICRF J2000 north pole",
+      "source": "IAU WGCCRE"
+    },
     "textureUrl": "earth.jpg",
     "cloudTextureUrl": null,
     "cloudTextureNote": "Cloud layer disabled until an earth_clouds.png asset is added.",
@@ -13327,16 +13345,16 @@
       }
     ],
     "kepler": {
-      "inclinationDeg": 0.004425554470223676,
-      "longAscNodeDeg": 177.1136903621288,
-      "argPeriapsisDeg": 283.2858180040115,
-      "meanAnomalyDeg": 92.0263171774288,
+      "inclinationDeg": 0.0034145856829635845,
+      "longAscNodeDeg": 180.0,
+      "argPeriapsisDeg": 283.0225605416128,
+      "meanAnomalyDeg": 89.42440124375753,
       "epoch": "2026-04-04 11:47 UTC (TDB)",
       "epochJD": 2461134.990972222,
       "epochDateUtc": "2026-04-04T11:47:00Z",
       "epochDate": "2026-04-04 11:47 UTC",
       "referenceFrame": "Ecliptic of J2000.0",
-      "referenceCenter": "Sun (10)",
+      "referenceCenter": "Earth-Moon barycenter mean elements (Standish, J2000 series); samples track the geocenter",
       "timescale": "TDB"
     },
     "coolFacts": [
@@ -13354,11 +13372,11 @@
       "surfaceTempMinC": -88,
       "surfaceTempMaxC": 58,
       "rotationPeriodDays": 0.99726968,
-      "orbitalPeriod": 364.825117,
-      "orbitalEccentricity": 0.01685312833567951,
-      "orbitalInclinationDeg": 0.004425554470223676,
+      "orbitalPeriod": 365.256363,
+      "orbitalEccentricity": 0.016699698380465436,
+      "orbitalInclinationDeg": 0.0034145856829635845,
       "meanOrbitalSpeedKms": 29.796,
-      "distanceAU": 0.999213,
+      "distanceAU": 1.000004,
       "moonCount": 1,
       "ringCount": 0,
       "magnetosphere": true,
@@ -19966,6 +19984,12 @@
     "rotationPeriod": 1.02595676,
     "retrograde": false,
     "axialTilt": 25.2,
+    "pole": {
+      "raDeg": 317.68143,
+      "decDeg": 52.8865,
+      "frame": "ICRF J2000 north pole",
+      "source": "IAU WGCCRE"
+    },
     "textureUrl": "mars.jpg",
     "atmosphere": {
       "exists": true,
@@ -26638,6 +26662,12 @@
     "rotationPeriod": 0.41354,
     "retrograde": false,
     "axialTilt": 3.1,
+    "pole": {
+      "raDeg": 268.056595,
+      "decDeg": 64.495303,
+      "frame": "ICRF J2000 north pole",
+      "source": "IAU WGCCRE"
+    },
     "textureUrl": "jupiter.jpg",
     "atmosphere": {
       "exists": true,
@@ -33341,6 +33371,12 @@
     "rotationPeriod": 0.44401,
     "retrograde": false,
     "axialTilt": 26.7,
+    "pole": {
+      "raDeg": 40.589,
+      "decDeg": 83.537,
+      "frame": "ICRF J2000 north pole",
+      "source": "IAU WGCCRE"
+    },
     "ringTilt": 26.7,
     "textureUrl": "saturn.jpg",
     "rings": {
@@ -40079,6 +40115,12 @@
     "rotationPeriod": -0.71833,
     "retrograde": true,
     "axialTilt": 97.8,
+    "pole": {
+      "raDeg": 257.311,
+      "decDeg": -15.175,
+      "frame": "ICRF J2000 north pole",
+      "source": "IAU WGCCRE"
+    },
     "textureUrl": "uranus.jpg",
     "atmosphere": {
       "exists": true,
@@ -46790,6 +46832,12 @@
     "rotationPeriod": 0.67125,
     "retrograde": false,
     "axialTilt": 28.3,
+    "pole": {
+      "raDeg": 299.36,
+      "decDeg": 43.46,
+      "frame": "ICRF J2000 north pole",
+      "source": "IAU WGCCRE"
+    },
     "textureUrl": "neptune.jpg",
     "atmosphere": {
       "exists": true,

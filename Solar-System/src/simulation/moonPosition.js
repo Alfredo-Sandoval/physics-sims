@@ -1,7 +1,15 @@
 import * as THREE from "three";
 import { eccentricAnomaly, trueAnomaly, radius } from "./kepler.js";
+import { eclipticToScene } from "./frames.js";
 
-const MOON_ORBIT_Z_AXIS = new THREE.Vector3(0, 0, 1);
+const orbitX = new THREE.Vector3();
+const orbitY = new THREE.Vector3();
+const orbitZ = new THREE.Vector3();
+const orbitBasis = new THREE.Matrix4();
+
+function usesEquatorialFrame(orbit, planetSpinFrame) {
+  return orbit?.orbitReference !== "ecliptic" && planetSpinFrame?.isQuaternion;
+}
 
 /**
  * Compute moon position in the parent-planet local frame from mean anomaly.
@@ -9,14 +17,14 @@ const MOON_ORBIT_Z_AXIS = new THREE.Vector3(0, 0, 1);
  *
  * @param {number} meanAnomalyRad Current mean anomaly [rad].
  * @param {object} orbit Orbit parameters.
- * @param {number} [planetAxialTiltRad=0] Parent planet axial tilt [rad].
+ * @param {THREE.Quaternion} [planetSpinFrame] Parent planet's equatorial frame.
  * @param {THREE.Vector3} [out] Optional output vector.
  * @returns {THREE.Vector3}
  */
 export function getMoonLocalPosition(
   meanAnomalyRad,
   orbit,
-  planetAxialTiltRad = 0,
+  planetSpinFrame = null,
   out = new THREE.Vector3()
 ) {
   const a = Number(orbit?.orbitSemiMajor ?? orbit?.orbitRadius ?? 0);
@@ -60,13 +68,25 @@ export function getMoonLocalPosition(
     return out;
   }
 
-  // Scene mapping keeps Y as ecliptic north, matching planet transforms.
-  out.set(xRef, zRef, yRef);
+  eclipticToScene(xRef, yRef, zRef, out);
 
   // Most regular moons are specified in the parent's equatorial frame.
-  if (orbit?.orbitReference !== "ecliptic" && Number.isFinite(planetAxialTiltRad)) {
-    out.applyAxisAngle(MOON_ORBIT_Z_AXIS, planetAxialTiltRad);
-  }
+  if (usesEquatorialFrame(orbit, planetSpinFrame)) out.applyQuaternion(planetSpinFrame);
 
+  return out;
+}
+
+/**
+ * Rotation whose +Y is the moon's orbit normal and +X its ascending node, so a
+ * spin about local Y shares the orbit's sense (tidal locking keeps one face inward).
+ */
+export function getMoonOrbitFrameQuaternion(orbit, planetSpinFrame = null, out = new THREE.Quaternion()) {
+  const i = Number(orbit?.orbitInclinationRad) || 0;
+  const O = Number(orbit?.orbitAscendingNodeRad) || 0;
+  eclipticToScene(Math.cos(O), Math.sin(O), 0, orbitX);
+  eclipticToScene(Math.sin(i) * Math.sin(O), -Math.sin(i) * Math.cos(O), Math.cos(i), orbitY);
+  orbitZ.crossVectors(orbitX, orbitY);
+  out.setFromRotationMatrix(orbitBasis.makeBasis(orbitX, orbitY, orbitZ));
+  if (usesEquatorialFrame(orbit, planetSpinFrame)) out.premultiply(planetSpinFrame);
   return out;
 }

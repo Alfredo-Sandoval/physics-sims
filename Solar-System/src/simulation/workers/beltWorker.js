@@ -195,7 +195,8 @@ function handleUpdateBelt(message) {
     const cosBigOmega = Math.cos(Omega);
     const sinBigOmega = Math.sin(Omega);
     const xFinal = xPeri * cosBigOmega - yIncl * sinBigOmega;
-    const zFinal = xPeri * sinBigOmega + yIncl * cosBigOmega;
+    // Ecliptic → scene: (x, y, z) → (x, z, −y), as in simulation/frames.js.
+    const zFinal = -(xPeri * sinBigOmega + yIncl * cosBigOmega);
     const yFinal = zIncl;
 
     const rotIndex = i * 3;

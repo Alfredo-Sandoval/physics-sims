@@ -5,7 +5,8 @@ import * as CONSTANTS from "../core/config.js";
 import { createPlanetMaterial, createTextSprite } from "./materials.js";
 import { createOrbitLine } from "./orbitLines.js";
 import { loadTexture } from "./textures.js";
-import { getMoonLocalPosition } from "../simulation/moonPosition.js";
+import { getMoonLocalPosition, getMoonOrbitFrameQuaternion } from "../simulation/moonPosition.js";
+import { getSpinFrameQuaternion } from "../simulation/frames.js";
 import { eccentricAnomaly, trueAnomaly, radius } from "../simulation/kepler.js";
 import { debug as logDebug, warn as logWarn } from "../core/logger.js";
 
@@ -138,7 +139,7 @@ export async function createPlanetsAndOrbits(scene, loader, configs) {
       rotationDirection: cfg.rotationDirection,
       initialAngle: cfg.initialAngleRad ?? 0,
       currentAngle: cfg.initialAngleRad ?? 0,
-      axialTilt: (cfg.axialTilt ?? 0) * THREE.MathUtils.DEG2RAD,
+      spinFrameQuaternion: getSpinFrameQuaternion(cfg),
       displayRadius: planetScaleProfile.enhancedRadius,
       displayRadiusEnhanced: planetScaleProfile.enhancedRadius,
       displayRadiusRelative: planetScaleProfile.relativeRadius,
@@ -162,7 +163,7 @@ export async function createPlanetsAndOrbits(scene, loader, configs) {
     mesh.receiveShadow = true; // All planets receive shadows
     // A fixed pole owns the tilt; only the surface rotates within that frame.
     const spinFrame = new THREE.Group();
-    spinFrame.rotation.z = group.userData.axialTilt;
+    spinFrame.quaternion.copy(group.userData.spinFrameQuaternion);
     group.add(spinFrame);
     // Set up click target to point to the selectable parent group
     mesh.userData.clickTarget = group;
@@ -222,7 +223,8 @@ export async function createPlanetsAndOrbits(scene, loader, configs) {
 
     /* Rings ----------------------------------------------------------- */
     if (planetHasRings(cfg)) {
-      await createRings(cfg, dispR, group, loader, planetScaleProfile);
+      // Rings lie in the equator, so they share the pole's frame.
+      await createRings(cfg, dispR, spinFrame, loader, planetScaleProfile);
     }
 
     /* Initial placement ------------------------------------------------ */
@@ -390,9 +392,7 @@ async function createRings(cfg, planetR, group, loader, scaleProfile = null) {
   mat.alphaTest = visual.alphaTest;
 
   const ring = new THREE.Mesh(geom, mat);
-  ring.rotation.order = "ZXY";
   ring.rotation.x = -Math.PI / 2;
-  ring.rotation.z = visual.tiltRad;
   ring.raycast = () => {};
   ring.userData = { isRing: true, bodyName: cfg?.name };
   applyScaleModeProfile(ring, scaleProfile);
@@ -420,9 +420,6 @@ function resolveRingVisualConfig(cfg) {
     Number.isFinite(outerRaw) ? outerRaw : CONSTANTS.SATURN_RING_OUTER_RADIUS_FACTOR
   );
   const opacityRaw = readFiniteNumber(ringConfig.opacity ?? preset?.opacity ?? CONSTANTS.SATURN_RING_OPACITY);
-  const tiltDeg = readFiniteNumber(
-    ringConfig.tiltDeg ?? ringConfig.ringTiltDeg ?? cfg?.ringTilt ?? preset?.tiltDeg ?? cfg?.axialTilt
-  );
   const thetaRaw = readFiniteNumber(ringConfig.thetaSegments ?? preset?.thetaSegments);
   const phiRaw = readFiniteNumber(ringConfig.phiSegments ?? preset?.phiSegments);
   const alphaRaw = readFiniteNumber(ringConfig.alphaTest ?? preset?.alphaTest);
@@ -442,7 +439,6 @@ function resolveRingVisualConfig(cfg) {
         : typeof preset?.textureUrl === "string"
           ? preset.textureUrl
           : null,
-    tiltRad: (Number.isFinite(tiltDeg) ? tiltDeg : 0) * THREE.MathUtils.DEG2RAD,
     thetaSegments: Math.max(48, Math.floor(Number.isFinite(thetaRaw) ? thetaRaw : 96)),
     phiSegments: Math.max(2, Math.floor(Number.isFinite(phiRaw) ? phiRaw : 4)),
     alphaTest: clampNumber(Number.isFinite(alphaRaw) ? alphaRaw : 0.02, 0, 0.2),
@@ -546,7 +542,7 @@ function createMoonSystem(planetCfg, planetGroup, planetRadius, loader) {
   const moonGroup = new THREE.Group();
   moonGroup.userData.parentPlanetName = planetCfg.name;
   const moonBodies = [];
-  const planetAxialTiltRad = planetGroup?.userData?.axialTilt ?? 0;
+  const planetSpinFrame = planetGroup?.userData?.spinFrameQuaternion ?? null;
   const baseOrbitRadius =
     Number.isFinite(planetRadius) && planetRadius > 0
       ? planetRadius * 1.5
@@ -639,7 +635,8 @@ function createMoonSystem(planetCfg, planetGroup, planetRadius, loader) {
 
     /* Position & userdata --------------------------------------------- */
     const M0 = initialMoonPhase(m);
-    moon.position.copy(getMoonLocalPosition(M0, orbitSpec, planetAxialTiltRad));
+    moon.position.copy(getMoonLocalPosition(M0, orbitSpec, planetSpinFrame));
+    getMoonOrbitFrameQuaternion(orbitSpec, planetSpinFrame, moon.quaternion);
     const orbitalPeriodRaw = readFiniteNumber(m.orbitalPeriod ?? m.orbitalPeriodDays);
     const rotationPeriodRaw = readFiniteNumber(m.rotationPeriod ?? m.rotationPeriodDays);
     const orbitalPeriod = Number.isFinite(orbitalPeriodRaw) ? orbitalPeriodRaw : 0;
@@ -703,7 +700,7 @@ function createMoonSystem(planetCfg, planetGroup, planetRadius, loader) {
     const moonOrbitPoints = [];
     for (let k = 0; k < CONSTANTS.MOON_ORBIT_SEGMENTS; k++) {
       const Mk = (k / CONSTANTS.MOON_ORBIT_SEGMENTS) * 2 * Math.PI;
-      moonOrbitPoints.push(getMoonLocalPosition(Mk, orbitSpec, planetAxialTiltRad));
+      moonOrbitPoints.push(getMoonLocalPosition(Mk, orbitSpec, planetSpinFrame));
     }
     const moonOrbitGeom = new THREE.BufferGeometry().setFromPoints(moonOrbitPoints);
     // Moon paths are contextual guides, shown when their planet is selected.

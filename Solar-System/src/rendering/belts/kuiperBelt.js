@@ -187,8 +187,9 @@ export function createKuiperBelt(scene, loader) {
     // Rotate by longitude of ascending node
     const cos_O = Math.cos(Omega);
     const sin_O = Math.sin(Omega);
+    // Ecliptic → scene: (x, y, z) → (x, z, −y), as in simulation/frames.js.
     const x = x_incl * cos_O - y_incl * sin_O;
-    const z = x_incl * sin_O + y_incl * cos_O;
+    const z = -(x_incl * sin_O + y_incl * cos_O);
     const y = z_incl;
 
     // Convert AU to scene units
@@ -453,8 +454,9 @@ export function updateKuiperBelt(belt, deltaTime) {
 
       const cos_O = Math.cos(Omega);
       const sin_O = Math.sin(Omega);
+      // Ecliptic → scene: (x, y, z) → (x, z, −y), as in simulation/frames.js.
       const x = x_incl * cos_O - y_incl * sin_O;
-      const z = x_incl * sin_O + y_incl * cos_O;
+      const z = -(x_incl * sin_O + y_incl * cos_O);
       const y = z_incl;
 
       kbo.position.set(

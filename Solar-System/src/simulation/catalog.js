@@ -104,7 +104,8 @@ export async function loadPlanetData() {
         const Pm = Math.abs(m.orbitalPeriod || 0);
         // Check retrograde flag first, then fall back to orbital period sign.
         if (typeof m.retrograde === "boolean") {
-          m.orbitDirection = m.retrograde ? -1 : 1;
+          // An inclination above 90° already reverses the orbit; don't flip it twice.
+          m.orbitDirection = m.retrograde && m.orbitalInclinationDeg <= 90 ? -1 : 1;
         } else {
           m.orbitDirection = m.orbitalPeriod >= 0 ? 1 : -1;
         }

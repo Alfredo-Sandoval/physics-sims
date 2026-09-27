@@ -1,4 +1,4 @@
-import { checkRotation, checkInspectionLabel } from "./solar-system.regressions.js";
+import { checkRotation, checkOrientation, checkInspectionLabel } from "./solar-system.regressions.js";
 
 export async function runBehaviorChecks(win, { assert, wait, waitFor }) {
   const doc = win.document;
@@ -27,6 +27,7 @@ export async function runBehaviorChecks(win, { assert, wait, waitFor }) {
 
   playback.applySimulationSpeed(0);
   await checkRotation(win, { assert, nextDraw, app, state, config });
+  await checkOrientation(win, { assert, nextDraw, app, state });
   await nextDraw(() => { setDate("2025-03-15"); setDate("2026-06-20"); });
   const expectedDays = (Date.parse("2026-06-20T12:00:00Z") - epoch) / 86400000;
   assert(Math.abs(app.getSimulatedDays() - expectedDays) < 1e-9, "rapid date changes keep the latest target");
@@ -74,7 +75,7 @@ export async function runBehaviorChecks(win, { assert, wait, waitFor }) {
     const data = (await response).data;
     const actual = new win.Float64Array(data.outBuffer);
     const expected = days === referenceDays ? referenceSample : solver.getPlanetPositionAU(earth.userData.config, days);
-    assert(Math.max(Math.abs(actual[0] - expected.x * 100), Math.abs(actual[1] - expected.z * 100), Math.abs(actual[2] - expected.y * 100)) < 1e-9,
+    assert(Math.max(Math.abs(actual[0] - expected.x * 100), Math.abs(actual[1] - expected.z * 100), Math.abs(actual[2] + expected.y * 100)) < 1e-9,
       days === referenceDays ? "worker returns the recorded Horizons sample inside coverage" :
         "worker transfers the Kepler position correctly outside ephemeris coverage");
   }
@@ -93,7 +94,7 @@ export async function runBehaviorChecks(win, { assert, wait, waitFor }) {
   app.seekToDays(1);
   belts.requestWorkerBeltUpdate(testBeltId, 1, 0);
   await waitFor(() => samples.length > 0, "latest queued belt date arrives");
-  assert(samples.length === 1 && Math.abs(samples[0][12]) < 1e-6 && Math.abs(samples[0][14] - 100) < 1e-6,
+  assert(samples.length === 1 && Math.abs(samples[0][12]) < 1e-6 && Math.abs(samples[0][14] + 100) < 1e-6,
     "stale belt responses are discarded and the latest date is applied");
   app.seekToDays(0);
   belts.requestWorkerBeltUpdate(testBeltId, 0, 0);

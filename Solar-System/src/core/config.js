@@ -70,7 +70,6 @@ export const PLANET_RING_PRESETS = Object.freeze({
     outerRadiusFactor: SATURN_RING_OUTER_RADIUS_FACTOR,
     opacity: SATURN_RING_OPACITY,
     textureUrl: "saturn_ring.png",
-    tiltDeg: 26.7,
     color: 0xffffff,
     alphaTest: 0.05,
     thetaSegments: 128,
