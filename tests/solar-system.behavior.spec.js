@@ -1,4 +1,4 @@
-import { checkRotation, checkOrientation, checkKeyboard, checkInspectionLabel } from "./solar-system.regressions.js";
+import { checkRotation, checkOrientation, checkKeyboard, checkRendering, checkInspectionLabel } from "./solar-system.regressions.js";
 
 export async function runBehaviorChecks(win, { assert, wait, waitFor }) {
   const doc = win.document;
@@ -62,6 +62,9 @@ export async function runBehaviorChecks(win, { assert, wait, waitFor }) {
   assert(app.getSimulationSpeed() < 0, "resume retains reverse direction");
   playback.applySimulationSpeed(0);
   await checkKeyboard(win, { assert, waitFor, app, playback, state });
+  await checkRendering(win, { assert, waitFor, nextDraw, app, playback, state, config });
+  playback.applySimulationSpeed(-1);
+  playback.applySimulationSpeed(0);
 
   // Compare actual worker output with the same main-thread solver, including outside ephemeris coverage.
   const worker = new win.Worker("/Solar-System/src/simulation/workers/orbitWorker.js", { type: "module" });

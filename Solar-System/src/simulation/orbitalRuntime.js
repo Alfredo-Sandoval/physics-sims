@@ -451,6 +451,14 @@ function ensureMoonPrecessionState(moonUserData, parentPlanetName, parentRadiusK
 
 export function applyMoonJ2PrecessionAtTime(moonUserData, parentName, parentRadiusKm, days) {
   const state = ensureMoonPrecessionState(moonUserData, parentName, parentRadiusKm);
+  // Measured rates win over J2: the Sun, not Earth's oblateness, turns the Moon's orbit.
+  const nodeRate = Number(moonUserData?.config?.nodePrecessionDegPerDay);
+  const periRate = Number(moonUserData?.config?.periapsisPrecessionDegPerDay);
+  if (state && Number.isFinite(nodeRate) && Number.isFinite(periRate)) {
+    moonUserData.orbitAscendingNodeRad = wrapAnglePositive(state.baseNode + days * nodeRate * Math.PI / 180);
+    moonUserData.orbitArgPeriapsisRad = wrapAnglePositive(state.basePeri + days * periRate * Math.PI / 180);
+    return;
+  }
   if (!state?.enabled) return;
   const period = Math.abs(moonUserData.config?.orbitalPeriod);
   if (!Number.isFinite(period) || period === 0) return;

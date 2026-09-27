@@ -73,8 +73,9 @@ export function createAsteroidBelt(scene, loader) {
   });
 
   const materials = [cTypeMaterial, sTypeMaterial, mTypeMaterial];
+  // instanceColor alone tints each instance; vertexColors would read a missing
+  // color attribute as black.
   materials.forEach((m) => {
-    m.vertexColors = true;
     m.userData.castShadow = false;
     m.userData.receiveShadow = false;
   });
@@ -122,7 +123,10 @@ export function createAsteroidBelt(scene, loader) {
     }
 
     // Deform vertices randomly for irregular asteroid shape
+    // Polyhedron geometry is non-indexed; deform by direction so every copy of a
+    // shared corner moves together and faces stay sealed.
     const positions = geom.attributes.position;
+    const deformByDirection = new Map();
     for (let i = 0; i < positions.count; i++) {
       const x = positions.getX(i);
       const y = positions.getY(i);
@@ -136,7 +140,12 @@ export function createAsteroidBelt(scene, loader) {
 
       // Add random deformation (craters and bumps)
       // Keep base size ~1.0, just add variation
-      const deform = 0.85 + random() * 0.3; // 0.85 to 1.15
+      const key = `${nx.toFixed(4)},${ny.toFixed(4)},${nz.toFixed(4)}`;
+      let deform = deformByDirection.get(key);
+      if (deform === undefined) {
+        deform = 0.85 + random() * 0.3; // 0.85 to 1.15
+        deformByDirection.set(key, deform);
+      }
       positions.setXYZ(i, nx * deform, ny * deform, nz * deform);
     }
 
@@ -353,7 +362,8 @@ export function createAsteroidBelt(scene, loader) {
       const quat = new THREE.Quaternion().setFromEuler(rotation);
       matrix.compose(pos, quat, scale);
       inst.setMatrixAt(i, matrix);
-      color.copy(material.color).multiplyScalar(random.range(0.85, 1.15));
+      // The shader multiplies by material.color, so the instance color is only the jitter.
+      color.setScalar(random.range(0.85, 1.15));
       inst.setColorAt(i, color);
 
       workerInstances.push({
@@ -508,16 +518,18 @@ function getBeltUpdateIntervalMs(distance, beltRadius) {
   return 160;
 }
 
-export function updateAsteroidBelt(belt, deltaTime) {
-  if (!belt || !belt.userData) return;
-  if (belt.visible === false) return;
+// Returns true once the current date has been requested. With timeChanged false,
+// only the camera-distance impostor switch runs, so zooming while paused still swaps it.
+export function updateAsteroidBelt(belt, deltaTime, timeChanged = true) {
+  if (!belt || !belt.userData) return true;
+  if (belt.visible === false) return true;
 
   const asteroidData = belt.userData.asteroidData;
   const namedAsteroids = belt.userData.namedAsteroids;
   const simulatedDays = getSimulatedDays() || 0;
   const camera = getCamera();
 
-  if (!asteroidData) return;
+  if (!asteroidData) return true;
 
   const now = performance.now ? performance.now() : Date.now();
   const beltRadius = belt.userData.beltRadius ?? 0;
@@ -535,7 +547,7 @@ export function updateAsteroidBelt(belt, deltaTime) {
   if (forceUpdate) {
     belt.userData.useImpostor = useImpostor;
   }
-  const shouldUpdate = forceUpdate || now - lastUpdateMs >= interval;
+  const shouldUpdate = forceUpdate || (timeChanged && now - lastUpdateMs >= interval);
 
   if (shouldUpdate) {
     belt.userData.lastUpdateMs = now;
@@ -602,6 +614,7 @@ export function updateAsteroidBelt(belt, deltaTime) {
       asteroid.rotation.y += 0.001 * deltaTime;
     });
   }
+  return shouldUpdate || !showInstances;
 }
 
 function unregisterAsteroidBelts(asteroidData) {

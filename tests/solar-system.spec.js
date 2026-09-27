@@ -176,7 +176,11 @@ async function runSolarSystemSmoke() {
   doc.getElementById("topDownBtn").click();
   assert(Math.hypot(state.camera.position.x, state.camera.position.z) / state.camera.position.y < 1e-5,
     "top-down view looks from ecliptic north");
-  assert(state.camera.up.z === -1 && state.controls.target.length() < 1e-6, "top-down view has a stable screen orientation and Sun-centered target");
+  state.camera.updateMatrixWorld();
+  const screen = state.camera.matrixWorld.elements;
+  // Screen-right is +X and screen-up is -Z, with the camera's up left at +Y for OrbitControls.
+  assert(screen[0] > 0.999 && screen[6] < -0.999 && state.camera.up.y === 1 && state.controls.target.length() < 1e-6,
+    "top-down view has a stable screen orientation and Sun-centered target");
   assert(state.followTarget === null, "view presets release body tracking");
   scaleButton.click();
 

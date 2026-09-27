@@ -13,7 +13,8 @@ import { on } from "../core/events.js";
 
 export function startAnimationLoop({ scene, camera, renderer, controls, clock, planets, celestialBodies, shadowManager, performanceTuner, orbitWorker }) {
   let frameId = null, rendering = false, stopped = false;
-  let lastDay = null, lastRevision = -1, lastUiUpdate = 0;
+  let lastDay = null, lastRevision = -1, lastUiUpdate = 0, kuiperBelt = null;
+  const starfield = scene.getObjectByName("starfield");
   const cameraFollow = new CameraFollowController();
   const detail = createDetailController(celestialBodies, renderer);
   const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
@@ -43,12 +44,14 @@ export function startAnimationLoop({ scene, camera, renderer, controls, clock, p
       updateRotations(planets, days);
       lastDay = days; lastRevision = revision;
     }
-    // Worker belts are also date-driven and only run when their visible state changes.
+    // Worker belts are date-driven. A throttled update leaves the date stale so a
+    // later frame retries, even after pausing; the call also runs belt LOD checks.
     const belt = getAsteroidBelt();
-    const kuiper = scene.getObjectByName("KuiperBelt");
+    const kuiper = kuiperBelt ??= scene.getObjectByName("KuiperBelt");
     for (const [object, update] of [[belt, updateAsteroidBelt], [kuiper, updateKuiperBelt]]) {
-      if (object?.visible && (object.userData.lastRenderedDay !== days || object.userData.lastRenderedRevision !== revision)) {
-        update(object, delta);
+      if (!object?.visible) continue;
+      const stale = object.userData.lastRenderedDay !== days || object.userData.lastRenderedRevision !== revision;
+      if (update(object, delta, stale) && stale) {
         object.userData.lastRenderedDay = days;
         object.userData.lastRenderedRevision = revision;
       }
@@ -74,6 +77,9 @@ export function startAnimationLoop({ scene, camera, renderer, controls, clock, p
       THREE.MathUtils.mapLinear(camera.position.length(), 100, CONSTANTS.STARFIELD_RADIUS,
         CONSTANTS.TONE_MAPPING_EXPOSURE_MIN, CONSTANTS.TONE_MAPPING_EXPOSURE_MAX),
       CONSTANTS.TONE_MAPPING_EXPOSURE_MIN, CONSTANTS.TONE_MAPPING_EXPOSURE_MAX);
+    // Stars are effectively at infinity: keep the sky centred on the camera so
+    // zooming out never leaves it.
+    starfield?.position.copy(camera.position);
     renderer.render(scene, camera);
     drawState.frames++; drawState.lastFrameMs = performance.now() - start;
     rendering = false;

@@ -79,6 +79,17 @@ export async function checkOrientation(win, { assert, nextDraw, app, state }) {
     }
   }
 
+  // Mean lunations from the Meeus series; true phases differ by under a day (~12°).
+  const moon = state.moons.find((body) => body.userData.name === "Moon");
+  for (const [iso, expected, phase] of [["2026-09-11T16:37:00Z", 0, "new"], ["2026-09-26T11:00:00Z", 180, "full"]]) {
+    const elongation = await sample(daysAt(iso), () => {
+      const toMoon = world(moon).sub(world(earth));
+      return THREE.MathUtils.euclideanModulo((longitude(toMoon) - longitude(world(earth).negate())) * 180 / Math.PI, 360);
+    });
+    const miss = Math.abs(THREE.MathUtils.euclideanModulo(elongation - expected + 180, 360) - 180);
+    assert(miss < 10, `the Moon is ${phase} on its ${iso.slice(0, 10)} lunation (off by ${miss.toFixed(1)}°)`);
+  }
+
   const trojans = await sample(start, () => {
     const jupiter = state.planets.find((body) => body.userData.name === "Jupiter");
     const lead = state.scene.getObjectByName("JupiterL4");
@@ -127,6 +138,72 @@ export async function checkKeyboard(win, { assert, waitFor, app, playback, state
   assert(doc.activeElement === pause, "the search palette returns focus where it opened");
   press("Escape");
   assert(selectedName() === null && state.planets.length > 0, "Escape still deselects after using the palette");
+
+  press("8");
+  doc.getElementById("topDownBtn").click();
+  assert(selectedName() === "Neptune", "Top-Down keeps the selected body, as the outer-planets tour stop needs");
+  const neptune = state.planets.find((body) => body.userData.name === "Neptune");
+  const THREE = await win.eval('import("three")');
+  const onScreen = neptune.getWorldPosition(new THREE.Vector3()).project(state.camera);
+  assert(Math.abs(onScreen.x) < 1 && Math.abs(onScreen.y) < 1, "Top-Down frames the selected body");
+  press("Escape");
+}
+
+export async function checkRendering(win, { assert, waitFor, nextDraw, app, playback, state, config }) {
+  const belts = [];
+  state.scene.traverse((object) => { if (object.isInstancedMesh && object.instanceColor) belts.push(object); });
+  const tint = belts[0] && [0, 1, 2].map((channel) => belts[0].instanceColor.array[channel]);
+  assert(belts.length > 0 && belts.every((mesh) => !mesh.material.vertexColors) &&
+    tint[0] === tint[1] && tint[1] === tint[2], "belt rocks keep their material color, lightly jittered, not black");
+  assert(state.renderer.capabilities.precision === "highp" || !state.renderer.capabilities.isWebGL2,
+    "the renderer keeps high precision for distant lighting");
+  const light = state.scene.children.find((child) => child.isPointLight && child.castShadow);
+  const neptune = state.planets.find((body) => body.userData.name === "Neptune");
+  assert(light.shadow.camera.far > neptune.position.length(), "point-light shadows reach Neptune");
+
+  const sun = state.scene.children.find((child) => child.userData?.name === "Sun");
+  const mercury = state.planets.find((body) => body.userData.name === "Mercury");
+  const perihelion = mercury.userData.config.orbitRadiusAU * (1 - mercury.userData.config.info.orbitalEccentricity) *
+    config.ORBIT_SCALE_FACTOR;
+  assert(perihelion - config.SUN_RADIUS * sun.scale.x > 10, "Mercury clears the enhanced-visibility Sun");
+
+  await nextDraw(() => state.controls.dispatchEvent({ type: "change" }));
+  const sky = state.scene.getObjectByName("starfield");
+  assert(sky.position.distanceTo(state.camera.position) < 1e-9, "the sky stays centred on the camera");
+  assert(state.controls.maxDistance + 50 * config.ORBIT_SCALE_FACTOR <= state.camera.far,
+    "the farthest zoom keeps the Kuiper belt inside the far plane");
+
+  // A throttled belt request must leave the date pending so a later paused frame retries.
+  const { updateAsteroidBelt } = await win.eval('import("/Solar-System/src/rendering/belts/asteroidBelt.js")');
+  const asteroidBelt = app.getAsteroidBelt();
+  const wasVisible = asteroidBelt.visible;
+  const savedCamera = state.camera.position.clone();
+  asteroidBelt.visible = true;
+  state.camera.position.set(0, 200, 200);
+  updateAsteroidBelt(asteroidBelt, 0, false);
+  asteroidBelt.userData.lastUpdateMs = win.performance.now();
+  assert(updateAsteroidBelt(asteroidBelt, 0, true) === false, "a throttled belt update reports its date as pending");
+  await nextDraw(() => app.seekToDays(app.getSimulatedDays() + 3));
+  await waitFor(() => asteroidBelt.userData.lastRenderedDay === app.getSimulatedDays(),
+    "a paused belt catches up to the paused date");
+  assert(true, "pausing never leaves the asteroid belt on an older date");
+  state.camera.position.copy(savedCamera);
+  asteroidBelt.visible = wasVisible;
+
+  const { PerformanceTuner } = await win.eval('import("/Solar-System/src/rendering/quality.js")');
+  let ratio = 2;
+  const tuner = new PerformanceTuner({ getPixelRatio: () => ratio, setPixelRatio: (value) => { ratio = value; } });
+  const realNow = win.performance.now.bind(win.performance);
+  let clock = realNow();
+  win.performance.now = () => clock;
+  try {
+    for (let frame = 0; frame < 400; frame++) { clock += 1000 / 30; tuner.tick(1 / 30); }
+  } finally {
+    win.performance.now = realNow;
+  }
+  assert(ratio === 2, "a 30 Hz display cap does not leave quality stuck at its minimum");
+  tuner.setMaxPixelRatio(1);
+  assert(ratio === 1, "a device-pixel-ratio change resizes the drawing buffer");
 }
 
 export async function checkMenu(win, { assert, waitFor }) {

@@ -90,8 +90,9 @@ export const setAsteroidBelt = (belt) => {
 export const setSimulationSpeed = (speed) => {
   if (Number.isFinite(speed)) {
     if (state.simulationSpeed === speed) return;
+    // No revision bump: worker clients already drop paused responses for other dates,
+    // and bumping here discarded every belt response while the speed slider moved.
     state.simulationSpeed = speed;
-    state.timeRevision += 1;
     emit("render");
   }
 };

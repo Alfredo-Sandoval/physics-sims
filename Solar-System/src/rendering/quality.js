@@ -21,6 +21,14 @@ export class PerformanceTuner {
     this.veryLowFps = 34;
     this.highFps = 58;
 
+    // A 30 Hz cap (battery saver, low-power mode) looks like a slow GPU. Each
+    // downscale is checked after a trial; if FPS did not improve, quality is
+    // restored and further downscaling waits, with the wait doubling each time.
+    this.trialMs = 3000;
+    this.trial = null;
+    this.retryAt = 0;
+    this.retryBackoffMs = 30000;
+
     this.uiIntervalMs = 33;
     this.beltIntervalMs = 36;
     this.shadowIntervalMs = shadowManager?.updateInterval ?? 100;
@@ -39,11 +47,22 @@ export class PerformanceTuner {
 
     if (now - this.lastAdjust < this.adjustCooldownMs) return this.uiIntervalMs;
 
-    if (avgFps < this.veryLowFps) {
-      this.applyAggressiveDownscale();
+    if (this.trial && now - this.trial.startedAt >= this.trialMs) {
+      if (avgFps < this.trial.fps * 1.15) {
+        this.restoreFullQuality();
+        this.retryAt = now + this.retryBackoffMs;
+        this.retryBackoffMs *= 2;
+      }
+      this.trial = null;
       this.lastAdjust = now;
-    } else if (avgFps < this.lowFps) {
-      this.applyMildDownscale();
+      return this.uiIntervalMs;
+    }
+
+    const mayDownscale = !this.trial ? now >= this.retryAt : true;
+    if (mayDownscale && avgFps < this.lowFps) {
+      if (!this.trial) this.trial = { fps: avgFps, startedAt: now };
+      if (avgFps < this.veryLowFps) this.applyAggressiveDownscale();
+      else this.applyMildDownscale();
       this.lastAdjust = now;
     } else if (avgFps > this.highFps && (this.currentPixelRatio < this.maxPixelRatio - 0.01 || this.beltIntervalMs > 36 || this.shadowIntervalMs > 100 || this.uiIntervalMs > 33)) {
       this.applyUpscale();
@@ -74,10 +93,29 @@ export class PerformanceTuner {
     this.setUiInterval(Math.max(33, this.uiIntervalMs - 8));
   }
 
+  restoreFullQuality() {
+    this.setPixelRatio(this.maxPixelRatio);
+    this.setBeltInterval(36);
+    this.setShadowInterval(100);
+    this.setUiInterval(33);
+  }
+
+  // Browser zoom or a move to another display changes the device pixel ratio.
+  setMaxPixelRatio(value) {
+    if (!Number.isFinite(value) || value <= 0) return;
+    const scale = this.currentPixelRatio / this.maxPixelRatio;
+    this.maxPixelRatio = value;
+    this.minPixelRatio = Math.min(0.7, value);
+    this.currentPixelRatio = Number.NaN;
+    this.setPixelRatio(value * scale);
+  }
+
   setPixelRatio(value) {
     const next = Math.min(this.maxPixelRatio, Math.max(this.minPixelRatio, value));
     if (!this.renderer || Math.abs(next - this.currentPixelRatio) < 0.01) return;
-    const previous = this.currentPixelRatio;
+    // NaN marks a forced reapply; restore to the new maximum if setPixelRatio throws.
+    const fallback = Number.isFinite(this.currentPixelRatio) ? this.currentPixelRatio : this.maxPixelRatio;
+    const previous = fallback;
     try {
       this.renderer.setPixelRatio(next);
       this.currentPixelRatio = next;

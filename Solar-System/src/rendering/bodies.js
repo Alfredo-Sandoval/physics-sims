@@ -86,7 +86,12 @@ export function createSun(scene, loader) {
       },
     },
     clickTarget: null,
+    displayRadiusEnhanced: CONSTANTS.SUN_RADIUS * CONSTANTS.SUN_ENHANCED_SCALE,
+    displayRadiusRelative: CONSTANTS.SUN_RADIUS,
   };
+  sun.userData.displayRadius = sun.userData.displayRadiusEnhanced;
+  applyScaleModeProfile(sun, { enhanced: CONSTANTS.SUN_ENHANCED_SCALE, relative: 1 });
+  sun.scale.setScalar(CONSTANTS.SUN_ENHANCED_SCALE);
   sun.userData.clickTarget = sun;
   scene.add(sun);
   return { mesh: sun, config: sun.userData.config };
@@ -890,6 +895,8 @@ function disposeMaterial(material) {
   // Dispose all texture properties
   Object.keys(material).forEach((key) => {
     const value = material[key];
+    // Cached textures are shared; the cache owns them (see clearTextureCache).
+    if (value?.isTexture && value.userData?.key) return;
     if (value && typeof value.dispose === "function") {
       value.dispose();
     }

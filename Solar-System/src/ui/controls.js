@@ -234,19 +234,24 @@ export function setupUIControls(planetConfigs, selectable, scene) {
     });
   }
 
-  const setCameraView = (position, up) => {
+  // OrbitControls only reads camera.up at construction, so every preset keeps +Y up.
+  const getFitDistance = (camera, radius) => {
+    const halfFov = Math.atan(Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * Math.min(1, camera.aspect));
+    return radius / Math.sin(halfFov) * 1.12;
+  };
+  const setCameraView = (position, { keepSelection = false } = {}) => {
     const camera = getCamera();
     const controlsRef = getControls();
     if (!camera || !controlsRef) return;
     rememberView();
-    deselectObject();
+    if (!keepSelection) deselectObject();
     stopCameraFollow();
     // Flush residual drag damping before applying an explicit view preset.
     const damping = controlsRef.enableDamping;
     controlsRef.enableDamping = false;
     controlsRef.update();
     camera.position.copy(position);
-    camera.up.copy(up);
+    camera.up.set(0, 1, 0);
     camera.near = 0.1;
     camera.updateProjectionMatrix();
     controlsRef.target.set(0, 0, 0);
@@ -256,23 +261,26 @@ export function setupUIControls(planetConfigs, selectable, scene) {
 
   listen(document.getElementById("resetCameraBtn"), "click", () => {
     const camera = getCamera();
-    if (camera) setCameraView(getInnerSystemCameraPosition(camera), new THREE.Vector3(0, 1, 0));
+    if (camera) setCameraView(getInnerSystemCameraPosition(camera));
   });
   listen(document.getElementById("wholeSystemBtn"), "click", () => {
     const camera = getCamera();
     if (!camera) return;
     const radius = Math.max(...planetConfigs.map((cfg) =>
       cfg.orbitRadiusAU * (1 + (cfg.info?.orbitalEccentricity || 0)) * CONSTANTS.ORBIT_SCALE_FACTOR));
-    const halfFov = Math.atan(Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * Math.min(1, camera.aspect));
-    const distance = radius / Math.sin(halfFov) * 1.12;
-    setCameraView(new THREE.Vector3(1, 0.8, 1).normalize().multiplyScalar(distance), new THREE.Vector3(0, 1, 0));
+    setCameraView(new THREE.Vector3(1, 0.8, 1).normalize().multiplyScalar(getFitDistance(camera, radius)));
   });
-  // View from ecliptic north (+Y); +X is screen-right, prograde is CCW.
+  // View from ecliptic north (+Y); +X is screen-right, prograde is CCW. A tiny +Z
+  // offset keeps screen-up on −Z without leaving OrbitControls at its pole singularity.
+  // A selected body stays selected and in view.
   listen(document.getElementById("topDownBtn"), "click", () => {
     const camera = getCamera();
     if (!camera) return;
-    const distance = Math.max(camera.position.length(), CONSTANTS.DEFAULT_CAMERA_DISTANCE);
-    setCameraView(new THREE.Vector3(0, distance, 0), new THREE.Vector3(0, 0, -1));
+    const selected = getSelectedObject();
+    const selectedRadius = selected ? selected.getWorldPosition(new THREE.Vector3()).length() * 1.15 : 0;
+    const distance = Math.max(camera.position.length(), CONSTANTS.DEFAULT_CAMERA_DISTANCE,
+      getFitDistance(camera, selectedRadius));
+    setCameraView(new THREE.Vector3(0, distance, distance * 2e-6), { keepSelection: true });
   });
 
   /* Toggle orbit‑lines ------------------------------------------------- */

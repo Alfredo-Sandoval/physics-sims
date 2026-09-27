@@ -270,6 +270,12 @@ export async function init() {
   } catch (err) {
     clearTimeout(emergencyTimeout);
     logError("Init", "failed", err);
+    // Release the partial scene, workers, and listeners so a retry starts clean.
+    try {
+      cleanup();
+    } catch (cleanupError) {
+      logDebug("Init", "cleanup after failed init error", cleanupError);
+    }
     showLoadingScreen(false);
     showErrorMessage(err.message || "Unknown error during init");
     isInitialized = false;
@@ -281,6 +287,7 @@ function attachResizeHandler() {
   resizeHandler = () => {
     if (camera && renderer) {
       SceneSetup.handleWindowResize(camera, renderer);
+      performanceTuner?.setMaxPixelRatio(SceneSetup.getRecommendedPixelRatio());
       emit("render");
     }
   };

@@ -63,8 +63,9 @@ export function createKuiperBelt(scene, loader) {
   });
 
   const materials = [icyMaterial, rockyMaterial];
+  // instanceColor alone tints each instance; vertexColors would read a missing
+  // color attribute as black.
   materials.forEach((m) => {
-    m.vertexColors = true;
     m.userData.castShadow = false;
     m.userData.receiveShadow = false;
   });
@@ -81,7 +82,10 @@ export function createKuiperBelt(scene, loader) {
     }
 
     // Deform vertices randomly for irregular asteroid shape (more deformation for distant objects)
+    // Polyhedron geometry is non-indexed; deform by direction so every copy of a
+    // shared corner moves together and faces stay sealed.
     const positions = geom.attributes.position;
+    const deformByDirection = new Map();
     for (let i = 0; i < positions.count; i++) {
       const x = positions.getX(i);
       const y = positions.getY(i);
@@ -94,7 +98,12 @@ export function createKuiperBelt(scene, loader) {
       const nz = z / len;
 
       // Add random deformation (craters and bumps) - more irregular than asteroids
-      const deform = 0.75 + random() * 0.5; // 0.75 to 1.25
+      const key = `${nx.toFixed(4)},${ny.toFixed(4)},${nz.toFixed(4)}`;
+      let deform = deformByDirection.get(key);
+      if (deform === undefined) {
+        deform = 0.75 + random() * 0.5; // 0.75 to 1.25
+        deformByDirection.set(key, deform);
+      }
       positions.setXYZ(i, nx * deform, ny * deform, nz * deform);
     }
 
@@ -247,7 +256,8 @@ export function createKuiperBelt(scene, loader) {
       const quat = new THREE.Quaternion().setFromEuler(rotation);
       matrix.compose(pos, quat, scale);
       inst.setMatrixAt(i, matrix);
-      color.copy(material.color).multiplyScalar(random.range(0.85, 1.15));
+      // The shader multiplies by material.color, so the instance color is only the jitter.
+      color.setScalar(random.range(0.85, 1.15));
       inst.setColorAt(i, color);
 
       workerInstances.push({
@@ -402,15 +412,16 @@ function createNamedKBObjects(scene, belt) {
   return namedKBObjects;
 }
 
-export function updateKuiperBelt(belt, deltaTime) {
-  if (!belt || !belt.userData) return;
-  if (belt.visible === false) return;
+// Returns true once the current date has been requested; nothing changes unless time did.
+export function updateKuiperBelt(belt, deltaTime, timeChanged = true) {
+  if (!belt || !belt.userData) return true;
+  if (belt.visible === false || !timeChanged) return true;
 
   const kboData = belt.userData.kboData;
   const namedKBObjects = belt.userData.namedKBObjects;
   const simulatedDays = getSimulatedDays() || 0;
 
-  if (!kboData) return;
+  if (!kboData) return true;
 
   kboData.forEach((group) => {
     const { mesh, beltId } = group;
@@ -469,6 +480,7 @@ export function updateKuiperBelt(belt, deltaTime) {
       kbo.rotation.y += 0.0005 * deltaTime;
     });
   }
+  return true;
 }
 
 function unregisterKuiperBelts(kboData) {

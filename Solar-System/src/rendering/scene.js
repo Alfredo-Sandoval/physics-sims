@@ -60,7 +60,6 @@ export function setupRenderer() {
     antialias: true,
     powerPreference: "high-performance",
     alpha: false,
-    precision: "mediump",
     logarithmicDepthBuffer: false,
     preserveDrawingBuffer: false, // Save memory
     stencil: false, // Save memory
@@ -115,7 +114,8 @@ export function setupControls(camera, renderer) {
     CONSTANTS.ZOOM.MIN_DISTANCE_BASE,
     CONSTANTS.SUN_RADIUS * CONSTANTS.ZOOM.NEAR_SUN_FACTOR
   );
-  controls.maxDistance = CONSTANTS.STARFIELD_RADIUS * 3;
+  // The sky follows the camera; this keeps the far edge of the Kuiper belt inside the far plane.
+  controls.maxDistance = CONSTANTS.STARFIELD_RADIUS * 2;
   controls.target.set(0, 0, 0);
   controls.update();
   return controls;
@@ -148,7 +148,7 @@ export function setupLighting(scene) {
   sunLight.castShadow = true;
   sunLight.shadow.mapSize.set(512, 512); // Reduced from 1024 for better performance
   sunLight.shadow.camera.near = 20; // Optimized near plane
-  sunLight.shadow.camera.far = 500; // Reduced far plane for better shadow quality
+  sunLight.shadow.camera.far = 35 * CONSTANTS.ORBIT_SCALE_FACTOR; // Reach past Neptune
   sunLight.shadow.bias = -0.0005; // Adjusted bias for lower resolution
   sunLight.shadow.radius = 2; // Reduced soft shadow radius
   sunLight.shadow.blurSamples = 4; // Reduced blur samples

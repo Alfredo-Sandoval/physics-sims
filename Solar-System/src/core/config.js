@@ -25,6 +25,9 @@ export const CAMERA_FOLLOW_LERP_FACTOR = 10; // higher = snappier
 
 /* Basic sizes ---------------------------------------------------------- */
 export const SUN_RADIUS = 25; // render‑unit radius of Sun
+// Relative mode keeps the true-size anchor; enhanced mode shrinks the Sun so
+// Mercury's perihelion (30.7 units) clears its disk.
+export const SUN_ENHANCED_SCALE = 0.6;
 export const SUN_RADIUS_KM = 695700; // Matches the mean diameter in the Sun's data card
 export const EARTH_RADIUS_KM = 6378.1366; // JPL equatorial radius (km) for info display
 

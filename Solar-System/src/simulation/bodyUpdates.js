@@ -33,7 +33,9 @@ export function updateRotations(planets, days = getSimulatedDays()) {
     }
     for (const moon of ud.__moonMeshes) {
       const mu = moon.userData;
-      mu.currentMeanAnomaly = angleAtDays(days, mu.config.orbitalPeriod, mu.orbitDirection, mu.initialMeanAnomaly);
+      // Mean anomaly runs at the anomalistic rate when the perigee itself moves.
+      mu.currentMeanAnomaly = angleAtDays(days, mu.config.anomalisticPeriodDays ?? mu.config.orbitalPeriod,
+        mu.orbitDirection, mu.initialMeanAnomaly);
       mu.currentAngle = mu.currentMeanAnomaly;
       applyMoonJ2PrecessionAtTime(mu, ud.name, getPlanetRadiusForMoonPrecession(ud), days);
       moon.position.copy(getMoonLocalPosition(mu.currentMeanAnomaly, mu, ud.spinFrameQuaternion, moonPosition));

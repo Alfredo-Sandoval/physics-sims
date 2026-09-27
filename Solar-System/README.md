@@ -82,8 +82,10 @@ first time, while Three.js loads.
 - Planet and moon data live in `data/solar-system.json`, with lightweight
   annotations for placeholder texture reuse
 - Worker and main-thread planet updates use the same orbital solver
-- Moon phases are illustrative, not measured epoch positions; precession uses
-  physical radii independently of the display scale
+- Earth's Moon uses mean elements at the simulation epoch with Sun-driven node
+  and perigee rates, so its phase matches the date to within a day; other moon
+  phases are illustrative, and their J2 precession uses physical radii
+  independently of the display scale
 - Orbit and belt updates use separate Web Workers under `src/simulation/workers/`
 - Coordinate frame: J2000 ecliptic with +Y as north; prograde orbits appear
   counterclockwise when viewed from +Y
