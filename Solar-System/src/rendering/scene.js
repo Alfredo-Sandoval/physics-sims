@@ -2,21 +2,12 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import * as CONSTANTS from "../core/config.js";
-import { debug as logDebug } from "../core/logger.js";
 import { getViewportSize } from "../core/viewport.js";
 
 /* Scene ---------------------------------------------------------------- */
-export function setupScene(environmentTexture) {
-  // MODIFIED: Accept environment texture
+export function setupScene() {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x000000);
-
-  // Set the loaded starfield texture as the environment map
-  if (environmentTexture) {
-    scene.environment = environmentTexture;
-    logDebug("SceneSetup", "Environment map assigned to scene.");
-  }
-
   return scene;
 }
 

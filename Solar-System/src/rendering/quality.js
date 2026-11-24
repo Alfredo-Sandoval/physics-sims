@@ -14,6 +14,7 @@ export class PerformanceTuner {
     this.minPixelRatio = 0.7;
 
     this.frameTimeMs = 1000 / 60;
+    this.warmupUntil = null;
     this.lastAdjust = performance.now ? performance.now() : Date.now();
     this.adjustCooldownMs = 500;
 
@@ -41,6 +42,10 @@ export class PerformanceTuner {
 
   tick(deltaSeconds) {
     const now = performance.now ? performance.now() : Date.now();
+    this.warmupUntil ??= now + 2000;
+    // Exclude startup shader and texture stalls, including frames that span the cutoff.
+    if (now - Math.max(0, deltaSeconds) * 1000 < this.warmupUntil) return this.uiIntervalMs;
+
     // Smooth frame duration directly; averaging reciprocal FPS overweights fast frames.
     if (deltaSeconds > 0) this.frameTimeMs += (deltaSeconds * 1000 - this.frameTimeMs) * 0.05;
     const avgFps = 1000 / this.frameTimeMs;
