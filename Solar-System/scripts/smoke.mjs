@@ -243,7 +243,7 @@ async function validateTextures(textureRefs) {
     const exists = await fileExists(absoluteTexturePath);
     check(exists || hasNote, `${ref.owner} texture '${normalized}' is missing and needs textureNote`);
     check(!exists || !tracked || tracked.has(normalized),
-      `${ref.owner} texture '${normalized}' exists locally but is not tracked by git (use git add -f)`);
+      `${ref.owner} texture '${normalized}' exists locally but is not tracked by git (git add it)`);
 
     if (!ref.allowReuseWithoutNote) {
       const group = bodyTextureGroups.get(normalized) ?? [];

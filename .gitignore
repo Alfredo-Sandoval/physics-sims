@@ -83,6 +83,18 @@ Thumbs.db
 *.webp
 image.*
 screenshot.*
+!/previews/*.webp
+
+# Textures the simulations load are source assets, not screenshots. Without this,
+# a new texture stays local and a fresh clone silently renders a gray sphere.
+!Solar-System/textures/**
+# Partial-coverage Voyager/Cassini maps kept locally but not used: their unimaged
+# regions render black, so the data reuses other moons' maps (see textureNote).
+Solar-System/textures/Moon_JPG_Collection/titan.jpg
+Solar-System/textures/Moon_JPG_Collection/titan_color_src.jpg
+Solar-System/textures/Moon_JPG_Collection/titania.jpg
+Solar-System/textures/Moon_JPG_Collection/triton.jpg
+Solar-System/textures/Moon_JPG_Collection/umbriel.jpg
 
 # Backups
 *.bak

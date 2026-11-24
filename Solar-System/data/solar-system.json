@@ -13320,8 +13320,7 @@
       "source": "IAU WGCCRE"
     },
     "textureUrl": "earth.jpg",
-    "cloudTextureUrl": null,
-    "cloudTextureNote": "Cloud layer disabled until an earth_clouds.png asset is added.",
+    "cloudTextureUrl": "earth_clouds.png",
     "atmosphere": {
       "exists": true,
       "color": "#6b8cff",
@@ -33427,8 +33426,7 @@
         "orbitalEccentricity": 0.0001,
         "orbitalInclinationDeg": 1.091,
         "orbitReference": "equatorial",
-        "textureUrl": "Moon_JPG_Collection/mimas.jpg",
-        "textureNote": "Placeholder texture reused from Mimas until a Tethys texture is added."
+        "textureUrl": "Moon_JPG_Collection/tethys.jpg"
       },
       {
         "name": "Dione",

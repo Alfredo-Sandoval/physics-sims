@@ -13,8 +13,17 @@ export function initTextureLoader(path = basePath) {
 export function setTextureLoader(value) { loader = value; }
 export function getTextureLoader() { return loader ?? initTextureLoader(); }
 
-export function loadTexture(filename, textureLoader = getTextureLoader(), maxSize = MAX_TEXTURE_SIZE) {
-  const key = `${filename}@${maxSize}`;
+/**
+ * Load a texture once per (filename, maxSize, colorSpace), downscaling it to maxSize.
+ * Color maps use sRGB; pass THREE.NoColorSpace for data maps such as alphaMap.
+ */
+export function loadTexture(
+  filename,
+  textureLoader = getTextureLoader(),
+  maxSize = MAX_TEXTURE_SIZE,
+  colorSpace = THREE.SRGBColorSpace
+) {
+  const key = `${filename}@${maxSize}@${colorSpace}`;
   if (textureCache.has(key)) return textureCache.get(key);
   let resolveReady;
   const ready = new Promise((resolve) => { resolveReady = resolve; });
@@ -31,7 +40,7 @@ export function loadTexture(filename, textureLoader = getTextureLoader(), maxSiz
       const context = canvas.getContext("2d");
       if (context) { context.drawImage(source, 0, 0, canvas.width, canvas.height); loaded.image = canvas; }
     }
-    loaded.colorSpace = THREE.SRGBColorSpace;
+    loaded.colorSpace = colorSpace;
     loaded.needsUpdate = true;
     resolveReady(loaded);
     emit("render");
@@ -44,7 +53,7 @@ export function loadTexture(filename, textureLoader = getTextureLoader(), maxSiz
     texture.image = canvas; texture.needsUpdate = true;
     resolveReady(texture); emit("render");
   });
-  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.colorSpace = colorSpace;
   texture.userData = { filename, maxSize, key, ready };
   textureCache.set(key, texture);
   return texture;
