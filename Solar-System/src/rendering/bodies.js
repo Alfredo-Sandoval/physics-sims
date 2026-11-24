@@ -159,9 +159,12 @@ export async function createPlanetsAndOrbits(scene, loader, configs) {
         planetSegments,
         planetHeightSegments
       );
-      const cloudTex = loadTexture(cfg.cloudTextureUrl, loader);
+      // The cloud map is grayscale coverage: use it as alpha on a white shell so
+      // clear sky stays transparent instead of tinting the surface dark.
+      const cloudTex = loadTexture(cfg.cloudTextureUrl, loader, undefined, THREE.NoColorSpace);
       const cloudMat = new THREE.MeshPhongMaterial({
-        map: cloudTex,
+        color: 0xffffff,
+        alphaMap: cloudTex,
         transparent: true,
         opacity: CONSTANTS.CLOUD_OPACITY,
         depthWrite: false,

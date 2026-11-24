@@ -1,140 +1,193 @@
 # physics-sims
 
-A small collection of interactive, browser-based physics and astronomy
-visualizations built on [Three.js](https://threejs.org/). It ranges from a
-single-file curvature experiment to a larger modular Solar System app and a
-shader-driven black hole renderer.
+Three interactive physics and astronomy simulations that run in the browser,
+built on [Three.js](https://threejs.org/). There is nothing to install or build:
+serve the folder, open the launcher, and pick a scene.
 
-A launcher at the repo root ties the demos together so you can browse them from
-one page.
-
-## The simulations
-
-| #  | Simulation                                          | Focus              | How to run                         |
-| -- | --------------------------------------------------- | ------------------ | ---------------------------------- |
-| 01 | [Solar System](./Solar-System/)                     | Orbital mechanics  | Static server                      |
-| 02 | [Spacetime Curvature](./general-relativity/)        | Curvature field    | Static server                      |
-| 03 | [Gargantua Black Hole](./gargantua/)                | Realtime shader    | Static server, or Vite for dev     |
-
-All three pull Three.js from the [unpkg](https://unpkg.com/) CDN through an
-import map, so an **internet connection** is needed the first time each scene
-loads.
+<table>
+  <tr>
+    <td align="center" width="33%">
+      <a href="./Solar-System/"><img src="./previews/solar.webp" alt="Saturn and its rings with a small moon passing in front, in the Solar System simulation" /></a>
+      <br /><b><a href="./Solar-System/">Solar System</a></b>
+      <br /><sub>Planets and major moons where they were, or will be, on any date</sub>
+    </td>
+    <td align="center" width="33%">
+      <a href="./general-relativity/"><img src="./previews/relativity.webp" alt="A white mass sinking into a blue wireframe grid while a smaller body circles it" /></a>
+      <br /><b><a href="./general-relativity/">Spacetime Curvature</a></b>
+      <br /><sub>The rubber-sheet picture of gravity, with masses you adjust live</sub>
+    </td>
+    <td align="center" width="33%">
+      <a href="./gargantua/"><img src="./previews/gargantua.webp" alt="A black hole's shadow ringed by a glowing accretion disk that lensing bends above and below it" /></a>
+      <br /><b><a href="./gargantua/">Gargantua</a></b>
+      <br /><sub>A ray-traced spinning black hole recreating the <i>Interstellar</i> shot</sub>
+    </td>
+  </tr>
+</table>
 
 ## Quick start
 
-Serve the repo root with any static HTTP server, then open the launcher and pick
-a scene:
-
 ```bash
+git clone https://github.com/Alfredo-Sandoval/physics-sims.git
 cd physics-sims
 python3 -m http.server 8888
 ```
 
-Open <http://localhost:8888/>. Every scene is also reachable directly at its own
-path (for example `http://localhost:8888/Solar-System/`).
+Open <http://localhost:8888/> for the launcher. Each scene also has its own URL,
+such as <http://localhost:8888/Solar-System/>.
 
-> A static server is required rather than opening the files directly: the demos
-> use ES modules, `fetch` for JSON data, and import maps, which browsers block on
-> the `file://` origin.
+Any static server works. Opening `index.html` straight from disk does not: the
+scenes use ES modules, import maps, and `fetch`, which browsers block on
+`file://` pages.
 
-## Projects
+## The simulations
 
-### 1. Solar System (`Solar-System/`)
+### Solar System
 
-A modular 3D Solar System with planets, moons, asteroid and Kuiper belts,
-clickable bodies, a date picker, and worker-backed orbital updates.
+The eight planets, their major moons, the asteroid and Kuiper belts, and named
+asteroids, placed by date. Fly between bodies, run time forward or backward,
+or jump to any date.
 
-- Kepler-style orbital motion, data-driven from a JSON payload
-- Camera follow, top-down ecliptic view, and focus mode
-- Relative-size vs. enhanced-visibility scale modes
-- Toggleable orbit lines, planet labels, and moon labels
-- Information panel with facts about each body
+**Try this**
 
-See [Solar-System/README.md](./Solar-System/README.md) for controls and details.
+- Press <kbd>1</kbd>–<kbd>8</kbd> to fly to a planet, then pick one of its moons
+  from the second dropdown.
+- Press <kbd>S</kbd> to switch from enhanced sizes to true relative scale and
+  see how small the planets really are.
+- Use the date picker to jump to a birthday or a launch date and see where
+  everything was.
+- Press <kbd>?</kbd> for every shortcut, or <kbd>/</kbd> to search for a body.
 
-### 2. Spacetime Curvature (`general-relativity/`)
+**How real is it?** Planet positions come from bundled
+[JPL Horizons](https://ssd.jpl.nasa.gov/horizons/) samples, with Keplerian
+elements outside the sampled window. Planet poles use IAU directions, so the
+seasons fall on the right dates, and Earth's Moon matches its real phase to
+within a day. Some things are scaled for viewing: bodies are enlarged by
+default, orbital spacing is compressed, surface rotation is slowed, and the
+fastest moons run on a compressed clock. The
+[display policy](./Solar-System/README.md#display-policy) explains each choice.
 
-A standalone Three.js scene that visualizes gravity as a deforming field
-surface, with a central mass and an orbiting body that each warp the grid.
+[Full controls and details →](./Solar-System/README.md)
 
-- Deformable wireframe plus a shaded curvature surface
-- Live controls for mass, orbiting mass, falloff, orbit radius, and speed
-- Telemetry readout (orbit angle, height, well depth, FPS)
-- Keyboard shortcuts for play/pause, grid, and HUD
+### Spacetime Curvature
 
-See [general-relativity/README.md](./general-relativity/README.md) for the full
-control reference and a note on what the model simplifies.
+Gravity drawn as a surface that masses sink into: a central mass, a smaller
+body orbiting it, and sliders for both.
 
-### 3. Gargantua Black Hole (`gargantua/`)
+**Try this**
 
-A realtime black hole ray tracer inspired by _Interstellar_, built as a small
-npm + Vite app. It also runs straight from the static server above, since
-it resolves Three.js through the same CDN import map.
+- Drag **Mass** up to deepen the central well, then raise **Orb** to see the
+  orbiting body drag its own dimple around.
+- Lower **Fall** so curvature reaches farther, and watch the two wells merge.
+- Press <kbd>W</kbd> to hide the grid and leave only the shaded surface.
 
-- Per-pixel geodesic ray tracing: lensed disk, photon ring, and warped starfield
-- Spin-dependent frame dragging, ISCO, and Doppler/gravitational shifts
-- Opens on the film's Gargantua shot, matched to the effects team's published renders
-- Adaptive resolution while moving, progressive anti-aliasing when still
-- HUD for camera, lens, disk, spin, realism, temperature, glow, and Cinema mode
+**How real is it?** This is a teaching visual, not a solution of Einstein's
+field equations. The surface height is a softened inverse-power potential, the
+orbit is a fixed circle, and the units are arbitrary. It is meant to build
+intuition for how mass shapes a gravity well.
 
-Run it with Vite for live reload and a production build:
+[Full controls and details →](./general-relativity/README.md)
+
+### Gargantua
+
+A spinning (Kerr) black hole ray-traced per pixel, opening on the shot from
+_Interstellar_. Orbit it, change its spin, and switch between the film's look
+and a physically shaded disk.
+
+**Try this**
+
+- Open the gear button for the controls, then push **Spin** toward 0.998 and
+  watch the horizon and ISCO readouts shrink.
+- Raise **Real** to 1 to add Doppler beaming and gravitational redshift: the
+  side of the disk moving toward you turns brighter and bluer.
+- Click **Edge** or **Top** to snap the view, <kbd>C</kbd> for the cinema
+  letterbox, and <kbd>R</kbd> to return to the film shot.
+
+**How real is it?** Light rays follow exact Schwarzschild null geodesics plus a
+frame-dragging term fitted to Kerr photon orbits, which matches the shadow edge
+to within about 2% up to spin 0.9. Disk speed, redshift, and the innermost
+stable orbit (ISCO) use exact Kerr formulas. The default view reproduces the
+film's published geometry (James et al. 2015), which left out Doppler beaming;
+**Real** puts it back.
+
+[Full controls and details →](./gargantua/README.md)
+
+## Requirements
+
+- A recent desktop or mobile browser with WebGL 2. The Solar System uses WebGPU
+  when the browser supports it and falls back to WebGL otherwise.
+- An internet connection. Three.js and anime.js load from the
+  [unpkg](https://unpkg.com/) CDN through import maps, and the pages load
+  Google Fonts.
+- Node.js `^20.19` or `>=22.12`, only for the Gargantua dev server and the
+  Node-based checks.
+
+## Troubleshooting
+
+| Symptom | Cause and fix |
+| --- | --- |
+| Blank page, with module or CORS errors in the console | The page was opened from disk. Serve the folder as in [Quick start](#quick-start). |
+| Scene never finishes loading | Three.js could not be fetched from unpkg. Check your connection or any content blocker. |
+| Black canvas or a WebGL error | WebGL 2 is unavailable. Turn on hardware acceleration in your browser settings; `chrome://gpu` shows its status in Chrome. |
+| `Address already in use` | Port 8888 is taken. Run `python3 -m http.server 8000` and open that port instead. |
+
+## Development
+
+### Gargantua with Vite
+
+Gargantua also runs as a small npm + Vite app, with live reload and a
+production build:
 
 ```bash
-cd physics-sims/gargantua
+cd gargantua
 npm install
 npm run dev      # http://localhost:5173/
 npm run build    # production bundle in dist/
-npm test         # smoke checks + build
 ```
 
-See [gargantua/README.md](./gargantua/README.md) for the controls and project
-layout.
+### Tests
 
-## Tests
+There is no top-level `package.json`, so run each `npm` command inside its
+project folder.
 
-`tests/` holds an in-browser smoke test that boots the Solar System app inside an
-iframe and checks rendering, labels, dropdown navigation, and accessibility
-attributes. Run it through the same static server:
+| Suite | Command | What it checks |
+| --- | --- | --- |
+| Solar System data | `cd Solar-System && npm test` | Data, assets, module boundaries, and positions against the Horizons samples for all eight planets |
+| Solar System in the browser | `uv run --python 3.12 --with playwright tests/run_browser_tests.py` | Boots the app in headless Chromium and checks rendering, labels, navigation, time controls, layout, and cleanup |
+| Ephemeris parser | `uv run --python 3.12 --with hypothesis tests/test_ephemeris_properties.py` | Property-based tests of the JavaScript ephemeris parser |
+| Gargantua | `cd gargantua && npm ci && npm test` | Smoke checks, then a production build |
 
-```bash
-cd physics-sims
-python3 -m http.server 8888
-```
+The browser suite needs Chromium for Playwright once:
+`uv run --python 3.12 --with playwright playwright install chromium`. To watch
+it run instead, serve the repo root and open
+<http://localhost:8888/tests/index.test.html>.
 
-Open <http://localhost:8888/tests/index.test.html>. Results stream into the page,
-and `document.body.dataset.testStatus` is set to `passed` or `failed` for
-automation.
-
-Gargantua has its own Node-based smoke check via `npm run check` (see above).
-
-## Repo layout
+### Repo layout
 
 ```text
 physics-sims/
-├── index.html            # launcher page
-├── launcher.css / .js    # launcher styling and animated previews
-├── Solar-System/         # modular Solar System app (static)
-├── general-relativity/   # spacetime curvature demo (static)
-├── gargantua/            # black hole renderer (npm + Vite, or static)
-└── tests/                # in-browser smoke test for the Solar System
+├── index.html              # launcher page
+├── launcher.css            # launcher styling
+├── previews/               # WebP stills captured from the simulations
+├── Solar-System/           # modular Solar System app (static)
+├── general-relativity/     # spacetime curvature demo (static)
+├── gargantua/              # black hole renderer (static, or npm + Vite)
+└── tests/                  # browser and property tests for the Solar System
 ```
 
-## Notes
+## Credits
 
-- There is no single top-level package or unified dev command. Each demo has its
-  own entrypoint; the launcher just links them together.
-- `Solar-System/` and `general-relativity/` are easiest to run from a static
-  server at the repo root.
-- `gargantua/` uses npm and Vite for development, and also works from the static
-  server thanks to its CDN import map.
+- [Three.js](https://threejs.org/) for rendering
+- Planet ephemerides from [JPL Horizons](https://ssd.jpl.nasa.gov/horizons/);
+  named asteroid orbits from the JPL Small-Body Database
+- Moon texture (LRO LROC mosaic) and the Deep Star Maps 2020 sky from
+  [NASA's Scientific Visualization Studio](https://svs.gsfc.nasa.gov/) (public
+  domain). Titan, Titania, Umbriel, and Triton reuse other moons' maps until
+  full-globe textures are added.
+- Gargantua's reference geometry from O. James, E. von Tunzelmann, P. Franklin
+  & K. S. Thorne, "Gravitational lensing by spinning black holes in
+  astrophysics, and in the movie _Interstellar_", _Class. Quantum Grav._ 32,
+  065001 (2015)
 
 ## License
 
-MIT. See [LICENSE](LICENSE) for the full text.
-
-## Acknowledgments
-
-- [Three.js](https://threejs.org/) and its examples ecosystem for the rendering
-  foundation
-- Texture assets are included in the repo; some Solar System entries reuse
-  documented placeholder maps until exact assets are added
+MIT. See [LICENSE](LICENSE).

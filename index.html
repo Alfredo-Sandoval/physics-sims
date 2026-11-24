@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="A launcher for interactive browser-based physics and astronomy simulations."
+      content="Explore the Solar System, change the shape of a gravity well, and see how a spinning black hole bends light."
     />
     <title>physics-sims</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -17,131 +17,56 @@
     <link rel="stylesheet" href="./launcher.css" />
   </head>
   <body>
-    <canvas id="spaceBackdrop" aria-hidden="true"></canvas>
+    <header class="topbar shell">
+      <a class="brand" href="./">
+        <span class="brand-mark" aria-hidden="true">ps</span>
+        physics-sims
+      </a>
+      <a class="source-link" href="https://github.com/Alfredo-Sandoval/physics-sims">
+        GitHub <span aria-hidden="true">↗</span>
+      </a>
+    </header>
 
-    <main class="shell" aria-labelledby="launcherTitle">
-      <header class="topbar">
-        <a class="brand" href="./" aria-label="physics-sims launcher">
-          <span class="brand-mark">ps</span>
-          <span class="brand-text">physics-sims</span>
-        </a>
-        <div class="status-strip" aria-label="Project status">
-          <span>Three.js</span>
-          <span>WebGL</span>
-          <span>Browser lab</span>
-        </div>
-      </header>
-
-      <section class="mission">
-        <div class="mission-copy">
-          <p class="eyebrow">Interactive physics and astronomy</p>
-          <h1 id="launcherTitle">Choose a simulation</h1>
-          <p>
-            A compact observatory desk for orbital motion, spacetime curvature,
-            and relativistic lensing.
-          </p>
-        </div>
-
-        <div class="mission-readout" aria-label="Simulation inventory">
-          <span class="readout-kicker">Catalog</span>
-          <strong>03</strong>
-          <span>live scenes</span>
-        </div>
+    <main class="shell">
+      <section class="intro" aria-labelledby="launcher-title">
+        <h1 id="launcher-title">Explore orbits and gravity</h1>
+        <p>Three interactive simulations, from the planets in our Solar System to the light around a black hole.</p>
       </section>
 
-      <section class="sim-grid" aria-label="Available simulations">
-        <a
-          class="sim-card sim-card--solar"
-          href="./Solar-System/"
-          aria-label="Open Solar System simulation"
-        >
-          <canvas class="sim-preview" data-preview="solar" aria-hidden="true"></canvas>
+      <section class="sim-grid" aria-label="Simulations">
+        <a class="sim-card sim-card--solar" href="./Solar-System/" aria-labelledby="solar-title" aria-describedby="solar-description">
+          <img class="sim-preview" src="./previews/solar.webp" width="768" height="480" alt="" />
           <div class="sim-copy">
-            <div class="sim-meta">
-              <span>01</span>
-              <span>Orbital mechanics</span>
-            </div>
-            <h2>Solar System</h2>
-            <p>
-              Planet focus, moon systems, belt fields, date jumps, and guided
-              camera navigation.
+            <h2 id="solar-title">Solar System</h2>
+            <p id="solar-description">
+              Visit planets and moons, follow their orbits, and see where the planets were on a date you choose.
             </p>
-            <dl class="specs">
-              <div>
-                <dt>Runtime</dt>
-                <dd>Static</dd>
-              </div>
-              <div>
-                <dt>Surface</dt>
-                <dd>Full system</dd>
-              </div>
-            </dl>
-            <span class="open-link" aria-hidden="true">Open scene</span>
+            <span class="open-link" aria-hidden="true">Open simulation <span>→</span></span>
           </div>
         </a>
 
-        <a
-          class="sim-card sim-card--relativity"
-          href="./general-relativity/"
-          aria-label="Open Spacetime Curvature simulation"
-        >
-          <canvas class="sim-preview" data-preview="relativity" aria-hidden="true"></canvas>
+        <a class="sim-card sim-card--relativity" href="./general-relativity/" aria-labelledby="relativity-title" aria-describedby="relativity-description">
+          <img class="sim-preview" src="./previews/relativity.webp" width="768" height="480" alt="" />
           <div class="sim-copy">
-            <div class="sim-meta">
-              <span>02</span>
-              <span>Curvature field</span>
-            </div>
-            <h2>Spacetime Curvature</h2>
-            <p>
-              A deforming field surface for central mass, orbiting mass,
-              falloff, and live telemetry.
+            <h2 id="relativity-title">Spacetime Curvature</h2>
+            <p id="relativity-description">
+              Change the central and orbiting masses and watch their gravity wells overlap on a deforming grid.
             </p>
-            <dl class="specs">
-              <div>
-                <dt>Runtime</dt>
-                <dd>Static</dd>
-              </div>
-              <div>
-                <dt>Surface</dt>
-                <dd>Grid probe</dd>
-              </div>
-            </dl>
-            <span class="open-link" aria-hidden="true">Open scene</span>
+            <span class="open-link" aria-hidden="true">Open simulation <span>→</span></span>
           </div>
         </a>
 
-        <a
-          class="sim-card sim-card--gargantua"
-          href="./gargantua/"
-          aria-label="Open Gargantua black hole renderer"
-        >
-          <canvas class="sim-preview" data-preview="gargantua" aria-hidden="true"></canvas>
+        <a class="sim-card sim-card--gargantua" href="./gargantua/" aria-labelledby="gargantua-title" aria-describedby="gargantua-description">
+          <img class="sim-preview" src="./previews/gargantua.webp" width="768" height="480" alt="" />
           <div class="sim-copy">
-            <div class="sim-meta">
-              <span>03</span>
-              <span>Shader renderer</span>
-            </div>
-            <h2>Gargantua</h2>
-            <p>
-              A realtime ray-traced black hole with a lensed disk, photon ring,
-              spin, and Doppler shift.
+            <h2 id="gargantua-title">Gargantua</h2>
+            <p id="gargantua-description">
+              Tilt your view around a spinning black hole and see how bent light reveals the far side of its accretion disk.
             </p>
-            <dl class="specs">
-              <div>
-                <dt>Runtime</dt>
-                <dd>Vite or static</dd>
-              </div>
-              <div>
-                <dt>Surface</dt>
-                <dd>Ray shader</dd>
-              </div>
-            </dl>
-            <span class="open-link" aria-hidden="true">Open scene</span>
+            <span class="open-link" aria-hidden="true">Open simulation <span>→</span></span>
           </div>
         </a>
       </section>
     </main>
-
-    <script type="module" src="./launcher.js"></script>
   </body>
 </html>
