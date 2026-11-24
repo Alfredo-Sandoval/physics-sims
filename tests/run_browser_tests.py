@@ -20,7 +20,7 @@ from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
 TIMEOUT_S = 300
-# Software WebGL so the suite runs on machines and CI runners without a GPU.
+# Software WebGL so the suite runs the same on machines with or without a GPU.
 CHROMIUM_ARGS = ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"]
 
 

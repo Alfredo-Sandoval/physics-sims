@@ -1,7 +1,5 @@
 # physics-sims
 
-[![test](https://github.com/Alfredo-Sandoval/physics-sims/actions/workflows/test.yml/badge.svg)](https://github.com/Alfredo-Sandoval/physics-sims/actions/workflows/test.yml)
-
 Three interactive physics and astronomy simulations that run in the browser,
 built on [Three.js](https://threejs.org/). There is nothing to install or build:
 serve the folder, open the launcher, and pick a scene.
@@ -149,8 +147,7 @@ npm run build    # production bundle in dist/
 ### Tests
 
 There is no top-level `package.json`, so run each `npm` command inside its
-project folder. GitHub Actions runs all four suites on every push to `main` and
-on pull requests.
+project folder.
 
 | Suite | Command | What it checks |
 | --- | --- | --- |
@@ -174,8 +171,7 @@ physics-sims/
 ├── Solar-System/           # modular Solar System app (static)
 ├── general-relativity/     # spacetime curvature demo (static)
 ├── gargantua/              # black hole renderer (static, or npm + Vite)
-├── tests/                  # browser and property tests for the Solar System
-└── .github/workflows/      # CI that runs every test suite
+└── tests/                  # browser and property tests for the Solar System
 ```
 
 ## Credits
