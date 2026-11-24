@@ -229,18 +229,29 @@ export async function checkRendering(win, { assert, waitFor, nextDraw, app, play
 
   const { PerformanceTuner } = await win.eval('import("/Solar-System/src/rendering/quality.js")');
   let ratio = 2;
-  const tuner = new PerformanceTuner({ getPixelRatio: () => ratio, setPixelRatio: (value) => { ratio = value; } });
-  const realNow = win.performance.now.bind(win.performance);
-  let clock = realNow();
+  const realNow = win.performance.now;
+  let clock = 0;
   win.performance.now = () => clock;
   try {
-    for (let frame = 0; frame < 400; frame++) { clock += 1000 / 30; tuner.tick(1 / 30); }
+    const tuner = new PerformanceTuner({ getPixelRatio: () => ratio, setPixelRatio: (value) => { ratio = value; } });
+    clock = 5000;
+    for (let frame = 0; frame < 20; frame++) { tuner.tick(0.1); clock += 100; }
+    assert(ratio === 2, "startup stalls leave the drawing buffer at full resolution");
+
+    tuner.tick(0.1);
+    clock += 16;
+    tuner.tick(0.016);
+    assert(ratio === 2, "startup stalls stay out of the post-warm-up frame average");
+
+    for (let frame = 0; frame < 60; frame++) { clock += 1000 / 30; tuner.tick(1 / 30); }
+    assert(ratio < 2, "sustained slow frames trigger tuning after warm-up");
+    for (let frame = 0; frame < 340; frame++) { clock += 1000 / 30; tuner.tick(1 / 30); }
+    assert(ratio === 2, "a 30 Hz display cap does not leave quality stuck at its minimum");
+    tuner.setMaxPixelRatio(1);
+    assert(ratio === 1, "a device-pixel-ratio change resizes the drawing buffer");
   } finally {
     win.performance.now = realNow;
   }
-  assert(ratio === 2, "a 30 Hz display cap does not leave quality stuck at its minimum");
-  tuner.setMaxPixelRatio(1);
-  assert(ratio === 1, "a device-pixel-ratio change resizes the drawing buffer");
 }
 
 export async function checkMenu(win, { assert, waitFor }) {

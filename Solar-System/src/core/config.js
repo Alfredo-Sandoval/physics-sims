@@ -244,8 +244,6 @@ export const HEMI_LIGHT_SKY_COLOR = 0x0d1f33;
 export const HEMI_LIGHT_GROUND_COLOR = 0x030303;
 export const SUN_EMISSIVE_INTENSITY = 1.2;
 
-export const PLANET_ENV_INTENSITY = 0.18;
-export const MOON_ENV_INTENSITY = 0.55;
 export const BOUNCE_LIGHT_INTENSITY = 0.08;
 export const INSPECTION_LIGHT_INTENSITY = 1.8;
 

@@ -38,7 +38,6 @@ export function createPlanetMaterial(filename, loader) {
     color: texture ? 0xffffff : 0x888888, // grey placeholder if missing
     roughness: CONSTANTS.PLANET_ROUGHNESS,
     metalness: CONSTANTS.PLANET_METALNESS,
-    envMapIntensity: CONSTANTS.PLANET_ENV_INTENSITY,
   });
 
   // Keep a slight emissive lift so darker albedo textures still read cleanly.

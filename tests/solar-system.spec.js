@@ -56,6 +56,7 @@ async function runSolarSystemSmoke() {
   await waitFor(() => doc.querySelectorAll(".planet-label").length >= 9, "creates labels");
   const app = await win.eval('import("/Solar-System/src/core/state.js")');
   const state = app.getState();
+  await waitFor(() => state.renderer?.userData.drawState?.frames > 0, "renders the first desktop frame");
   assert(doc.getElementById("errorOverlay")?.style.display !== "block", "app has no initialization error overlay");
 
   const planetNav = doc.getElementById("planetNav");
@@ -227,6 +228,8 @@ async function runSolarSystemSmoke() {
   const mobileDoc = mobileWin.document;
   await waitFor(() => mobileDoc.querySelector("canvas"), "renders the mobile canvas");
   await waitFor(() => mobileDoc.querySelectorAll(".planet-label").length >= 9, "creates mobile labels");
+  const mobileState = await mobileWin.eval('import("/Solar-System/src/core/state.js")');
+  await waitFor(() => mobileState.getState().renderer?.userData.drawState?.frames > 0, "renders the first mobile frame");
 
   const mobileMenu = mobileDoc.getElementById("menuContainer");
   const mobileToggle = mobileDoc.getElementById("menuToggle");
@@ -264,7 +267,6 @@ async function runSolarSystemSmoke() {
   assert(mobileInfo.top >= mobileMetadata.bottom && mobileInfo.bottom <= mobileWin.innerHeight,
     "mobile body details stay clear of metadata and within the viewport");
 
-  const mobileState = await mobileWin.eval('import("/Solar-System/src/core/state.js")');
   const fallbackEarth = mobileState.getPlanets().find((body) => body.userData.name === "Earth");
   const initialPosition = fallbackEarth.position.clone();
   await waitFor(() => fallbackEarth.position.distanceTo(initialPosition) > 0.01,

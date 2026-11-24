@@ -1,4 +1,3 @@
-import * as THREE from "three";
 import * as CONSTANTS from "../core/config.js";
 import * as SceneSetup from "../rendering/scene.js";
 import * as UI from "../ui/index.js";
@@ -92,22 +91,8 @@ export async function init() {
     orbitWorker = createOrbitWorkerClient({ simulationEpochJD, simulationEpochDateUtc });
     orbitWorker.initialize();
 
-    /* Load Environment Map Texture FIRST */
-    const environmentTexture = textureLoader.load(
-      "Moon_JPG_Collection/hipparcos star map.jpg",
-      () => {
-        logDebug("Texture", "Environment map loaded");
-      },
-      undefined,
-      (err) => {
-        logError("Texture", "Failed to load environment map", err);
-      }
-    );
-    environmentTexture.mapping = THREE.EquirectangularReflectionMapping;
-    environmentTexture.colorSpace = THREE.SRGBColorSpace;
-
-    /* Scene / camera / renderer (Pass env map to scene setup) */
-    scene = SceneSetup.setupScene(environmentTexture);
+    /* Scene / camera / renderer */
+    scene = SceneSetup.setupScene();
     camera = SceneSetup.setupCamera();
     const rendererChoice = await createRendererWithFallback();
     renderer = rendererChoice.renderer;
@@ -149,7 +134,7 @@ export async function init() {
     /* Loading splash */
     showLoadingScreen(true, "Loading textures…");
 
-    /* Starfield and Sun (Pass pre-loaded env map texture) */
+    /* Starfield and Sun */
     createStarfield(scene);
     const sunData = createSun(scene, textureLoader);
     sunMesh = sunData.mesh;
@@ -253,6 +238,14 @@ export async function init() {
 
     /* Dropdown builder */
     setupPlanetDropdown(planets, sunMesh);
+
+    if (typeof renderer.compileAsync === "function") {
+      try {
+        await renderer.compileAsync(scene, camera);
+      } catch (err) {
+        logWarn("Renderer", "Shader precompilation failed. The first render will compile shaders as needed.", err);
+      }
+    }
 
     clearTimeout(emergencyTimeout);
     showLoadingScreen(false);

@@ -1,8 +1,17 @@
 import * as THREE from "three";
 import { MAX_TEXTURE_SIZE } from "../core/config.js";
 import { emit } from "../core/events.js";
+import { ORIGINAL_TEXTURE_SIZES } from "./textureSizes.js";
 
 const textureCache = new Map();
+// Bodies render at MAX_TEXTURE_SIZE, so they load WebP copies already scaled to it
+// (built by scripts/build_textures.py) instead of downloading and shrinking 2048 px
+// originals. Larger requests, the sky and close inspection, load the original file.
+const SCALED_COPY_DIR = `${MAX_TEXTURE_SIZE}/`;
+function sourcePath(filename, maxSize) {
+  if (maxSize !== MAX_TEXTURE_SIZE || !ORIGINAL_TEXTURE_SIZES[filename]) return filename;
+  return SCALED_COPY_DIR + filename.replace(/\.[^./]+$/, ".webp");
+}
 let basePath = new URL("../../textures/", import.meta.url).toString();
 let loader;
 export function initTextureLoader(path = basePath) {
@@ -27,11 +36,12 @@ export function loadTexture(
   if (textureCache.has(key)) return textureCache.get(key);
   let resolveReady;
   const ready = new Promise((resolve) => { resolveReady = resolve; });
-  const texture = textureLoader.load(filename, (loaded) => {
+  const texture = textureLoader.load(sourcePath(filename, maxSize), (loaded) => {
     const source = loaded.image;
     const width = source.naturalWidth || source.width;
     const height = source.naturalHeight || source.height;
-    loaded.userData.originalSize = Math.max(width, height);
+    // Close inspection compares this with the copy to decide whether the original is sharper.
+    loaded.userData.originalSize = Math.max(...(ORIGINAL_TEXTURE_SIZES[filename] ?? [width, height]));
     if (Math.max(width, height) > maxSize) {
       const scale = maxSize / Math.max(width, height);
       const canvas = document.createElement("canvas");

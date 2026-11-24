@@ -2,6 +2,7 @@ import { readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 
 const solarDir = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
 const texturesDir = path.join(solarDir, "textures");
@@ -225,9 +226,28 @@ function listTrackedTextures() {
   }
 }
 
+// Bodies load 1024 px WebP copies built by scripts/build_textures.py; the sky loads its original.
+const FULL_SIZE_TEXTURES = new Set(["starmap_2020_4k.jpg"]);
+const scaledCopyPath = (normalized) => `1024/${normalized.replace(/\.[^./]+$/, ".webp")}`;
+
+async function validateScaledCopy(ref, normalized, tracked, sizes, hashes) {
+  const fix = "run scripts/build_textures.py";
+  const copy = scaledCopyPath(normalized);
+  const exists = await fileExists(path.join(texturesDir, copy));
+  check(exists && Array.isArray(sizes[normalized]),
+    `${ref.owner} texture '${normalized}' has no 1024 px copy; ${fix}`);
+  check(!exists || !tracked || tracked.has(copy), `${ref.owner} texture copy '${copy}' is not tracked by git (git add it)`);
+  if (!exists || !hashes[normalized]) return;
+  const digest = createHash("sha256").update(await readFile(path.join(texturesDir, normalized))).digest("hex");
+  check(digest.startsWith(hashes[normalized]), `${ref.owner} texture '${normalized}' changed since its copy was built; ${fix}`);
+}
+
 async function validateTextures(textureRefs) {
   const bodyTextureGroups = new Map();
   const tracked = listTrackedTextures();
+  const { ORIGINAL_TEXTURE_SIZES: sizes, SOURCE_TEXTURE_HASHES: hashes } = await import(
+    pathToFileURL(path.join(solarDir, "src/rendering/textureSizes.js"))
+  );
 
   for (const ref of textureRefs) {
     const normalized = normalizeTextureUrl(ref.textureUrl);
@@ -244,6 +264,9 @@ async function validateTextures(textureRefs) {
     check(exists || hasNote, `${ref.owner} texture '${normalized}' is missing and needs textureNote`);
     check(!exists || !tracked || tracked.has(normalized),
       `${ref.owner} texture '${normalized}' exists locally but is not tracked by git (git add it)`);
+    if (exists && !FULL_SIZE_TEXTURES.has(normalized)) {
+      await validateScaledCopy(ref, normalized, tracked, sizes, hashes);
+    }
 
     if (!ref.allowReuseWithoutNote) {
       const group = bodyTextureGroups.get(normalized) ?? [];
@@ -379,8 +402,9 @@ async function main() {
     }
   }
 
-  // The sky map is referenced from src/rendering/starfield.js, not the data file.
+  // The sky map and Sun texture are referenced from src/rendering/, not the data file.
   addTextureRef(textureRefs, "Sky", "starmap_2020_4k.jpg", null, true);
+  addTextureRef(textureRefs, "Sun", "sun.jpg", null, true);
 
   if (Array.isArray(planets) && planets.length > 0) {
     const { getEphemerisRangeJD, getInterpolatedEphemerisPositionAU } = await import(

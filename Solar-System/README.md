@@ -102,7 +102,8 @@ first time, while Three.js loads.
 Solar-System/
 ├── index.html              # markup, import map, file:// help
 ├── data/solar-system.json  # planet and moon catalog
-├── textures/               # body texture assets
+├── textures/               # body texture assets (originals)
+│   └── 1024/               # generated 1024 px WebP copies loaded by default
 ├── src/
 │   ├── app/                # entry.js, startup/cleanup, one render loop
 │   ├── core/               # shared state, configuration, events, viewport
@@ -112,13 +113,20 @@ Solar-System/
 │   │   └── belts/          # asteroid, Kuiper, and Trojan rendering
 │   ├── navigation/         # pointer, keyboard, camera tracking
 │   └── ui/                 # controls, labels, body details, telemetry, CSS
-└── scripts/smoke.mjs       # data, asset, and module-boundary checks
+└── scripts/
+    ├── smoke.mjs           # data, asset, and module-boundary checks
+    └── build_textures.py   # regenerates textures/1024/ and textureSizes.js
 ```
 
 `src/app/entry.js` starts the application. `application.js` owns setup and cleanup;
 `renderLoop.js` coordinates each frame. Simulation modules do not import UI or
 rendering modules. Keep feature-specific behavior with its owner instead of
 adding to a shared utility file. All paths work directly over HTTP; no build step.
+
+Bodies load 1024 px WebP copies of their textures, and close inspection fetches
+the 2048 px original. After adding or replacing a texture, `git add` it and run
+`uv run --with pillow Solar-System/scripts/build_textures.py` from the repo root;
+`npm test` fails with that instruction when a copy is missing or stale.
 
 ## Tests
 

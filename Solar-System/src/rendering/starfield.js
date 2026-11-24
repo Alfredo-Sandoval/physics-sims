@@ -32,6 +32,9 @@ export function createStarfield(scene) {
 function createSkySphere() {
   const texture = loadTexture(SKY_TEXTURE, undefined, SKY_TEXTURE_SIZE);
   texture.colorSpace = THREE.SRGBColorSpace;
+  // The visible portion of the sky is magnified, so base-level filtering is enough.
+  texture.generateMipmaps = false;
+  texture.minFilter = THREE.LinearFilter;
   const geom = new THREE.SphereGeometry(CONSTANTS.STARFIELD_RADIUS, 64, 32);
   const mat = new THREE.MeshBasicMaterial({
     map: texture,
